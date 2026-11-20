@@ -32,6 +32,19 @@ export default function FormSilabus({ user }) {
   // Form data
   const [mkDipilih, setMkDipilih] = useState(null);
   const [deskripsiMk, setDeskripsiMk] = useState('');
+  // Deskripsi MK terstruktur (DES-Cre)
+  const [desMk, setDesMk] = useState({
+    jenis_mk: 'wajib',
+    kemampuan: '',
+    jenis_pengetahuan: '',
+    bahan_kajian_des: '',
+    penugasan_des: '',
+    metoda_1: '',
+    tanda_baca_1: '.',
+    metoda_2: '',
+    tanda_baca_2: '',
+    metoda_3: '',
+  });
   const [cplDipilih, setCplDipilih] = useState([]); // array of CPL id
   const [cpmk, setCpmk] = useState([{ no: 'CPMK-1', deskripsi_id: '', deskripsi_en: '' }]);
   const [bahanKajian, setBahanKajian] = useState(['']);
@@ -80,6 +93,20 @@ export default function FormSilabus({ user }) {
           const mk = mkData?.find(m => m.id === dok.mk_id);
           setMkDipilih(mk || null);
           setDeskripsiMk(dok.deskripsi_mk || '');
+          if (dok.jenis_mk) {
+            setDesMk({
+              jenis_mk: dok.jenis_mk || 'wajib',
+              kemampuan: dok.kemampuan || '',
+              jenis_pengetahuan: dok.jenis_pengetahuan || '',
+              bahan_kajian_des: dok.bahan_kajian_des || '',
+              penugasan_des: dok.penugasan_des || '',
+              metoda_1: dok.metoda_1 || '',
+              tanda_baca_1: '.',
+              metoda_2: dok.metoda_2 || '',
+              tanda_baca_2: '',
+              metoda_3: dok.metoda_3 || '',
+            });
+          }
           setCplDipilih(dok.cpl_dipilih || []);
           setCpmk(dok.cpmk?.length > 0 ? dok.cpmk : [{ no: 'CPMK-1', deskripsi_id: '', deskripsi_en: '' }]);
           setBahanKajian(dok.bahan_kajian?.length > 0 ? dok.bahan_kajian : ['']);
@@ -121,6 +148,14 @@ export default function FormSilabus({ user }) {
       mk_id: mkDipilih.id,
       status: statusBaru,
       deskripsi_mk: deskripsiMk,
+      jenis_mk: desMk.jenis_mk || null,
+      kemampuan: desMk.kemampuan || null,
+      jenis_pengetahuan: desMk.jenis_pengetahuan || null,
+      bahan_kajian_des: desMk.bahan_kajian_des || null,
+      penugasan_des: desMk.penugasan_des || null,
+      metoda_1: desMk.metoda_1 || null,
+      metoda_2: desMk.metoda_2 || null,
+      metoda_3: desMk.metoda_3 || null,
       cpl_dipilih: cplDipilih,
       cpmk,
       bahan_kajian: bahanKajian.filter(b => b.trim()),
@@ -238,6 +273,8 @@ export default function FormSilabus({ user }) {
               mkDipilih={mkDipilih}
               deskripsi={deskripsiMk}
               onChange={setDeskripsiMk}
+              desMk={desMk}
+              onChangeDesMk={setDesMk}
             />
           )}
           {step === 3 && (
@@ -445,38 +482,139 @@ function Step1PilihMK({ daftarMK, mkDipilih, onChange }) {
 }
 
 // ─── Langkah 2: Deskripsi MK ─────────────────────────────────────────────
-function Step2Deskripsi({ mkDipilih, deskripsi, onChange }) {
+const KEMAMPUAN_OPTS = ['mendalami', 'memahami', 'menerapkan', 'menganalisis', 'mengembangkan', 'merancang'];
+const JENIS_PENGETAHUAN_OPTS = ['teori dan prinsip', 'teori dan konteks', 'teori dasar', 'konsep teoritis', 'konsep rancangan', 'prinsip', 'proses', 'prosedur', 'strategi', 'metoda', 'desain'];
+const PENUGASAN_DES_OPTS = ['secara mandiri', 'secara berkelompok', 'secara mandiri dan berkelompok'];
+const METODA_OPTS = ['diskusi kelompok', 'studi kasus', 'berbasis permasalahan', 'berbasis proyek', 'simulasi', 'penemuan/discovery', 'kontekstual', 'kooperatif', 'kolaboratif', 'mandiri', 'bertukar matra/flipped', 'bauran/blended', 'non-SCL (kuliah dan diskusi kelas)', 'ujian/evaluasi'];
+const TANDA_BACA_OPTS = ['.', ',', '; ', 'dan', 'serta'];
+
+function buildDeskripsiStatement(mk, des) {
+  if (!mk || !des.kemampuan) return '';
+  const jenis = des.jenis_mk || 'wajib';
+  const parts = [`Mata kuliah ${jenis} yang mengembangkan kemampuan mahasiswa dalam`];
+  parts.push(des.kemampuan);
+  if (des.jenis_pengetahuan) parts.push(des.jenis_pengetahuan);
+  if (des.bahan_kajian_des) parts.push(des.bahan_kajian_des);
+  if (des.penugasan_des) parts.push(des.penugasan_des);
+  parts.push('melalui perkuliahan dan pembelajaran');
+  const metodaList = [des.metoda_1, des.metoda_2, des.metoda_3].filter(Boolean);
+  if (metodaList.length) parts.push(metodaList.join(', '));
+  return parts.join(' ') + '.';
+}
+
+function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk }) {
+  const preview = buildDeskripsiStatement(mkDipilih, desMk);
+
+  // sync generated statement to deskripsiMk whenever preview changes
+  React.useEffect(() => {
+    if (preview) onChange(preview);
+  }, [preview]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const upd = (key, val) => onChangeDesMk(prev => ({ ...prev, [key]: val }));
+
+  const SelDes = ({ label, field, opts, placeholder = '— pilih —' }) => (
+    <div className="form-group">
+      <label className="form-label" style={{ fontSize: 13 }}>{label}</label>
+      <select className="form-select" value={desMk[field]} onChange={e => upd(field, e.target.value)}>
+        <option value="">{placeholder}</option>
+        {opts.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+
   return (
     <div>
       {mkDipilih && (
-        <div style={{
-          background: 'var(--color-gray-50)',
-          border: '1px solid var(--color-gray-200)',
-          borderRadius: 8,
-          padding: '14px 16px',
-          marginBottom: 20,
-        }}>
-          <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginBottom: 4 }}>Mata Kuliah Dipilih</div>
+        <div style={{ background: 'var(--color-gray-50)', border: '1px solid var(--color-gray-200)', borderRadius: 8, padding: '14px 16px', marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginBottom: 4 }}>Mata Kuliah</div>
           <div style={{ fontWeight: 700 }}>{mkDipilih.kode_mk} — {mkDipilih.nama_mk}</div>
           <div style={{ fontSize: 13, color: 'var(--color-gray-500)', marginTop: 2 }}>
-            {mkDipilih.sks} SKS · Jenjang {mkDipilih.jenjang} · Semester {mkDipilih.semester}
+            {mkDipilih.sks} SKS · {mkDipilih.jenjang} · Semester {mkDipilih.semester} · {mkDipilih.tipe}
           </div>
         </div>
       )}
 
-      <div className="form-group">
-        <label className="form-label">Deskripsi Singkat Mata Kuliah</label>
-        <p style={{ fontSize: 13, color: 'var(--color-gray-500)', marginBottom: 8 }}>
-          Tuliskan gambaran singkat tentang isi, tujuan, dan relevansi mata kuliah ini.
-        </p>
-        <textarea
-          className="form-textarea"
-          rows={6}
-          placeholder="Contoh: Mata kuliah ini memperkenalkan konsep perancangan digital dalam arsitektur, meliputi penggunaan alat-alat komputasi untuk eksplorasi desain, representasi dan presentasi gagasan arsitektural..."
-          value={deskripsi}
-          onChange={e => onChange(e.target.value)}
-        />
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13 }}>
+        ℹ️ Pilih komponen di bawah — deskripsi MK akan <strong>terbentuk otomatis</strong> sesuai pola standar ITS.
       </div>
+
+      {/* Komponen Pengetahuan & Ketrampilan */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 12, padding: '6px 12px', background: 'var(--color-gray-50)', borderRadius: 6 }}>
+          📘 Komponen: Pengetahuan &amp; Ketrampilan
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="form-group">
+            <label className="form-label" style={{ fontSize: 13 }}>Jenis MK <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['wajib', 'pilihan'].map(j => (
+                <button key={j}
+                  onClick={() => upd('jenis_mk', j)}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13,
+                    fontWeight: desMk.jenis_mk === j ? 700 : 400,
+                    background: desMk.jenis_mk === j ? 'var(--color-primary)' : 'var(--color-gray-100)',
+                    color: desMk.jenis_mk === j ? 'white' : 'var(--color-gray-700)',
+                  }}
+                >
+                  {j.charAt(0).toUpperCase() + j.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <SelDes label="Kemampuan *" field="kemampuan" opts={KEMAMPUAN_OPTS} />
+        </div>
+        <SelDes label="Jenis Pengetahuan *" field="jenis_pengetahuan" opts={JENIS_PENGETAHUAN_OPTS} />
+        <div className="form-group">
+          <label className="form-label" style={{ fontSize: 13 }}>Kelompok Bahan Kajian <span style={{ fontSize: 11, color: 'var(--color-gray-500)', fontWeight: 400 }}>(ketik bebas)</span></label>
+          <textarea className="form-textarea" rows={2} style={{ fontSize: 13 }}
+            placeholder="mis: perkembangan proses desain di era digital; peran perancang dalam platform digital; ..."
+            value={desMk.bahan_kajian_des}
+            onChange={e => upd('bahan_kajian_des', e.target.value)} />
+        </div>
+      </div>
+
+      {/* Komponen Sikap & Metoda */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 12, padding: '6px 12px', background: 'var(--color-gray-50)', borderRadius: 6 }}>
+          💡 Komponen: Sikap &amp; Metoda Pembelajaran
+        </div>
+        <SelDes label="Penugasan" field="penugasan_des" opts={PENUGASAN_DES_OPTS} />
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+          <SelDes label="Metoda Pembelajaran-1" field="metoda_1" opts={METODA_OPTS} />
+          <SelDes label="Tanda Baca" field="tanda_baca_1" opts={TANDA_BACA_OPTS} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+          <SelDes label="Metoda Pembelajaran-2 (opsional)" field="metoda_2" opts={METODA_OPTS} />
+          <SelDes label="Tanda Baca" field="tanda_baca_2" opts={TANDA_BACA_OPTS} />
+        </div>
+        <SelDes label="Metoda Pembelajaran-3 (opsional)" field="metoda_3" opts={METODA_OPTS} />
+      </div>
+
+      {/* Preview */}
+      {preview && (
+        <div style={{ marginTop: 8, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 6 }}>📋 Pernyataan Deskripsi MK (otomatis):</div>
+          <div style={{
+            background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+            padding: '14px 16px', fontSize: 14, lineHeight: 1.7, color: 'var(--color-gray-800)',
+          }}>
+            {preview}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback manual */}
+      <details style={{ marginTop: 8 }}>
+        <summary style={{ fontSize: 12, color: 'var(--color-gray-400)', cursor: 'pointer' }}>
+          ✏️ Edit manual deskripsi (opsional)
+        </summary>
+        <div className="form-group" style={{ marginTop: 8 }}>
+          <textarea className="form-textarea" rows={4} style={{ fontSize: 13 }}
+            value={deskripsi}
+            onChange={e => onChange(e.target.value)} />
+        </div>
+      </details>
     </div>
   );
 }
