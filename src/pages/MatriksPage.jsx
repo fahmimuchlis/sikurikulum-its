@@ -22,7 +22,7 @@ export default function MatriksPage({ user }) {
   // Data master
   const [silabusId, setSilabusId] = useState('');
   const [silabusOptions, setSilabusOptions] = useState([]);
-  const [silabusInfo, setSilabusInfo] = useState(null);
+  const [silabusInfo, setSilabusInfo] = useState(null); // eslint-disable-line no-unused-vars
   const [cpmkList, setCpmkList] = useState([]); // dari dokumen_cpmk
 
   // Halaman aktif

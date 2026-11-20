@@ -184,7 +184,7 @@ export default function FormSilabus({ user }) {
 
     setSaving(false);
     return id;
-  }, [mkDipilih, user, deskripsiMk, cplDipilih, cpmk, bahanKajian, prasyarat, pustakaUtama, pustakaP, sapMinggu, currentSilabusId]);
+  }, [mkDipilih, user, deskripsiMk, cplDipilih, cpmk, bahanKajian, prasyarat, pustakaUtama, pustakaP, sapMinggu, currentSilabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNext = async () => {
     if (step === 1 && !mkDipilih) {

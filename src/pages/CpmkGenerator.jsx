@@ -478,7 +478,7 @@ export default function CpmkGenerator({ user }) {
     );
   }
 
-  const selectedSilabus = daftarSilabus.find(s => s.id === silabusId);
+  const selectedSilabus = daftarSilabus.find(s => s.id === silabusId); // eslint-disable-line no-unused-vars
   const tipeLabel = { kognitif: '🧠 Kognitif', kognitif_psiko: '🧠💪 Kognitif + Psiko', afeksi: '💛 Afeksi' };
   const tipeLabelSub = { kognitif: '🧠 Kognitif', psikomotorik: '💪 Psikomotorik', afeksi: '💛 Afeksi' };
 
