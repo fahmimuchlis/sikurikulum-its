@@ -61,6 +61,9 @@ export default function Navbar({ user }) {
           <NavLink to="/dashboard" active={isActive('/dashboard')}>
             🏠 Dasbor Saya
           </NavLink>
+          <NavLink to="/cpmk" active={isActive('/cpmk')}>
+            🎯 CPMK Generator
+          </NavLink>
           <NavLink to="/direktori" active={isActive('/direktori')}>
             📚 Direktori
           </NavLink>

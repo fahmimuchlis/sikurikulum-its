@@ -9,6 +9,7 @@ import FormSilabus from './pages/FormSilabus';
 import Direktori from './pages/Direktori';
 import DetailDokumen from './pages/DetailDokumen';
 import AdminMasterData from './pages/AdminMasterData';
+import CpmkGenerator from './pages/CpmkGenerator';
 
 // Komponen penjaga: hanya bisa diakses jika sudah login
 function ProtectedRoute({ user, children }) {
@@ -78,6 +79,11 @@ export default function App() {
         } />
 
         {/* Redirect default */}
+        <Route path="/cpmk" element={
+          <ProtectedRoute user={user}>
+            <CpmkGenerator user={user} />
+          </ProtectedRoute>
+        } />
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
