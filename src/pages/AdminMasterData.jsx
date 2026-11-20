@@ -3,7 +3,6 @@ import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 
 // Halaman admin untuk kelola Master Data MK dan CPL
-// Akses ke halaman ini sebaiknya dibatasi - bisa ditambah role-check di sini
 
 export default function AdminMasterData({ user }) {
   const [tab, setTab] = useState('mk');
@@ -12,6 +11,7 @@ export default function AdminMasterData({ user }) {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Form state MK
   const [formMK, setFormMK] = useState({ kode_mk: '', nama_mk: '', sks: 2, jenjang: 'S1', semester: 1, departemen: 'Arsitektur' });
@@ -24,6 +24,14 @@ export default function AdminMasterData({ user }) {
 
   const loadAll = async () => {
     setLoading(true);
+    // Cek role admin
+    const { data: profil } = await supabase
+      .from('profil_dosen')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    setIsAdmin(profil?.role === 'admin');
+
     const [{ data: mkData }, { data: cplData }] = await Promise.all([
       supabase.from('master_mata_kuliah').select('*').order('kode_mk'),
       supabase.from('master_cpl').select('*').order('jenjang, nomor_cpl'),
@@ -72,6 +80,35 @@ export default function AdminMasterData({ user }) {
     notify('CPL dihapus.');
     loadAll();
   };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar user={user} />
+        <div className="page-loader" style={{ minHeight: 'calc(100vh - 60px)' }}>
+          <div className="spinner spinner-primary"></div>
+          <p>Memuat data admin...</p>
+        </div>
+      </>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <>
+        <Navbar user={user} />
+        <main style={{ maxWidth: 600, margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-gray-900)', marginBottom: 8 }}>
+            Akses Dibatasi
+          </h2>
+          <p style={{ color: 'var(--color-gray-500)' }}>
+            Halaman ini hanya dapat diakses oleh Administrator.
+          </p>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>

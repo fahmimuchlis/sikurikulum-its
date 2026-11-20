@@ -93,6 +93,35 @@ export default function Dashboard({ user }) {
           <StatCard icon="○" label="Belum Dibuat" value={stats.belum} color="var(--color-gray-500)" />
         </div>
 
+        {/* Tombol Panel Admin (hanya untuk admin) */}
+        {profil?.role === 'admin' && (
+          <div style={{
+            background: '#FFF7ED',
+            border: '1px solid #FED7AA',
+            borderRadius: 8,
+            padding: '12px 20px',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>⚙️</span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#92400E' }}>Mode Administrator</div>
+                <div style={{ fontSize: 13, color: '#B45309' }}>Anda memiliki akses penuh ke data master dan pengaturan sistem.</div>
+              </div>
+            </div>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => navigate('/admin')}
+            >
+              🔧 Panel Admin
+            </button>
+          </div>
+        )}
+
         {/* Tombol buat dokumen baru */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600 }}>Dokumen Kurikulum Saya</h2>
