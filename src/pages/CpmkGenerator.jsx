@@ -344,14 +344,14 @@ export default function CpmkGenerator({ user }) {
     const loadVocab = async () => {
       const { data, error } = await supabase.from('source_vocabulary').select('*').order('urutan');
       if (error) console.error('vocab load error:', error);
+      const v = {};
       if (data) {
-        const v = {};
         data.forEach(row => {
           if (!v[row.kategori]) v[row.kategori] = [];
           v[row.kategori].push(row.nilai);
         });
-        setVocab(v);
       }
+      setVocab(v); // selalu set, minimal {} agar !vocab tidak block render
     };
     loadVocab();
   }, []);
@@ -482,7 +482,7 @@ export default function CpmkGenerator({ user }) {
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
-  if (loading || !vocab) {
+  if (loading) {
     return (
       <>
         <Navbar user={user} />
