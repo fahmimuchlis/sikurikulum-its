@@ -1118,7 +1118,43 @@ function Step3CPL({ cplFiltered, cplDipilih, onChange, jenjang, kodeTipeMk, cplO
 
 // ─── CPMK Builder helpers ─────────────────────────────────────────────────
 
-// Template AFEKSI ITS: kalimat baku + max 2 kegiatan + topik
+// ── Vocab ITS (sesuai template resmi) ──────────────────────────────────────
+
+// KOGNITIF: maks 2 kata kerja
+const KATA_KERJA_KOGNITIF = [
+  'menyebut', 'memahami', 'menerapkan',
+  'menganalisis', 'mengevaluasi', 'merancang', 'mengembangkan',
+];
+
+// KOGNITIF: elemen pengetahuan
+const ELEMEN_PENGETAHUAN = [
+  'pengetahuan', 'data', 'cara berpikir', 'desain',
+  'konsep rancangan', 'konsep teoritis', 'prinsip',
+  'teori', 'teori dasar', 'teori dan prinsip', 'teori dan konteks',
+  'konteks', 'model', 'metoda', 'strategi', 'proses', 'prosedur',
+];
+
+// UKURAN KETERCAPAIAN (sama untuk Kognitif & Psikomotorik)
+const UKURAN_KETERCAPAIAN = [
+  'sesuai literatur yang kredibel',
+  'sesuai pedoman baku mutu',
+  'sesuai literatur dan pedoman baku mutu',
+];
+
+// PSIKOMOTORIK: maks 2 kata kerja
+const KATA_KERJA_PSIKO = [
+  'melakukan', 'membuat', 'mengoperasikan',
+  'menggunakan', 'mempertunjukan',
+];
+
+// PSIKOMOTORIK: objek kegiatan
+const OBJEK_KEGIATAN_PSIKO = [
+  'dokumen teknis', 'model', 'sajian grafis', 'kajian',
+  'kritik', 'apresiasi pada', 'riset/penelitian', 'presentasi',
+  'poster', 'diskusi', 'alat/perangkat', 'pameran',
+];
+
+// AFEKSI
 const AFEKSI_PREFIX = 'Mampu menunjukkan sikap dan menjunjung tinggi etika akademik pada kegiatan';
 
 const KEGIATAN_AFEKSI = [
@@ -1130,29 +1166,29 @@ const KEGIATAN_AFEKSI = [
   'ujian',
 ];
 
+// ── Builder: rakit kalimat CPMK dari fields ────────────────────────────────
 function buildCpmkStatement(tipe, fields) {
   if (tipe === 'kognitif') {
+    // "Mampu [kog1] [dan kog2] [elemen] [rincian] [ukuran]."
     const parts = ['Mampu'];
     if (fields.kognitif_1) parts.push(fields.kognitif_1);
+    if (fields.kognitif_2) { parts.push('dan'); parts.push(fields.kognitif_2); }
     if (fields.elemen_1) parts.push(fields.elemen_1);
-    if (fields.kata_hubung && fields.kognitif_2) { parts.push(fields.kata_hubung); parts.push(fields.kognitif_2); }
-    if (fields.elemen_2) parts.push(fields.elemen_2);
     if (fields.rincian) parts.push(fields.rincian);
     if (fields.ukuran) parts.push(fields.ukuran);
     return parts.length > 1 ? parts.join(' ') + '.' : '';
   }
   if (tipe === 'kognitif_psiko') {
+    // "Mampu [psiko1] [dan psiko2] [objek] [rincian] [ukuran]."
     const parts = ['Mampu'];
-    if (fields.kognitif) parts.push(fields.kognitif);
-    if (fields.elemen_1) parts.push(fields.elemen_1);
-    if (fields.kata_hubung && fields.psikomotorik) { parts.push(fields.kata_hubung); parts.push(fields.psikomotorik); }
-    if (fields.elemen_2) parts.push(fields.elemen_2);
+    if (fields.psiko_1) parts.push(fields.psiko_1);
+    if (fields.psiko_2) { parts.push('dan'); parts.push(fields.psiko_2); }
+    if (fields.objek_psiko) parts.push(fields.objek_psiko);
     if (fields.rincian) parts.push(fields.rincian);
     if (fields.ukuran) parts.push(fields.ukuran);
     return parts.length > 1 ? parts.join(' ') + '.' : '';
   }
   if (tipe === 'afeksi') {
-    // Template baku ITS: "Mampu menunjukkan sikap... pada kegiatan X dan Y materi/topik Z."
     const kegiatan = [fields.kegiatan_1, fields.kegiatan_2].filter(Boolean);
     if (!kegiatan.length) return '';
     let keg = kegiatan.length === 1 ? kegiatan[0] : kegiatan[0] + ' dan ' + kegiatan[1];
@@ -1163,27 +1199,60 @@ function buildCpmkStatement(tipe, fields) {
   return '';
 }
 
-// Render highlighted kalimat (tebal bagian yang dipilih, abu bagian template)
+// Render highlighted kalimat — warna berbeda per komponen
 function CpmkPreviewHighlight({ tipe, fields }) {
   const stmt = buildCpmkStatement(tipe, fields);
   if (!stmt) return <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Pilih komponen di kiri untuk melihat kalimat CPMK...</span>;
 
-  if (tipe === 'afeksi') {
-    // Sorot bagian yang diedit dosen
-    const kegiatan = [fields.kegiatan_1, fields.kegiatan_2].filter(Boolean);
-    const kegStr = kegiatan.length === 1 ? kegiatan[0] : kegiatan.length === 2 ? kegiatan[0] + ' dan ' + kegiatan[1] : '';
+  const S = { fontSize: 15, lineHeight: 1.9 };
+  const Muted = ({ children }) => <span style={{ color: '#64748b' }}>{children}</span>;
+  const Blue = ({ children }) => <span style={{ color: '#1d4ed8', fontWeight: 700 }}>{children}</span>;
+  const Green = ({ children }) => <span style={{ color: '#059669', fontWeight: 700 }}>{children}</span>;
+  const Purple = ({ children }) => <span style={{ color: '#7c3aed', fontWeight: 700 }}>{children}</span>;
+  const Orange = ({ children }) => <span style={{ color: '#d97706', fontWeight: 700 }}>{children}</span>;
+
+  if (tipe === 'kognitif') {
     return (
-      <span style={{ fontSize: 15, lineHeight: 1.8 }}>
-        <span style={{ color: '#64748b' }}>{AFEKSI_PREFIX} </span>
-        {kegStr && <span style={{ color: '#1d4ed8', fontWeight: 700 }}>{kegStr}</span>}
-        {fields.rincian && <><span style={{ color: '#64748b' }}> materi/topik </span><span style={{ color: '#7c3aed', fontWeight: 700 }}>{fields.rincian}</span></>}
-        <span style={{ color: '#64748b' }}>.</span>
+      <span style={S}>
+        <Muted>Mampu </Muted>
+        {fields.kognitif_1 && <Blue>{fields.kognitif_1}</Blue>}
+        {fields.kognitif_2 && <><Muted> dan </Muted><Blue>{fields.kognitif_2}</Blue></>}
+        {fields.elemen_1 && <><Muted> </Muted><Green>{fields.elemen_1}</Green></>}
+        {fields.rincian && <><Muted> </Muted><Purple>{fields.rincian}</Purple></>}
+        {fields.ukuran && <><Muted> </Muted><Orange>{fields.ukuran}</Orange></>}
+        <Muted>.</Muted>
       </span>
     );
   }
 
-  // Kognitif / Kognitif+Psiko: sorot setiap token yang diisi
-  return <span style={{ fontSize: 15, lineHeight: 1.8, color: '#1e293b' }}>{stmt}</span>;
+  if (tipe === 'kognitif_psiko') {
+    return (
+      <span style={S}>
+        <Muted>Mampu </Muted>
+        {fields.psiko_1 && <Blue>{fields.psiko_1}</Blue>}
+        {fields.psiko_2 && <><Muted> dan </Muted><Blue>{fields.psiko_2}</Blue></>}
+        {fields.objek_psiko && <><Muted> </Muted><Green>{fields.objek_psiko}</Green></>}
+        {fields.rincian && <><Muted> </Muted><Purple>{fields.rincian}</Purple></>}
+        {fields.ukuran && <><Muted> </Muted><Orange>{fields.ukuran}</Orange></>}
+        <Muted>.</Muted>
+      </span>
+    );
+  }
+
+  if (tipe === 'afeksi') {
+    const kegiatan = [fields.kegiatan_1, fields.kegiatan_2].filter(Boolean);
+    const kegStr = kegiatan.length === 1 ? kegiatan[0] : kegiatan.length === 2 ? kegiatan[0] + ' dan ' + kegiatan[1] : '';
+    return (
+      <span style={S}>
+        <Muted>{AFEKSI_PREFIX} </Muted>
+        {kegStr && <Blue>{kegStr}</Blue>}
+        {fields.rincian && <><Muted> materi/topik </Muted><Purple>{fields.rincian}</Purple></>}
+        <Muted>.</Muted>
+      </span>
+    );
+  }
+
+  return <span style={S}>{stmt}</span>;
 }
 
 // Selector dropdown bergaya
@@ -1206,43 +1275,114 @@ function SelDrop({ label, value, onChange, options, required = false, placeholde
   );
 }
 
+// Selector checkbox untuk daftar kata kerja (maks 2)
+function CheckboxSelector({ label, options, val1, val2, onChange1, onChange2, required = false }) {
+  const upd = (k) => {
+    const isV1 = val1 === k;
+    const isV2 = val2 === k;
+    if (isV1) { onChange1(val2 || ''); onChange2(''); }
+    else if (isV2) { onChange2(''); }
+    else if (!val1) { onChange1(k); }
+    else if (!val2) { onChange2(k); }
+  };
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+        {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+        <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>(pilih maks. 2)</span>
+      </label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+        {options.map(k => {
+          const isV1 = val1 === k, isV2 = val2 === k;
+          const isSel = isV1 || isV2;
+          const canSel = isSel || !(val1 && val2);
+          return (
+            <label key={k} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '7px 10px', borderRadius: 8,
+              border: `1.5px solid ${isSel ? '#6366f1' : '#e2e8f0'}`,
+              background: isSel ? '#eef2ff' : '#fafafa',
+              cursor: canSel ? 'pointer' : 'not-allowed',
+              opacity: !canSel ? 0.4 : 1,
+              transition: 'all 0.15s',
+            }}>
+              <input type="checkbox" checked={isSel} disabled={!canSel}
+                onChange={() => upd(k)} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: isSel ? 600 : 400, color: isSel ? '#4338ca' : '#374151' }}>
+                {k}
+                {isV1 && val2 && <span style={{ fontSize: 10, color: '#818cf8', marginLeft: 4 }}>①</span>}
+                {isV2 && <span style={{ fontSize: 10, color: '#818cf8', marginLeft: 4 }}>②</span>}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      {(val1 || val2) && (
+        <div style={{ marginTop: 6, fontSize: 11, color: '#6366f1' }}>
+          Terpilih: {[val1, val2].filter(Boolean).join(' dan ')}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Form builder dalam modal
-function CpmkBuilderFields({ tipe, fields, vocab, onChange }) {
-  const allKog = [...(vocab.kognitif_c1||[]), ...(vocab.kognitif_c2||[]), ...(vocab.kognitif_c3||[]),
-    ...(vocab.kognitif_c4||[]), ...(vocab.kognitif_c5||[]), ...(vocab.kognitif_c6||[])];
+function CpmkBuilderFields({ tipe, fields, onChange }) {
   const upd = patch => onChange({ ...fields, ...patch });
 
   if (tipe === 'kognitif') return (
     <>
-      <SelDrop label="① Kata Kerja Kognitif (C1–C6)" value={fields.kognitif_1||''} onChange={v => upd({kognitif_1: v})} options={allKog} required />
-      <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={vocab.elemen_pengetahuan||[]} required />
-      <SelDrop label="③ Kata Hubung (opsional — tambah kata kerja ke-2)" value={fields.kata_hubung||''} onChange={v => upd({kata_hubung: v, kognitif_2: '', elemen_2: ''})} options={vocab.kata_hubung||[]} />
-      {fields.kata_hubung && <>
-        <SelDrop label="④ Kata Kerja Kognitif-2" value={fields.kognitif_2||''} onChange={v => upd({kognitif_2: v})} options={allKog} />
-        <SelDrop label="⑤ Elemen Pengetahuan-2" value={fields.elemen_2||''} onChange={v => upd({elemen_2: v})} options={vocab.elemen_pengetahuan||[]} />
-      </>}
+      {/* A: Kata Kerja Kognitif — maks 2 */}
+      <CheckboxSelector
+        label="① Kata Kerja Kognitif"
+        options={KATA_KERJA_KOGNITIF}
+        val1={fields.kognitif_1||''} val2={fields.kognitif_2||''}
+        onChange1={v => upd({ kognitif_1: v })}
+        onChange2={v => upd({ kognitif_2: v })}
+        required
+      />
+      {/* B: Elemen Pengetahuan */}
+      <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={ELEMEN_PENGETAHUAN} required />
+      {/* C: Rincian (manual) */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-          {fields.kata_hubung ? '⑥' : '④'} Rincian / Topik Bahan Kajian <span style={{ color: '#ef4444' }}>*</span>
+          ③ Rincian Sub-Bahan Kajian <span style={{ color: '#ef4444' }}>*</span>
         </label>
-        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => upd({rincian: e.target.value})} placeholder="mis: digitalisasi dalam konteks arsitektur tropis" />
+        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''}
+          onChange={e => upd({rincian: e.target.value})}
+          placeholder="mis: digitalisasi dalam konteks arsitektur tropis" />
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Ketik topik/bahan kajian spesifik MK ini</p>
       </div>
-      <SelDrop label={`${fields.kata_hubung ? '⑦' : '⑤'} Ukuran / Kriteria Penilaian`} value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={vocab.ukuran||[]} required />
+      {/* D: Ukuran */}
+      <SelDrop label="④ Ukuran Ketercapaian" value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={UKURAN_KETERCAPAIAN} required />
     </>
   );
 
   if (tipe === 'kognitif_psiko') return (
     <>
-      <SelDrop label="① Kata Kerja Kognitif (C4–C6)" value={fields.kognitif||''} onChange={v => upd({kognitif: v})} options={[...(vocab.kognitif_c4||[]), ...(vocab.kognitif_c5||[]), ...(vocab.kognitif_c6||[])]} required />
-      <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={vocab.elemen_pengetahuan||[]} required />
-      <SelDrop label="③ Kata Hubung" value={fields.kata_hubung||''} onChange={v => upd({kata_hubung: v})} options={vocab.kata_hubung||[]} />
-      <SelDrop label="④ Kata Kerja Psikomotorik" value={fields.psikomotorik||''} onChange={v => upd({psikomotorik: v})} options={vocab.psikomotorik||[]} required />
-      <SelDrop label="⑤ Elemen / Obyek" value={fields.elemen_2||''} onChange={v => upd({elemen_2: v})} options={vocab.elemen_pengetahuan||[]} />
+      {/* A: Kata Kerja Psikomotorik — maks 2 */}
+      <CheckboxSelector
+        label="① Kata Kerja Psikomotorik"
+        options={KATA_KERJA_PSIKO}
+        val1={fields.psiko_1||''} val2={fields.psiko_2||''}
+        onChange1={v => upd({ psiko_1: v })}
+        onChange2={v => upd({ psiko_2: v })}
+        required
+      />
+      {/* B: Objek kegiatan */}
+      <SelDrop label="② Objek Kegiatan" value={fields.objek_psiko||''} onChange={v => upd({objek_psiko: v})} options={OBJEK_KEGIATAN_PSIKO} required />
+      {/* C: Rincian (manual) */}
       <div style={{ marginBottom: 12 }}>
-        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>⑥ Rincian / Topik <span style={{ color: '#ef4444' }}>*</span></label>
-        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => upd({rincian: e.target.value})} placeholder="mis: cara berpikir merancang digital" />
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+          ③ Rincian Sub-Bahan Kajian <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''}
+          onChange={e => upd({rincian: e.target.value})}
+          placeholder="mis: perancangan sistem informasi berbasis web" />
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Ketik topik/bahan kajian spesifik MK ini</p>
       </div>
-      <SelDrop label="⑦ Ukuran / Kriteria Penilaian" value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={vocab.ukuran||[]} required />
+      {/* D: Ukuran */}
+      <SelDrop label="④ Ukuran Ketercapaian" value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={UKURAN_KETERCAPAIAN} required />
     </>
   );
 
@@ -1322,10 +1462,14 @@ function CpmkBuilderFields({ tipe, fields, vocab, onChange }) {
 
 const EMPTY_CPMK_FIELDS = {
   tipe: 'kognitif',
-  kognitif_1: '', elemen_1: '', kata_hubung: '', kognitif_2: '', elemen_2: '',
-  kognitif: '', psikomotorik: '',
+  // Kognitif
+  kognitif_1: '', kognitif_2: '', elemen_1: '',
+  // Psikomotorik
+  psiko_1: '', psiko_2: '', objek_psiko: '',
+  // Bersama
   rincian: '', ukuran: '',
-  afeksi: '', kegiatan_1: '', kegiatan_2: '',
+  // Afeksi
+  kegiatan_1: '', kegiatan_2: '',
   cpl_ids: [], // CPL yang dipetakan ke CPMK ini
 };
 
@@ -1336,8 +1480,8 @@ function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, o
   const preview = buildCpmkStatement(tipe, draft);
 
   const TIPE_OPTS = [
-    { value: 'kognitif', label: '🧠 Kognitif', color: '#2563eb', bg: '#eff6ff', desc: 'C1–C6: mengingat, memahami, menerapkan, menganalisis, mengevaluasi, menciptakan' },
-    { value: 'kognitif_psiko', label: '🤝 Kognitif + Psiko', color: '#7c3aed', bg: '#f5f3ff', desc: 'Menggabungkan kemampuan berpikir dan melakukan / membuat fisik' },
+    { value: 'kognitif', label: '🧠 Kognitif', color: '#2563eb', bg: '#eff6ff', desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
+    { value: 'kognitif_psiko', label: '🤝 Psikomotorik', color: '#7c3aed', bg: '#f5f3ff', desc: 'Maks 2 kata kerja psikomotorik + objek kegiatan + rincian + ukuran' },
     { value: 'afeksi', label: '❤️ Afeksi', color: '#dc2626', bg: '#fef2f2', desc: 'Sikap, etika akademik, nilai-nilai profesional' },
   ];
 
@@ -1412,7 +1556,7 @@ function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, o
             <div style={{ height: 1, background: '#f1f5f9', margin: '0 0 16px' }} />
 
             {/* Fields sesuai tipe */}
-            <CpmkBuilderFields tipe={tipe} fields={draft} vocab={vocab} onChange={d => setDraft(p => ({...p, ...d}))} />
+            <CpmkBuilderFields tipe={tipe} fields={draft} onChange={d => setDraft(p => ({...p, ...d}))} />
 
             {/* Pemetaan CPL */}
             {cplTersedia.length > 0 && (
@@ -1479,14 +1623,18 @@ function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, o
               <div style={{ background: '#ecfdf5', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 8 }}>✅ Komponen Terpilih</div>
                 <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
-                  <div>• Tipe: <strong>{tipe}</strong></div>
-                  {draft.kognitif_1 && <div>• Kata kerja: <strong>{draft.kognitif_1}</strong></div>}
-                  {draft.kognitif && <div>• Kognitif: <strong>{draft.kognitif}</strong></div>}
-                  {draft.psikomotorik && <div>• Psikomotorik: <strong>{draft.psikomotorik}</strong></div>}
-                  {draft.elemen_1 && <div>• Elemen: <strong>{draft.elemen_1}</strong></div>}
-                  {draft.rincian && <div>• Topik: <strong>{draft.rincian}</strong></div>}
-                  {draft.ukuran && <div>• Kriteria: <strong>{draft.ukuran}</strong></div>}
+                  <div>• Tipe: <strong>{tipe === 'kognitif' ? 'Kognitif' : tipe === 'kognitif_psiko' ? 'Psikomotorik' : 'Afeksi'}</strong></div>
+                  {tipe === 'kognitif' && (draft.kognitif_1 || draft.kognitif_2) && (
+                    <div>• Kata kerja: <strong>{[draft.kognitif_1, draft.kognitif_2].filter(Boolean).join(' + ')}</strong></div>
+                  )}
+                  {tipe === 'kognitif' && draft.elemen_1 && <div>• Elemen pengetahuan: <strong>{draft.elemen_1}</strong></div>}
+                  {tipe === 'kognitif_psiko' && (draft.psiko_1 || draft.psiko_2) && (
+                    <div>• Kata kerja: <strong>{[draft.psiko_1, draft.psiko_2].filter(Boolean).join(' + ')}</strong></div>
+                  )}
+                  {tipe === 'kognitif_psiko' && draft.objek_psiko && <div>• Objek kegiatan: <strong>{draft.objek_psiko}</strong></div>}
                   {tipe === 'afeksi' && draft.kegiatan_1 && <div>• Kegiatan: <strong>{[draft.kegiatan_1, draft.kegiatan_2].filter(Boolean).join(' + ')}</strong></div>}
+                  {draft.rincian && <div>• Rincian/Topik: <strong>{draft.rincian}</strong></div>}
+                  {draft.ukuran && <div>• Ukuran: <strong>{draft.ukuran}</strong></div>}
                   {(draft.cpl_ids||[]).length > 0 && (
                     <div>• Dipetakan ke: <strong>{cplTersedia.filter(c => (draft.cpl_ids||[]).includes(c.id)).map(c => c.nomor_cpl).join(', ')}</strong></div>
                   )}
