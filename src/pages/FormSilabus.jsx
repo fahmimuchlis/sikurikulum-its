@@ -796,6 +796,7 @@ function Step6SAP({ sapMinggu, onChange, cpmk }) {
             {sapMinggu.map((row, idx) => {
               const isUTS = row.minggu === 8;
               const isUAS = row.minggu === 16;
+              // eslint-disable-next-line no-unused-vars
               const isEval = isUTS || isUAS;
 
               return (
