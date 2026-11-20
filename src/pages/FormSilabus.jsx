@@ -812,15 +812,17 @@ function Step4CPMK({ cpmk, onChange }) {
   const [expanded, setExpanded] = useState(0); // index yang terbuka
 
   useEffect(() => {
-    supabase.from('source_vocabulary').select('*').then(({ data }) => {
-      if (!data) return;
-      const v = {};
-      data.forEach(r => {
-        if (!v[r.kategori]) v[r.kategori] = [];
-        v[r.kategori].push(r.nilai);
-      });
-      setVocab(v);
-      setVocabLoaded(true);
+    supabase.from('source_vocabulary').select('*').then(({ data, error }) => {
+      if (error) console.error('vocab load error:', error);
+      if (data) {
+        const v = {};
+        data.forEach(r => {
+          if (!v[r.kategori]) v[r.kategori] = [];
+          v[r.kategori].push(r.nilai);
+        });
+        setVocab(v);
+      }
+      setVocabLoaded(true); // selalu set, agar spinner tidak hang selamanya
     });
   }, []);
 
