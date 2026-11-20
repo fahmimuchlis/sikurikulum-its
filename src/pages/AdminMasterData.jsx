@@ -14,7 +14,7 @@ export default function AdminMasterData({ user }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Form state MK
-  const [formMK, setFormMK] = useState({ kode_mk: '', nama_mk: '', sks: 2, jenjang: 'S1', semester: 1, departemen: 'Arsitektur' });
+  const [formMK, setFormMK] = useState({ kode_mk: '', nama_mk: '', sks: 2, jenjang: 'S1', semester: 1, tipe: 'Teoritik', periode: 'Ganjil', departemen: 'Arsitektur' });
   // Form state CPL
   const [formCPL, setFormCPL] = useState({ jenjang: 'S1', nomor_cpl: '', kategori: '', deskripsi_id: '', deskripsi_en: '' });
 
@@ -54,7 +54,7 @@ export default function AdminMasterData({ user }) {
     const { error: err } = await supabase.from('master_mata_kuliah').insert(formMK);
     if (err) return notify('Gagal: ' + err.message, true);
     notify('✅ MK berhasil ditambahkan.');
-    setFormMK({ kode_mk: '', nama_mk: '', sks: 2, jenjang: 'S1', semester: 1, departemen: 'Arsitektur' });
+    setFormMK({ kode_mk: '', nama_mk: '', sks: 2, jenjang: 'S1', semester: 1, tipe: 'Teoritik', periode: 'Ganjil', departemen: 'Arsitektur' });
     loadAll();
   };
 
@@ -170,7 +170,7 @@ export default function AdminMasterData({ user }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">
                   <label className="form-label">SKS</label>
-                  <input type="number" min={1} max={6} className="form-input" value={formMK.sks}
+                  <input type="number" min={1} max={12} className="form-input" value={formMK.sks}
                     onChange={e => setFormMK({ ...formMK, sks: Number(e.target.value) })} />
                 </div>
                 <div className="form-group">
@@ -179,11 +179,27 @@ export default function AdminMasterData({ user }) {
                     onChange={e => setFormMK({ ...formMK, semester: Number(e.target.value) })} />
                 </div>
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <label className="form-label">Jenjang</label>
+                  <select className="form-select" value={formMK.jenjang}
+                    onChange={e => setFormMK({ ...formMK, jenjang: e.target.value })}>
+                    {['S1', 'Profesi', 'S2', 'S3'].map(j => <option key={j} value={j}>{j}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tipe</label>
+                  <select className="form-select" value={formMK.tipe}
+                    onChange={e => setFormMK({ ...formMK, tipe: e.target.value })}>
+                    {['Teoritik', 'Studio'].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
               <div className="form-group">
-                <label className="form-label">Jenjang</label>
-                <select className="form-select" value={formMK.jenjang}
-                  onChange={e => setFormMK({ ...formMK, jenjang: e.target.value })}>
-                  {['S1', 'Profesi', 'S2', 'S3'].map(j => <option key={j} value={j}>{j}</option>)}
+                <label className="form-label">Periode</label>
+                <select className="form-select" value={formMK.periode}
+                  onChange={e => setFormMK({ ...formMK, periode: e.target.value })}>
+                  {['Ganjil', 'Genap'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={tambahMK}>
@@ -199,7 +215,7 @@ export default function AdminMasterData({ user }) {
                     <div key={mk.id} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ flex: 1 }}>
                         <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-primary)', fontSize: 13 }}>{mk.kode_mk}</span>
-                        <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--color-gray-500)' }}>{mk.jenjang} · Sem {mk.semester} · {mk.sks} SKS</span>
+                        <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--color-gray-500)' }}>{mk.jenjang} · Sem {mk.semester} · {mk.sks} SKS · {mk.tipe} · {mk.periode}</span>
                         <div style={{ fontWeight: 500, fontSize: 14 }}>{mk.nama_mk}</div>
                       </div>
                       <button onClick={() => hapusMK(mk.id)} style={{ background: 'none', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
