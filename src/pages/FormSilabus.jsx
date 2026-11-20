@@ -338,6 +338,7 @@ export default function FormSilabus({ user }) {
               cplDipilih={cplDipilih}
               daftarCPL={daftarCPL}
               jenjang={mkDipilih?.jenjang}
+              isStudio={mkDipilih?.tipe === 'studio'}
             />
           )}
           {step === 5 && (
@@ -1167,9 +1168,13 @@ const KEGIATAN_AFEKSI = [
 ];
 
 // ── Builder: rakit kalimat CPMK dari fields ────────────────────────────────
+// Tipe:
+//   'kognitif'       → Mampu [kog1] [kog2] [elemen] [rincian] [ukuran]
+//   'psikomotorik'   → Mampu [psiko1] [psiko2] [objek] [rincian] [ukuran]
+//   'kognitif_psiko' → Mampu [kog1] [elemen] dan [psiko1] [objek] [rincian] [ukuran]
+//   'afeksi'         → template baku ITS
 function buildCpmkStatement(tipe, fields) {
   if (tipe === 'kognitif') {
-    // "Mampu [kog1] [dan kog2] [elemen] [rincian] [ukuran]."
     const parts = ['Mampu'];
     if (fields.kognitif_1) parts.push(fields.kognitif_1);
     if (fields.kognitif_2) { parts.push('dan'); parts.push(fields.kognitif_2); }
@@ -1178,11 +1183,21 @@ function buildCpmkStatement(tipe, fields) {
     if (fields.ukuran) parts.push(fields.ukuran);
     return parts.length > 1 ? parts.join(' ') + '.' : '';
   }
-  if (tipe === 'kognitif_psiko') {
-    // "Mampu [psiko1] [dan psiko2] [objek] [rincian] [ukuran]."
+  if (tipe === 'psikomotorik') {
     const parts = ['Mampu'];
     if (fields.psiko_1) parts.push(fields.psiko_1);
     if (fields.psiko_2) { parts.push('dan'); parts.push(fields.psiko_2); }
+    if (fields.objek_psiko) parts.push(fields.objek_psiko);
+    if (fields.rincian) parts.push(fields.rincian);
+    if (fields.ukuran) parts.push(fields.ukuran);
+    return parts.length > 1 ? parts.join(' ') + '.' : '';
+  }
+  if (tipe === 'kognitif_psiko') {
+    // Gabungan: "Mampu [kog] [elemen] dan [psiko] [objek] [rincian] [ukuran]."
+    const parts = ['Mampu'];
+    if (fields.kognitif_1) parts.push(fields.kognitif_1);
+    if (fields.elemen_1) parts.push(fields.elemen_1);
+    if (fields.psiko_1) { parts.push('dan'); parts.push(fields.psiko_1); }
     if (fields.objek_psiko) parts.push(fields.objek_psiko);
     if (fields.rincian) parts.push(fields.rincian);
     if (fields.ukuran) parts.push(fields.ukuran);
@@ -1225,13 +1240,29 @@ function CpmkPreviewHighlight({ tipe, fields }) {
     );
   }
 
-  if (tipe === 'kognitif_psiko') {
+  if (tipe === 'psikomotorik') {
     return (
       <span style={S}>
         <Muted>Mampu </Muted>
         {fields.psiko_1 && <Blue>{fields.psiko_1}</Blue>}
         {fields.psiko_2 && <><Muted> dan </Muted><Blue>{fields.psiko_2}</Blue></>}
         {fields.objek_psiko && <><Muted> </Muted><Green>{fields.objek_psiko}</Green></>}
+        {fields.rincian && <><Muted> </Muted><Purple>{fields.rincian}</Purple></>}
+        {fields.ukuran && <><Muted> </Muted><Orange>{fields.ukuran}</Orange></>}
+        <Muted>.</Muted>
+      </span>
+    );
+  }
+
+  if (tipe === 'kognitif_psiko') {
+    // Gabungan: warna beda untuk bagian kognitif vs psikomotorik
+    return (
+      <span style={S}>
+        <Muted>Mampu </Muted>
+        {fields.kognitif_1 && <Blue>{fields.kognitif_1}</Blue>}
+        {fields.elemen_1 && <><Muted> </Muted><Green>{fields.elemen_1}</Green></>}
+        {fields.psiko_1 && <><Muted> dan </Muted><span style={{ color: '#7c3aed', fontWeight: 700 }}>{fields.psiko_1}</span></>}
+        {fields.objek_psiko && <><Muted> </Muted><span style={{ color: '#059669', fontWeight: 700 }}>{fields.objek_psiko}</span></>}
         {fields.rincian && <><Muted> </Muted><Purple>{fields.rincian}</Purple></>}
         {fields.ukuran && <><Muted> </Muted><Orange>{fields.ukuran}</Orange></>}
         <Muted>.</Muted>
@@ -1358,7 +1389,7 @@ function CpmkBuilderFields({ tipe, fields, onChange }) {
     </>
   );
 
-  if (tipe === 'kognitif_psiko') return (
+  if (tipe === 'psikomotorik') return (
     <>
       {/* A: Kata Kerja Psikomotorik — maks 2 */}
       <CheckboxSelector
@@ -1383,6 +1414,47 @@ function CpmkBuilderFields({ tipe, fields, onChange }) {
       </div>
       {/* D: Ukuran */}
       <SelDrop label="④ Ukuran Ketercapaian" value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={UKURAN_KETERCAPAIAN} required />
+    </>
+  );
+
+  if (tipe === 'kognitif_psiko') return (
+    <>
+      {/* Banner penjelasan gabungan */}
+      <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12, color: '#6d28d9', lineHeight: 1.5 }}>
+        <strong>Gabungan Kognitif + Psikomotorik</strong> — masing-masing 1 kemampuan.<br/>
+        Format: <em>Mampu [kognitif] [elemen] dan [psikomotorik] [objek] [rincian] [ukuran]</em>
+      </div>
+
+      {/* Bagian Kognitif */}
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 10 }}>🧠 BAGIAN KOGNITIF</div>
+        <SelDrop label="① Kata Kerja Kognitif" value={fields.kognitif_1||''} onChange={v => upd({kognitif_1: v})} options={KATA_KERJA_KOGNITIF} required />
+        <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={ELEMEN_PENGETAHUAN} required />
+      </div>
+
+      {/* Penghubung */}
+      <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#6d28d9', margin: '4px 0 8px' }}>
+        — dan —
+      </div>
+
+      {/* Bagian Psikomotorik */}
+      <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#6d28d9', marginBottom: 10 }}>🤝 BAGIAN PSIKOMOTORIK</div>
+        <SelDrop label="③ Kata Kerja Psikomotorik" value={fields.psiko_1||''} onChange={v => upd({psiko_1: v})} options={KATA_KERJA_PSIKO} required />
+        <SelDrop label="④ Objek Kegiatan" value={fields.objek_psiko||''} onChange={v => upd({objek_psiko: v})} options={OBJEK_KEGIATAN_PSIKO} required />
+      </div>
+
+      {/* Rincian & Ukuran (bersama) */}
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+          ⑤ Rincian Sub-Bahan Kajian <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''}
+          onChange={e => upd({rincian: e.target.value})}
+          placeholder="mis: perancangan struktur bangunan tahan gempa" />
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Topik/bahan kajian spesifik MK ini</p>
+      </div>
+      <SelDrop label="⑥ Ukuran Ketercapaian" value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={UKURAN_KETERCAPAIAN} required />
     </>
   );
 
@@ -1474,15 +1546,16 @@ const EMPTY_CPMK_FIELDS = {
 };
 
 // Modal generator CPMK
-function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, onClose }) {
+function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose }) {
   const [draft, setDraft] = useState({ ...EMPTY_CPMK_FIELDS, ...item });
   const tipe = draft.tipe || 'kognitif';
   const preview = buildCpmkStatement(tipe, draft);
 
   const TIPE_OPTS = [
-    { value: 'kognitif', label: '🧠 Kognitif', color: '#2563eb', bg: '#eff6ff', desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
-    { value: 'kognitif_psiko', label: '🤝 Psikomotorik', color: '#7c3aed', bg: '#f5f3ff', desc: 'Maks 2 kata kerja psikomotorik + objek kegiatan + rincian + ukuran' },
-    { value: 'afeksi', label: '❤️ Afeksi', color: '#dc2626', bg: '#fef2f2', desc: 'Sikap, etika akademik, nilai-nilai profesional' },
+    { value: 'kognitif',       label: '🧠 Kognitif',        color: '#2563eb', bg: '#eff6ff',  desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
+    { value: 'psikomotorik',   label: '🤝 Psikomotorik',    color: '#7c3aed', bg: '#f5f3ff',  desc: 'Maks 2 kata kerja psikomotorik + objek kegiatan + rincian + ukuran' },
+    { value: 'kognitif_psiko', label: '🧠🤝 Gabungan',      color: '#0369a1', bg: '#e0f2fe',  desc: 'Kognitif (1) + Psikomotorik (1) dalam 1 kalimat CPMK' },
+    { value: 'afeksi',         label: '❤️ Afeksi',          color: '#dc2626', bg: '#fef2f2',  desc: 'Template baku ITS: sikap & etika akademik — 1 nomor per MK' },
   ];
 
   // CPL yang bisa dipetakan (hanya CPL yang sudah dipilih di Step3)
@@ -1534,7 +1607,7 @@ function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, o
             {/* Pilih Tipe */}
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Tipe CPMK <span style={{ color: '#ef4444' }}>*</span></label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 {TIPE_OPTS.map(t => (
                   <button key={t.value} type="button" title={t.desc}
                     onClick={() => setDraft(p => ({ ...EMPTY_CPMK_FIELDS, no: p.no, cpl_ids: p.cpl_ids||[], tipe: t.value }))}
@@ -1623,15 +1696,15 @@ function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, o
               <div style={{ background: '#ecfdf5', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 8 }}>✅ Komponen Terpilih</div>
                 <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
-                  <div>• Tipe: <strong>{tipe === 'kognitif' ? 'Kognitif' : tipe === 'kognitif_psiko' ? 'Psikomotorik' : 'Afeksi'}</strong></div>
-                  {tipe === 'kognitif' && (draft.kognitif_1 || draft.kognitif_2) && (
-                    <div>• Kata kerja: <strong>{[draft.kognitif_1, draft.kognitif_2].filter(Boolean).join(' + ')}</strong></div>
+                  <div>• Tipe: <strong>{{ kognitif: 'Kognitif', psikomotorik: 'Psikomotorik', kognitif_psiko: 'Gabungan K+P', afeksi: 'Afeksi' }[tipe]}</strong></div>
+                  {(tipe === 'kognitif') && (draft.kognitif_1 || draft.kognitif_2) && (
+                    <div>• Kata kerja: <strong>{[draft.kognitif_1, draft.kognitif_2].filter(Boolean).join(' dan ')}</strong></div>
                   )}
-                  {tipe === 'kognitif' && draft.elemen_1 && <div>• Elemen pengetahuan: <strong>{draft.elemen_1}</strong></div>}
-                  {tipe === 'kognitif_psiko' && (draft.psiko_1 || draft.psiko_2) && (
-                    <div>• Kata kerja: <strong>{[draft.psiko_1, draft.psiko_2].filter(Boolean).join(' + ')}</strong></div>
+                  {(tipe === 'kognitif' || tipe === 'kognitif_psiko') && draft.elemen_1 && <div>• Elemen pengetahuan: <strong>{draft.elemen_1}</strong></div>}
+                  {(tipe === 'psikomotorik' || tipe === 'kognitif_psiko') && (draft.psiko_1 || draft.psiko_2) && (
+                    <div>• Kata kerja psiko: <strong>{[draft.psiko_1, draft.psiko_2].filter(Boolean).join(' dan ')}</strong></div>
                   )}
-                  {tipe === 'kognitif_psiko' && draft.objek_psiko && <div>• Objek kegiatan: <strong>{draft.objek_psiko}</strong></div>}
+                  {(tipe === 'psikomotorik' || tipe === 'kognitif_psiko') && draft.objek_psiko && <div>• Objek kegiatan: <strong>{draft.objek_psiko}</strong></div>}
                   {tipe === 'afeksi' && draft.kegiatan_1 && <div>• Kegiatan: <strong>{[draft.kegiatan_1, draft.kegiatan_2].filter(Boolean).join(' + ')}</strong></div>}
                   {draft.rincian && <div>• Rincian/Topik: <strong>{draft.rincian}</strong></div>}
                   {draft.ukuran && <div>• Ukuran: <strong>{draft.ukuran}</strong></div>}
@@ -1665,24 +1738,8 @@ function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, o
 }
 
 // ─── Langkah 4: CPMK ─────────────────────────────────────────────────────
-function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang }) {
-  const [vocab, setVocab] = useState({});
-  const [vocabLoaded, setVocabLoaded] = useState(false);
+function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, isStudio }) {
   const [modalIdx, setModalIdx] = useState(null); // null = tutup
-
-  useEffect(() => {
-    supabase.from('source_vocabulary').select('*').then(({ data }) => {
-      if (data) {
-        const v = {};
-        data.forEach(r => {
-          if (!v[r.kategori]) v[r.kategori] = [];
-          v[r.kategori].push(r.nilai);
-        });
-        setVocab(v);
-      }
-      setVocabLoaded(true);
-    });
-  }, []);
 
   const addCPMK = () => {
     const newIdx = cpmk.length;
@@ -1705,11 +1762,37 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang }) {
   // CPL yang sudah dipilih di Step 3 (sesuai jenjang)
   const cplTersedia = daftarCPL.filter(c => cplDipilih.includes(c.id));
 
+  // Hitung distribusi tipe saat ini
+  const countTipe = (t) => cpmk.filter(c => c.tipe === t).length;
+  const totalCpmk = cpmk.length;
+
   return (
     <div>
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 14 }}>
-        ℹ️ Setiap CPMK dibuat menggunakan <strong>Generator CPMK</strong> — klik tombol <em>✏️ Buka Generator</em> untuk menyusun kalimat standar ITS. Petakan setiap CPMK ke CPL yang relevan.
-        {!vocabLoaded && <span style={{ color: '#f59e0b', marginLeft: 8 }}>⏳ Memuat kosakata...</span>}
+      {/* Panduan komposisi berdasarkan jenis MK */}
+      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 8 }}>📐 Panduan Komposisi CPMK</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
+          <div style={{ background: isStudio ? '#eff6ff' : '#f1f5f9', border: `1px solid ${isStudio ? '#93c5fd' : '#e2e8f0'}`, borderRadius: 8, padding: '8px 10px' }}>
+            <div style={{ fontWeight: 700, color: isStudio ? '#1d4ed8' : '#94a3b8', marginBottom: 2 }}>🏛️ MK Non-Studio</div>
+            <div style={{ color: '#64748b', lineHeight: 1.5 }}>Kognitif: banyak<br/>Psikomotorik: sedikit<br/>❤️ Afeksi: 1 nomor</div>
+          </div>
+          <div style={{ background: isStudio ? '#f0fdf4' : '#f1f5f9', border: `1px solid ${isStudio ? '#86efac' : '#e2e8f0'}`, borderRadius: 8, padding: '8px 10px' }}>
+            <div style={{ fontWeight: 700, color: isStudio ? '#15803d' : '#94a3b8', marginBottom: 2 }}>🎨 MK Studio</div>
+            <div style={{ color: '#64748b', lineHeight: 1.5 }}>Kognitif: ≈ 50%<br/>Psikomotorik: ≈ 50%<br/>❤️ Afeksi: 1 nomor</div>
+          </div>
+        </div>
+        {totalCpmk > 0 && (
+          <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {countTipe('kognitif') > 0 && <span style={{ fontSize: 11, background: '#eff6ff', color: '#1d4ed8', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>🧠 Kognitif: {countTipe('kognitif')}</span>}
+            {countTipe('psikomotorik') > 0 && <span style={{ fontSize: 11, background: '#f5f3ff', color: '#7c3aed', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>🤝 Psikomotorik: {countTipe('psikomotorik')}</span>}
+            {countTipe('kognitif_psiko') > 0 && <span style={{ fontSize: 11, background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>🧠🤝 Gabungan: {countTipe('kognitif_psiko')}</span>}
+            {countTipe('afeksi') > 0 && <span style={{ fontSize: 11, background: '#fef2f2', color: '#dc2626', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>❤️ Afeksi: {countTipe('afeksi')}</span>}
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 20, fontSize: 13 }}>
+        ℹ️ Klik <em>✏️ Buka Generator</em> untuk menyusun kalimat standar ITS. Petakan setiap CPMK ke CPL yang relevan.
       </div>
 
       {/* Daftar CPMK */}
@@ -1720,9 +1803,10 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang }) {
 
         // Badge warna per tipe
         const tipeBadge = {
-          kognitif: { label: '🧠 Kognitif', color: '#1d4ed8', bg: '#eff6ff' },
-          kognitif_psiko: { label: '🤝 K+P', color: '#7c3aed', bg: '#f5f3ff' },
-          afeksi: { label: '❤️ Afeksi', color: '#dc2626', bg: '#fef2f2' },
+          kognitif:       { label: '🧠 Kognitif',     color: '#1d4ed8', bg: '#eff6ff' },
+          psikomotorik:   { label: '🤝 Psikomotorik', color: '#7c3aed', bg: '#f5f3ff' },
+          kognitif_psiko: { label: '🧠🤝 Gabungan',   color: '#0369a1', bg: '#e0f2fe' },
+          afeksi:         { label: '❤️ Afeksi',       color: '#dc2626', bg: '#fef2f2' },
         }[item.tipe || 'kognitif'] || { label: '—', color: '#64748b', bg: '#f1f5f9' };
 
         return (
@@ -1761,8 +1845,7 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderLeft: '1px solid #f1f5f9' }}>
                 <button
                   onClick={() => setModalIdx(idx)}
-                  disabled={!vocabLoaded}
-                  style={{ flex: 1, padding: '0 16px', background: 'none', border: 'none', cursor: vocabLoaded ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600, color: '#4f46e5', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}
+                  style={{ flex: 1, padding: '0 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#4f46e5', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}
                 >
                   ✏️ {hasContent ? 'Edit' : 'Buka Generator'}
                 </button>
@@ -1808,11 +1891,10 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang }) {
       )}
 
       {/* Modal */}
-      {modalIdx !== null && vocabLoaded && (
+      {modalIdx !== null && (
         <CpmkGeneratorModal
           item={cpmk[modalIdx] || EMPTY_CPMK_FIELDS}
           idx={modalIdx}
-          vocab={vocab}
           cplDipilih={cplDipilih}
           daftarCPL={daftarCPL}
           onSave={(item) => saveFromModal(modalIdx, item)}
