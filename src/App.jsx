@@ -10,6 +10,7 @@ import Direktori from './pages/Direktori';
 import DetailDokumen from './pages/DetailDokumen';
 import AdminMasterData from './pages/AdminMasterData';
 import CpmkGenerator from './pages/CpmkGenerator';
+import MatriksPage from './pages/MatriksPage';
 
 // Komponen penjaga: hanya bisa diakses jika sudah login
 function ProtectedRoute({ user, children }) {
@@ -75,6 +76,12 @@ export default function App() {
         <Route path="/admin" element={
           <ProtectedRoute user={user}>
             <AdminMasterData user={user} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/matriks" element={
+          <ProtectedRoute user={user}>
+            <MatriksPage user={user} />
           </ProtectedRoute>
         } />
 

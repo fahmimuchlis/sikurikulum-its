@@ -64,6 +64,9 @@ export default function Navbar({ user }) {
           <NavLink to="/cpmk" active={isActive('/cpmk')}>
             🎯 CPMK Generator
           </NavLink>
+          <NavLink to="/matriks" active={isActive('/matriks')}>
+            📊 Matriks CPL
+          </NavLink>
           <NavLink to="/direktori" active={isActive('/direktori')}>
             📚 Direktori
           </NavLink>
