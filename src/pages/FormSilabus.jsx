@@ -45,8 +45,10 @@ export default function FormSilabus({ user }) {
     metoda_2: '',
     tanda_baca_2: '',
     metoda_3: '',
+    deskripsi_tambahan: '',
   });
   const [cplDipilih, setCplDipilih] = useState([]); // array of CPL id
+  const [deskripsiEn, setDeskripsiEn] = useState(''); // terjemahan Inggris deskripsi MK
   const [cpmk, setCpmk] = useState([{ tipe: 'kognitif', no: 'CPMK-1', deskripsi_id: '', deskripsi_en: '', kognitif_1: '', elemen_1: '', kata_hubung: '', kognitif_2: '', elemen_2: '', kognitif: '', psikomotorik: '', rincian: '', ukuran: '', afeksi: '', kegiatan_1: '', kegiatan_2: '' }]);
   const [bahanKajian, setBahanKajian] = useState(['']);
   const [prasyarat, setPrasyarat] = useState('');
@@ -100,6 +102,7 @@ export default function FormSilabus({ user }) {
           const mk = mkData?.find(m => m.id === dok.mk_id);
           setMkDipilih(mk || null);
           setDeskripsiMk(dok.deskripsi_mk || '');
+          setDeskripsiEn(dok.deskripsi_mk_en || '');
           if (dok.jenis_mk) {
             setDesMk({
               jenis_mk: dok.jenis_mk || 'wajib',
@@ -112,6 +115,7 @@ export default function FormSilabus({ user }) {
               metoda_2: dok.metoda_2 || '',
               tanda_baca_2: '',
               metoda_3: dok.metoda_3 || '',
+              deskripsi_tambahan: dok.deskripsi_tambahan || '',
             });
           }
           setCplDipilih(dok.cpl_dipilih || []);
@@ -192,6 +196,8 @@ export default function FormSilabus({ user }) {
       metoda_1: desMk.metoda_1 || null,
       metoda_2: desMk.metoda_2 || null,
       metoda_3: desMk.metoda_3 || null,
+      deskripsi_tambahan: desMk.deskripsi_tambahan || null,
+      deskripsi_mk_en: deskripsiEn || null,
       cpl_dipilih: cplDipilih,
       cpmk,
       bahan_kajian: bahanKajian.filter(b => b.trim()),
@@ -219,7 +225,7 @@ export default function FormSilabus({ user }) {
 
     setSaving(false);
     return id;
-  }, [mkDipilih, user, deskripsiMk, cplDipilih, cpmk, bahanKajian, prasyarat, pustakaUtama, pustakaP, sapMinggu, currentSilabusId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mkDipilih, user, deskripsiMk, deskripsiEn, cplDipilih, cpmk, bahanKajian, prasyarat, pustakaUtama, pustakaP, sapMinggu, currentSilabusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNext = async () => {
     if (step === 1 && !mkDipilih) {
@@ -311,6 +317,8 @@ export default function FormSilabus({ user }) {
               onChange={setDeskripsiMk}
               desMk={desMk}
               onChangeDesMk={setDesMk}
+              deskripsiEn={deskripsiEn}
+              onChangeDeskripsiEn={setDeskripsiEn}
             />
           )}
           {step === 3 && (
@@ -657,6 +665,8 @@ const PENUGASAN_DES_OPTS = ['secara mandiri', 'secara berkelompok', 'secara mand
 const METODA_OPTS = ['diskusi kelompok', 'studi kasus', 'berbasis permasalahan', 'berbasis proyek', 'simulasi', 'penemuan/discovery', 'kontekstual', 'kooperatif', 'kolaboratif', 'mandiri', 'bertukar matra/flipped', 'bauran/blended', 'non-SCL (kuliah dan diskusi kelas)', 'ujian/evaluasi'];
 const TANDA_BACA_OPTS = ['.', ',', '; ', 'dan', 'serta'];
 
+const SUPABASE_FN_URL = 'https://hohzdezcdcpjjpabuhge.supabase.co/functions/v1/translate-desc';
+
 function buildDeskripsiStatement(mk, des) {
   if (!mk || !des.kemampuan) return '';
   const jenis = des.jenis_mk || 'wajib';
@@ -671,119 +681,274 @@ function buildDeskripsiStatement(mk, des) {
   return parts.join(' ') + '.';
 }
 
-function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk }) {
+function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk, deskripsiEn, onChangeDeskripsiEn }) {
   const preview = buildDeskripsiStatement(mkDipilih, desMk);
+  const [deskripsiTambahan, setDeskripsiTambahan] = useState(desMk.deskripsi_tambahan || '');
+  const [translating, setTranslating] = useState(false);
+  const [transError, setTransError] = useState('');
+  const [enEdited, setEnEdited] = useState(false); // apakah user sudah edit manual terjemahan
 
   // sync generated statement to deskripsiMk whenever preview changes
   React.useEffect(() => {
     if (preview) onChange(preview);
   }, [preview]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // sync deskripsi_tambahan ke desMk
+  React.useEffect(() => {
+    onChangeDesMk(prev => ({ ...prev, deskripsi_tambahan: deskripsiTambahan }));
+  }, [deskripsiTambahan]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-translate ketika preview atau tambahan berubah (debounce 800ms)
+  React.useEffect(() => {
+    if (!preview && !deskripsiTambahan) return;
+    if (enEdited) return; // jangan overwrite kalau user sudah edit manual
+    const timer = setTimeout(async () => {
+      setTranslating(true);
+      setTransError('');
+      try {
+        const res = await fetch(SUPABASE_FN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text_id: preview, deskripsi_tambahan: deskripsiTambahan }),
+        });
+        const data = await res.json();
+        if (data.translation) {
+          onChangeDeskripsiEn(data.translation);
+        }
+      } catch {
+        setTransError('Gagal memuat terjemahan otomatis.');
+      } finally {
+        setTranslating(false);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [preview, deskripsiTambahan]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const upd = (key, val) => onChangeDesMk(prev => ({ ...prev, [key]: val }));
 
-  const SelDes = ({ label, field, opts, placeholder = '— pilih —' }) => (
-    <div className="form-group">
-      <label className="form-label" style={{ fontSize: 13 }}>{label}</label>
-      <select className="form-select" value={desMk[field]} onChange={e => upd(field, e.target.value)}>
-        <option value="">{placeholder}</option>
-        {opts.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </div>
-  );
+  // Teks lengkap Indonesia = template + tambahan
+  const deskripsiFullId = [preview, deskripsiTambahan].filter(Boolean).join(' ');
 
   return (
     <div>
+      {/* Info MK */}
       {mkDipilih && (
-        <div style={{ background: 'var(--color-gray-50)', border: '1px solid var(--color-gray-200)', borderRadius: 8, padding: '14px 16px', marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginBottom: 4 }}>Mata Kuliah</div>
-          <div style={{ fontWeight: 700 }}>{mkDipilih.kode_mk} — {mkDipilih.nama_mk}</div>
-          <div style={{ fontSize: 13, color: 'var(--color-gray-500)', marginTop: 2 }}>
-            {mkDipilih.sks} SKS · {mkDipilih.jenjang} · Semester {mkDipilih.semester} · {mkDipilih.tipe}
+        <div style={{ background: 'var(--color-gray-50)', border: '1px solid var(--color-gray-200)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginBottom: 2 }}>Mata Kuliah</div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>{mkDipilih.kode_mk} — {mkDipilih.nama_mk}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginLeft: 'auto' }}>
+            <span style={{ fontSize: 11, background: '#EEF4FF', color: 'var(--color-primary)', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>{mkDipilih.jenjang}</span>
+            <span style={{ fontSize: 11, background: 'var(--color-gray-100)', color: 'var(--color-gray-600)', padding: '2px 8px', borderRadius: 10 }}>Sem {mkDipilih.semester}</span>
+            <span style={{ fontSize: 11, background: 'var(--color-gray-100)', color: 'var(--color-gray-600)', padding: '2px 8px', borderRadius: 10 }}>{mkDipilih.sks} SKS</span>
+            {mkDipilih.kode_tipe && <span style={{ fontSize: 11, background: '#f5f3ff', color: '#7c3aed', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>{mkDipilih.kode_tipe}</span>}
           </div>
         </div>
       )}
 
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13 }}>
-        ℹ️ Pilih komponen di bawah — deskripsi MK akan <strong>terbentuk otomatis</strong> sesuai pola standar ITS.
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 20, fontSize: 13 }}>
+        ℹ️ Pilih komponen di bawah — deskripsi MK terbentuk otomatis sesuai <strong>pola standar ITS</strong>, lalu Anda bisa tambahkan narasi bebas. Terjemahan Inggris disarankan otomatis di panel kanan.
       </div>
 
-      {/* Komponen Pengetahuan & Ketrampilan */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 12, padding: '6px 12px', background: 'var(--color-gray-50)', borderRadius: 6 }}>
-          📘 Komponen: Pengetahuan &amp; Ketrampilan
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="form-group">
-            <label className="form-label" style={{ fontSize: 13 }}>Jenis MK <span style={{ color: 'var(--color-danger)' }}>*</span></label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['wajib', 'pilihan'].map(j => (
-                <button key={j}
-                  onClick={() => upd('jenis_mk', j)}
-                  style={{
-                    flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13,
-                    fontWeight: desMk.jenis_mk === j ? 700 : 400,
-                    background: desMk.jenis_mk === j ? 'var(--color-primary)' : 'var(--color-gray-100)',
-                    color: desMk.jenis_mk === j ? 'white' : 'var(--color-gray-700)',
-                  }}
-                >
-                  {j.charAt(0).toUpperCase() + j.slice(1)}
-                </button>
-              ))}
+      {/* Layout utama: form kiri, preview dua kolom kanan */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+
+        {/* ── KOLOM KIRI: Form input ── */}
+        <div>
+          {/* A. Pengetahuan & Ketrampilan */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '5px 10px', background: '#EEF4FF', borderRadius: 6, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>A</span> Pengetahuan &amp; Ketrampilan
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>① Jenis MK</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['wajib', 'pilihan'].map(j => (
+                    <button key={j} type="button"
+                      onClick={() => upd('jenis_mk', j)}
+                      style={{
+                        flex: 1, padding: '7px', borderRadius: 6, border: `1px solid ${desMk.jenis_mk === j ? 'var(--color-primary)' : 'var(--color-gray-300)'}`,
+                        cursor: 'pointer', fontSize: 12, fontWeight: desMk.jenis_mk === j ? 700 : 400,
+                        background: desMk.jenis_mk === j ? 'var(--color-primary)' : 'white',
+                        color: desMk.jenis_mk === j ? 'white' : 'var(--color-gray-600)',
+                      }}
+                    >
+                      {j.charAt(0).toUpperCase() + j.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>② Kemampuan <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+                <select className="form-select" style={{ fontSize: 12 }} value={desMk.kemampuan} onChange={e => upd('kemampuan', e.target.value)}>
+                  <option value="">— pilih —</option>
+                  {KEMAMPUAN_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: 8, marginTop: 8 }}>
+              <label className="form-label" style={{ fontSize: 12 }}>③ Jenis Pengetahuan <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+              <select className="form-select" style={{ fontSize: 12 }} value={desMk.jenis_pengetahuan} onChange={e => upd('jenis_pengetahuan', e.target.value)}>
+                <option value="">— pilih —</option>
+                {JENIS_PENGETAHUAN_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: 12 }}>④ Kelompok Bahan Kajian <span style={{ fontSize: 11, color: 'var(--color-gray-400)', fontWeight: 400 }}>(ketik bebas)</span></label>
+              <textarea className="form-textarea" rows={2} style={{ fontSize: 12 }}
+                placeholder="mis: aspek lingkungan dan keberlanjutan dalam perancangan arsitektur tropis..."
+                value={desMk.bahan_kajian_des}
+                onChange={e => upd('bahan_kajian_des', e.target.value)} />
             </div>
           </div>
-          <SelDes label="Kemampuan *" field="kemampuan" opts={KEMAMPUAN_OPTS} />
-        </div>
-        <SelDes label="Jenis Pengetahuan *" field="jenis_pengetahuan" opts={JENIS_PENGETAHUAN_OPTS} />
-        <div className="form-group">
-          <label className="form-label" style={{ fontSize: 13 }}>Kelompok Bahan Kajian <span style={{ fontSize: 11, color: 'var(--color-gray-500)', fontWeight: 400 }}>(ketik bebas)</span></label>
-          <textarea className="form-textarea" rows={2} style={{ fontSize: 13 }}
-            placeholder="mis: perkembangan proses desain di era digital; peran perancang dalam platform digital; ..."
-            value={desMk.bahan_kajian_des}
-            onChange={e => upd('bahan_kajian_des', e.target.value)} />
-        </div>
-      </div>
 
-      {/* Komponen Sikap & Metoda */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 12, padding: '6px 12px', background: 'var(--color-gray-50)', borderRadius: 6 }}>
-          💡 Komponen: Sikap &amp; Metoda Pembelajaran
-        </div>
-        <SelDes label="Penugasan" field="penugasan_des" opts={PENUGASAN_DES_OPTS} />
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-          <SelDes label="Metoda Pembelajaran-1" field="metoda_1" opts={METODA_OPTS} />
-          <SelDes label="Tanda Baca" field="tanda_baca_1" opts={TANDA_BACA_OPTS} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-          <SelDes label="Metoda Pembelajaran-2 (opsional)" field="metoda_2" opts={METODA_OPTS} />
-          <SelDes label="Tanda Baca" field="tanda_baca_2" opts={TANDA_BACA_OPTS} />
-        </div>
-        <SelDes label="Metoda Pembelajaran-3 (opsional)" field="metoda_3" opts={METODA_OPTS} />
-      </div>
+          {/* B. Sikap & Metoda */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '5px 10px', background: '#e0f2fe', borderRadius: 6, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>B</span> Sikap &amp; Metoda Pembelajaran
+            </div>
+            <div className="form-group" style={{ marginBottom: 8 }}>
+              <label className="form-label" style={{ fontSize: 12 }}>① Bentuk Penugasan</label>
+              <select className="form-select" style={{ fontSize: 12 }} value={desMk.penugasan_des} onChange={e => upd('penugasan_des', e.target.value)}>
+                <option value="">— pilih —</option>
+                {PENUGASAN_DES_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            {[1, 2, 3].map(n => (
+              <div key={n} style={{ display: 'grid', gridTemplateColumns: n < 3 ? '3fr 1fr' : '1fr', gap: 6, marginBottom: 6 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 12 }}>② Metoda {n === 1 ? '' : n === 2 ? '2 ' : '3 '}{n > 1 ? '(opsional)' : ''}</label>
+                  <select className="form-select" style={{ fontSize: 12 }} value={desMk[`metoda_${n}`]} onChange={e => upd(`metoda_${n}`, e.target.value)}>
+                    <option value="">— pilih —</option>
+                    {METODA_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                {n < 3 && (
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 12 }}>Pemisah</label>
+                    <select className="form-select" style={{ fontSize: 12 }} value={desMk[`tanda_baca_${n}`]} onChange={e => upd(`tanda_baca_${n}`, e.target.value)}>
+                      {TANDA_BACA_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
 
-      {/* Preview */}
-      {preview && (
-        <div style={{ marginTop: 8, marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 6 }}>📋 Pernyataan Deskripsi MK (otomatis):</div>
-          <div style={{
-            background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
-            padding: '14px 16px', fontSize: 14, lineHeight: 1.7, color: 'var(--color-gray-800)',
-          }}>
-            {preview}
+          {/* C. Deskripsi Tambahan */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '5px 10px', background: '#d1fae5', borderRadius: 6, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>C</span> Deskripsi Tambahan <span style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}>(opsional — narasi bebas)</span>
+            </div>
+            <textarea
+              className="form-textarea"
+              rows={3}
+              style={{ fontSize: 12 }}
+              placeholder="Tambahkan penjelasan lebih spesifik tentang konteks, pendekatan, atau keunikan mata kuliah ini..."
+              value={deskripsiTambahan}
+              onChange={e => { setDeskripsiTambahan(e.target.value); setEnEdited(false); }}
+            />
+            <p style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 4 }}>
+              Narasi bebas ini akan digabung dengan deskripsi template dan diterjemahkan.
+            </p>
           </div>
         </div>
-      )}
 
-      {/* Fallback manual */}
-      <details style={{ marginTop: 8 }}>
-        <summary style={{ fontSize: 12, color: 'var(--color-gray-400)', cursor: 'pointer' }}>
-          ✏️ Edit manual deskripsi (opsional)
-        </summary>
-        <div className="form-group" style={{ marginTop: 8 }}>
-          <textarea className="form-textarea" rows={4} style={{ fontSize: 13 }}
-            value={deskripsi}
-            onChange={e => onChange(e.target.value)} />
+        {/* ── KOLOM KANAN: Preview dua bahasa ── */}
+        <div style={{ position: 'sticky', top: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-gray-600)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            📋 Pratinjau Deskripsi
+          </div>
+
+          {/* Bahasa Indonesia */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, background: '#1d4ed8', color: 'white', padding: '2px 8px', borderRadius: 10 }}>🇮🇩 Bahasa Indonesia</span>
+              {deskripsiFullId && <span style={{ fontSize: 11, color: 'var(--color-gray-400)' }}>terbentuk otomatis</span>}
+            </div>
+            <div style={{
+              minHeight: 80,
+              background: deskripsiFullId ? '#f8faff' : 'var(--color-gray-50)',
+              border: `1px solid ${deskripsiFullId ? '#bfdbfe' : 'var(--color-gray-200)'}`,
+              borderRadius: 8,
+              padding: '12px 14px',
+              fontSize: 13,
+              lineHeight: 1.75,
+              color: deskripsiFullId ? 'var(--color-gray-800)' : 'var(--color-gray-400)',
+              fontStyle: deskripsiFullId ? 'normal' : 'italic',
+            }}>
+              {deskripsiFullId || 'Deskripsi akan muncul setelah mengisi komponen di kiri...'}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-gray-200)' }} />
+            <span style={{ fontSize: 11, color: 'var(--color-gray-400)' }}>terjemahan</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-gray-200)' }} />
+          </div>
+
+          {/* Bahasa Inggris */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, background: '#b45309', color: 'white', padding: '2px 8px', borderRadius: 10 }}>🇬🇧 English</span>
+                {translating && (
+                  <span style={{ fontSize: 11, color: 'var(--color-gray-400)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ display: 'inline-block', width: 10, height: 10, border: '2px solid #bfdbfe', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></span>
+                    menerjemahkan...
+                  </span>
+                )}
+                {!translating && deskripsiEn && !enEdited && (
+                  <span style={{ fontSize: 11, color: '#16a34a' }}>✓ saran AI</span>
+                )}
+                {enEdited && (
+                  <span style={{ fontSize: 11, color: '#d97706' }}>✏️ diedit manual</span>
+                )}
+              </div>
+              {deskripsiEn && enEdited && (
+                <button
+                  type="button"
+                  onClick={() => { setEnEdited(false); }}
+                  style={{ fontSize: 11, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  ↺ Muat ulang terjemahan
+                </button>
+              )}
+            </div>
+            <textarea
+              className="form-textarea"
+              rows={5}
+              style={{ fontSize: 13, lineHeight: 1.75, background: enEdited ? '#fffbeb' : '#fafff9', borderColor: enEdited ? '#fcd34d' : '#bbf7d0' }}
+              placeholder="Terjemahan Inggris akan muncul otomatis..."
+              value={deskripsiEn}
+              onChange={e => { onChangeDeskripsiEn(e.target.value); setEnEdited(true); }}
+            />
+            {transError && <p style={{ fontSize: 11, color: 'var(--color-danger)', marginTop: 4 }}>{transError}</p>}
+            <p style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 4 }}>
+              Terjemahan istilah standar diisi otomatis. Anda dapat mengedit bagian narasi bebas.
+            </p>
+          </div>
+
+          {/* Summary card */}
+          {deskripsiFullId && (
+            <div style={{ marginTop: 16, padding: '10px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#166534', marginBottom: 6 }}>✅ Ringkasan Komponen</div>
+              <div style={{ fontSize: 11, color: 'var(--color-gray-600)', lineHeight: 1.6 }}>
+                {desMk.jenis_mk && <div>• Jenis: <strong>{desMk.jenis_mk}</strong></div>}
+                {desMk.kemampuan && <div>• Kemampuan: <strong>{desMk.kemampuan}</strong></div>}
+                {desMk.jenis_pengetahuan && <div>• Pengetahuan: <strong>{desMk.jenis_pengetahuan}</strong></div>}
+                {desMk.penugasan_des && <div>• Penugasan: <strong>{desMk.penugasan_des}</strong></div>}
+                {[desMk.metoda_1, desMk.metoda_2, desMk.metoda_3].filter(Boolean).length > 0 && (
+                  <div>• Metoda: <strong>{[desMk.metoda_1, desMk.metoda_2, desMk.metoda_3].filter(Boolean).join(', ')}</strong></div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </details>
+      </div>
     </div>
   );
 }
