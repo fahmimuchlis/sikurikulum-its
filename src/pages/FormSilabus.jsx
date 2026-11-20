@@ -28,6 +28,7 @@ export default function FormSilabus({ user }) {
   // Master data
   const [daftarMK, setDaftarMK] = useState([]);
   const [daftarCPL, setDaftarCPL] = useState([]);
+  const [cplTipeMk, setCplTipeMk] = useState([]); // mapping CPL ↔ tipe MK
 
   // Form data
   const [mkDipilih, setMkDipilih] = useState(null);
@@ -80,6 +81,12 @@ export default function FormSilabus({ user }) {
         .select('*')
         .order('jenjang, nomor_cpl');
       setDaftarCPL(cplData || []);
+
+      // Ambil mapping CPL ↔ tipe MK
+      const { data: cplTipeData } = await supabase
+        .from('cpl_tipe_mk')
+        .select('*');
+      setCplTipeMk(cplTipeData || []);
 
       // Jika edit: muat dokumen yang sudah ada
       if (isEdit) {
@@ -137,6 +144,34 @@ export default function FormSilabus({ user }) {
   const cplFiltered = mkDipilih
     ? daftarCPL.filter(c => c.jenjang === mkDipilih.jenjang)
     : [];
+
+  // CPL yang otomatis terdeteksi dari tipe MK (berdasarkan cpl_tipe_mk)
+  const cplOtomatis = mkDipilih
+    ? cplTipeMk
+        .filter(m => m.jenjang === mkDipilih.jenjang && m.kode_tipe === mkDipilih.kode_tipe)
+        .map(m => m.nomor_cpl)
+    : [];
+
+  // Ketika MK dipilih, otomatis pre-select CPL yang terdeteksi
+  const handleMkChange = useCallback((mk) => {
+    setMkDipilih(mk);
+    // Auto-detect CPL berdasarkan tipe MK — gunakan setter function agar dapat akses state terbaru
+    setCplTipeMk(currentCplTipeMk => {
+      if (mk && currentCplTipeMk.length > 0) {
+        const nomorCplOtomatis = currentCplTipeMk
+          .filter(m => m.jenjang === mk.jenjang && m.kode_tipe === mk.kode_tipe)
+          .map(m => m.nomor_cpl);
+        setDaftarCPL(currentDaftarCPL => {
+          const cplIds = currentDaftarCPL
+            .filter(c => c.jenjang === mk.jenjang && nomorCplOtomatis.includes(c.nomor_cpl))
+            .map(c => c.id);
+          setCplDipilih(cplIds);
+          return currentDaftarCPL;
+        });
+      }
+      return currentCplTipeMk;
+    });
+  }, []);
 
   // Auto-save ke Supabase
   const autoSave = useCallback(async (statusBaru = 'draft') => {
@@ -266,7 +301,7 @@ export default function FormSilabus({ user }) {
             <Step1PilihMK
               daftarMK={daftarMK}
               mkDipilih={mkDipilih}
-              onChange={setMkDipilih}
+              onChange={handleMkChange}
             />
           )}
           {step === 2 && (
@@ -284,6 +319,8 @@ export default function FormSilabus({ user }) {
               cplDipilih={cplDipilih}
               onChange={setCplDipilih}
               jenjang={mkDipilih?.jenjang}
+              kodeTipeMk={mkDipilih?.kode_tipe}
+              cplOtomatis={cplOtomatis}
             />
           )}
           {step === 4 && (
@@ -408,76 +445,207 @@ function WizardProgress({ steps, currentStep }) {
 }
 
 // ─── Langkah 1: Pilih Mata Kuliah ────────────────────────────────────────
-function Step1PilihMK({ daftarMK, mkDipilih, onChange }) {
-  const jenjangList = [...new Set(daftarMK.map(m => m.jenjang))];
-  const [filterJenjang, setFilterJenjang] = useState('');
+const JENJANG_ORDER = ['S1', 'Profesi', 'S2', 'S3'];
 
-  const mkFiltered = filterJenjang
-    ? daftarMK.filter(m => m.jenjang === filterJenjang)
-    : daftarMK;
+function Step1PilihMK({ daftarMK, mkDipilih, onChange }) {
+  const jenjangList = JENJANG_ORDER.filter(j => daftarMK.some(m => m.jenjang === j));
+  const [filterJenjang, setFilterJenjang] = useState(mkDipilih?.jenjang || '');
+  const [filterTipe, setFilterTipe] = useState('');
+  const [filterSemester, setFilterSemester] = useState('');
+  const [filterSks, setFilterSks] = useState('');
+  const [cari, setCari] = useState('');
+
+  // Ketika jenjang berubah, reset filter lainnya
+  const handleJenjangChange = (j) => {
+    setFilterJenjang(j);
+    setFilterTipe('');
+    setFilterSemester('');
+  };
+
+  // Daftar filter opsi berdasarkan jenjang terpilih
+  const mkByJenjang = filterJenjang ? daftarMK.filter(m => m.jenjang === filterJenjang) : [];
+  const tipeList = [...new Set(mkByJenjang.map(m => m.kode_tipe).filter(Boolean))].sort();
+  const semesterList = [...new Set(mkByJenjang.map(m => m.semester).filter(Boolean))].sort((a,b) => a-b);
+  const sksList = [...new Set(mkByJenjang.map(m => m.sks).filter(Boolean))].sort((a,b) => a-b);
+
+  // Filter MK berdasarkan semua kriteria
+  const mkFiltered = mkByJenjang.filter(m => {
+    if (filterTipe && m.kode_tipe !== filterTipe) return false;
+    if (filterSemester && m.semester !== parseInt(filterSemester)) return false;
+    if (filterSks && m.sks !== parseInt(filterSks)) return false;
+    if (cari && !m.nama_mk.toLowerCase().includes(cari.toLowerCase()) && !m.kode_mk.toLowerCase().includes(cari.toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <div>
       <p style={{ color: 'var(--color-gray-500)', fontSize: 14, marginBottom: 20 }}>
-        Pilih mata kuliah yang akan Anda buatkan dokumen kurikulumnya.
+        Pilih jenjang terlebih dahulu, lalu gunakan filter untuk mempersempit pilihan mata kuliah.
       </p>
 
-      <div className="form-group">
-        <label className="form-label">Filter berdasarkan Jenjang</label>
-        <select
-          className="form-select"
-          value={filterJenjang}
-          onChange={e => setFilterJenjang(e.target.value)}
-          style={{ maxWidth: 220 }}
-        >
-          <option value="">— Semua Jenjang —</option>
-          {jenjangList.map(j => <option key={j} value={j}>{j}</option>)}
-        </select>
+      {/* Step 1: Pilih Jenjang */}
+      <div style={{ marginBottom: 20 }}>
+        <label className="form-label" style={{ marginBottom: 8 }}>1. Pilih Jenjang <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {jenjangList.map(j => (
+            <button
+              key={j}
+              type="button"
+              onClick={() => handleJenjangChange(j)}
+              style={{
+                padding: '8px 20px',
+                borderRadius: 20,
+                border: `2px solid ${filterJenjang === j ? 'var(--color-primary)' : 'var(--color-gray-300)'}`,
+                background: filterJenjang === j ? 'var(--color-primary)' : 'white',
+                color: filterJenjang === j ? 'white' : 'var(--color-gray-700)',
+                fontWeight: filterJenjang === j ? 700 : 400,
+                fontSize: 14,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {j}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gap: 10, maxHeight: 400, overflowY: 'auto' }}>
-        {mkFiltered.map(mk => (
-          <label
-            key={mk.id}
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 12,
-              padding: '14px 16px',
-              border: `2px solid ${mkDipilih?.id === mk.id ? 'var(--color-primary)' : 'var(--color-gray-200)'}`,
-              borderRadius: 8,
-              cursor: 'pointer',
-              background: mkDipilih?.id === mk.id ? '#EEF4FF' : 'white',
-              transition: 'all 0.15s',
-            }}
-          >
-            <input
-              type="radio"
-              name="mk"
-              value={mk.id}
-              checked={mkDipilih?.id === mk.id}
-              onChange={() => onChange(mk)}
-              style={{ marginTop: 3, flexShrink: 0 }}
-            />
-            <div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 2 }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: 'var(--color-primary)' }}>
-                  {mk.kode_mk}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--color-gray-500)' }}>
-                  {mk.jenjang} · Sem {mk.semester} · {mk.sks} SKS
-                </span>
-              </div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{mk.nama_mk}</div>
+      {/* Step 2: Filter (hanya tampil setelah jenjang dipilih) */}
+      {filterJenjang && (
+        <>
+          <div style={{
+            background: 'var(--color-gray-50)',
+            border: '1px solid var(--color-gray-200)',
+            borderRadius: 8,
+            padding: '14px 16px',
+            marginBottom: 16,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-gray-500)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              2. Filter Mata Kuliah (opsional)
             </div>
-          </label>
-        ))}
-        {mkFiltered.length === 0 && (
-          <p style={{ color: 'var(--color-gray-500)', textAlign: 'center', padding: 32 }}>
-            Tidak ada mata kuliah ditemukan.
-          </p>
-        )}
-      </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--color-gray-600)', display: 'block', marginBottom: 4 }}>Tipe MK</label>
+                <select className="form-select" style={{ fontSize: 13 }} value={filterTipe} onChange={e => setFilterTipe(e.target.value)}>
+                  <option value="">— Semua Tipe —</option>
+                  {tipeList.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--color-gray-600)', display: 'block', marginBottom: 4 }}>Semester</label>
+                <select className="form-select" style={{ fontSize: 13 }} value={filterSemester} onChange={e => setFilterSemester(e.target.value)}>
+                  <option value="">— Semua —</option>
+                  {semesterList.map(s => <option key={s} value={s}>Semester {s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--color-gray-600)', display: 'block', marginBottom: 4 }}>SKS</label>
+                <select className="form-select" style={{ fontSize: 13 }} value={filterSks} onChange={e => setFilterSks(e.target.value)}>
+                  <option value="">— Semua —</option>
+                  {sksList.map(s => <option key={s} value={s}>{s} SKS</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--color-gray-600)', display: 'block', marginBottom: 4 }}>Cari nama / kode</label>
+                <input
+                  className="form-input"
+                  style={{ fontSize: 13 }}
+                  placeholder="Ketik nama atau kode MK..."
+                  value={cari}
+                  onChange={e => setCari(e.target.value)}
+                />
+              </div>
+            </div>
+            {(filterTipe || filterSemester || filterSks || cari) && (
+              <button
+                type="button"
+                onClick={() => { setFilterTipe(''); setFilterSemester(''); setFilterSks(''); setCari(''); }}
+                style={{ marginTop: 8, fontSize: 12, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                ✕ Reset filter
+              </button>
+            )}
+          </div>
+
+          {/* Step 3: Daftar MK */}
+          <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginBottom: 8 }}>
+            3. Pilih Mata Kuliah — menampilkan {mkFiltered.length} dari {mkByJenjang.length} MK
+          </div>
+          <div style={{ display: 'grid', gap: 8, maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
+            {mkFiltered.map(mk => (
+              <label
+                key={mk.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  padding: '12px 16px',
+                  border: `2px solid ${mkDipilih?.id === mk.id ? 'var(--color-primary)' : 'var(--color-gray-200)'}`,
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  background: mkDipilih?.id === mk.id ? '#EEF4FF' : 'white',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="mk"
+                  value={mk.id}
+                  checked={mkDipilih?.id === mk.id}
+                  onChange={() => onChange(mk)}
+                  style={{ marginTop: 3, flexShrink: 0 }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 3 }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', background: '#EEF4FF', padding: '1px 6px', borderRadius: 4 }}>
+                      {mk.kode_mk}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--color-gray-500)', background: 'var(--color-gray-100)', padding: '1px 6px', borderRadius: 4 }}>
+                      Sem {mk.semester}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--color-gray-500)', background: 'var(--color-gray-100)', padding: '1px 6px', borderRadius: 4 }}>
+                      {mk.sks} SKS
+                    </span>
+                    {mk.kode_tipe && (
+                      <span style={{ fontSize: 11, color: '#7c3aed', background: '#f5f3ff', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                        {mk.kode_tipe}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{mk.nama_mk}</div>
+                </div>
+              </label>
+            ))}
+            {mkFiltered.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--color-gray-400)' }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                <p style={{ fontSize: 14 }}>Tidak ada mata kuliah yang cocok dengan filter ini.</p>
+              </div>
+            )}
+          </div>
+
+          {mkDipilih && (
+            <div style={{
+              marginTop: 16,
+              padding: '12px 16px',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: 8,
+              fontSize: 13,
+            }}>
+              ✅ <strong>Terpilih:</strong> {mkDipilih.kode_mk} — {mkDipilih.nama_mk}
+              {mkDipilih.kode_tipe && <span style={{ color: '#7c3aed', marginLeft: 8 }}>({mkDipilih.kode_tipe})</span>}
+            </div>
+          )}
+        </>
+      )}
+
+      {!filterJenjang && (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--color-gray-400)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🎓</div>
+          <p style={{ fontSize: 14 }}>Pilih jenjang terlebih dahulu untuk melihat daftar mata kuliah.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -621,72 +789,161 @@ function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk }
 }
 
 // ─── Langkah 3: CPL ──────────────────────────────────────────────────────
-function Step3CPL({ cplFiltered, cplDipilih, onChange, jenjang }) {
+function Step3CPL({ cplFiltered, cplDipilih, onChange, jenjang, kodeTipeMk, cplOtomatis }) {
   const toggle = (id) => {
     onChange(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
 
+  const jumlahOtomatis = cplFiltered.filter(c => cplOtomatis.includes(c.nomor_cpl)).length;
+  const jumlahLainnya = cplFiltered.length - jumlahOtomatis;
+
   return (
     <div>
-      <div style={{
-        background: '#EEF4FF',
-        border: '1px solid #C7D7F9',
-        borderRadius: 8,
-        padding: '12px 16px',
-        marginBottom: 20,
-        fontSize: 14,
-      }}>
-        ℹ️ Daftar CPL di bawah sudah <strong>difilter otomatis</strong> untuk jenjang <strong>{jenjang}</strong>.
-        Centang CPL yang dibebankan pada mata kuliah ini.
-      </div>
+      {/* Info otomatis */}
+      {cplOtomatis.length > 0 ? (
+        <div style={{
+          background: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          borderRadius: 8,
+          padding: '14px 16px',
+          marginBottom: 20,
+          fontSize: 14,
+        }}>
+          <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>
+            ✅ {jumlahOtomatis} CPL terdeteksi otomatis untuk Tipe MK: <strong>{kodeTipeMk}</strong>
+          </div>
+          <div style={{ color: '#15803d', fontSize: 13 }}>
+            CPL yang disorot hijau sudah dipilihkan sesuai kurikulum. Anda dapat menambah atau melepas centang sesuai kebutuhan mata kuliah.
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          background: '#EEF4FF',
+          border: '1px solid #C7D7F9',
+          borderRadius: 8,
+          padding: '12px 16px',
+          marginBottom: 20,
+          fontSize: 14,
+        }}>
+          ℹ️ Daftar CPL di bawah sudah <strong>difilter otomatis</strong> untuk jenjang <strong>{jenjang}</strong>.
+          {kodeTipeMk && <span> Centang CPL yang sesuai dengan tipe MK <strong>{kodeTipeMk}</strong>.</span>}
+        </div>
+      )}
 
       {cplFiltered.length === 0 ? (
         <p style={{ color: 'var(--color-gray-500)', textAlign: 'center', padding: 32 }}>
           Tidak ada data CPL untuk jenjang {jenjang}. Hubungi administrator.
         </p>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
-          {cplFiltered.map(cpl => (
-            <label
-              key={cpl.id}
-              style={{
-                display: 'flex',
-                gap: 12,
-                padding: '14px 16px',
-                border: `2px solid ${cplDipilih.includes(cpl.id) ? 'var(--color-primary)' : 'var(--color-gray-200)'}`,
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: cplDipilih.includes(cpl.id) ? '#EEF4FF' : 'white',
-                transition: 'all 0.15s',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={cplDipilih.includes(cpl.id)}
-                onChange={() => toggle(cpl.id)}
-                style={{ marginTop: 2, flexShrink: 0 }}
-              />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-primary)', marginBottom: 2 }}>
-                  {cpl.nomor_cpl}
-                  {cpl.kategori && <span style={{ color: 'var(--color-gray-500)', fontWeight: 400, marginLeft: 8 }}>({cpl.kategori})</span>}
-                </div>
-                <div style={{ fontSize: 14 }}>{cpl.deskripsi_id}</div>
-                {cpl.deskripsi_en && (
-                  <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 4, fontStyle: 'italic' }}>
-                    {cpl.deskripsi_en}
-                  </div>
-                )}
+        <>
+          {/* CPL yang otomatis terdeteksi */}
+          {jumlahOtomatis > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, padding: '4px 10px', background: '#dcfce7', borderRadius: 4, display: 'inline-block' }}>
+                📌 CPL Sesuai Tipe MK ({kodeTipeMk})
               </div>
-            </label>
-          ))}
-        </div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {cplFiltered.filter(c => cplOtomatis.includes(c.nomor_cpl)).map(cpl => (
+                  <label
+                    key={cpl.id}
+                    style={{
+                      display: 'flex',
+                      gap: 12,
+                      padding: '12px 16px',
+                      border: `2px solid ${cplDipilih.includes(cpl.id) ? '#16a34a' : '#86efac'}`,
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      background: cplDipilih.includes(cpl.id) ? '#f0fdf4' : '#fafff9',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cplDipilih.includes(cpl.id)}
+                      onChange={() => toggle(cpl.id)}
+                      style={{ marginTop: 2, flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: '#15803d' }}>{cpl.nomor_cpl}</span>
+                        {cpl.kategori && <span style={{ fontSize: 11, color: '#16a34a', background: '#dcfce7', padding: '1px 6px', borderRadius: 10 }}>{cpl.kategori}</span>}
+                        <span style={{ fontSize: 11, color: '#15803d', background: '#dcfce7', padding: '1px 6px', borderRadius: 10, fontWeight: 600 }}>✓ sesuai kurikulum</span>
+                      </div>
+                      <div style={{ fontSize: 14, color: 'var(--color-gray-800)' }}>{cpl.deskripsi_id}</div>
+                      {cpl.deskripsi_en && (
+                        <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 3, fontStyle: 'italic' }}>
+                          {cpl.deskripsi_en}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CPL lainnya (tidak terdeteksi otomatis) */}
+          {jumlahLainnya > 0 && (
+            <div>
+              {jumlahOtomatis > 0 && (
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, padding: '4px 10px', background: 'var(--color-gray-100)', borderRadius: 4, display: 'inline-block' }}>
+                  CPL Lainnya (opsional / lintas tipe)
+                </div>
+              )}
+              <div style={{ display: 'grid', gap: 8 }}>
+                {cplFiltered.filter(c => !cplOtomatis.includes(c.nomor_cpl)).map(cpl => (
+                  <label
+                    key={cpl.id}
+                    style={{
+                      display: 'flex',
+                      gap: 12,
+                      padding: '12px 16px',
+                      border: `2px solid ${cplDipilih.includes(cpl.id) ? 'var(--color-primary)' : 'var(--color-gray-200)'}`,
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      background: cplDipilih.includes(cpl.id) ? '#EEF4FF' : 'white',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cplDipilih.includes(cpl.id)}
+                      onChange={() => toggle(cpl.id)}
+                      style={{ marginTop: 2, flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-primary)' }}>{cpl.nomor_cpl}</span>
+                        {cpl.kategori && <span style={{ fontSize: 11, color: 'var(--color-gray-500)', background: 'var(--color-gray-100)', padding: '1px 6px', borderRadius: 10 }}>{cpl.kategori}</span>}
+                      </div>
+                      <div style={{ fontSize: 14, color: 'var(--color-gray-800)' }}>{cpl.deskripsi_id}</div>
+                      {cpl.deskripsi_en && (
+                        <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 3, fontStyle: 'italic' }}>
+                          {cpl.deskripsi_en}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
-      <p style={{ fontSize: 13, color: 'var(--color-gray-500)', marginTop: 12 }}>
-        {cplDipilih.length} CPL dipilih
-      </p>
+
+      <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--color-gray-50)', borderRadius: 8, fontSize: 13, color: 'var(--color-gray-600)' }}>
+        <strong>{cplDipilih.length}</strong> CPL dipilih
+        {cplOtomatis.length > 0 && cplDipilih.length > 0 && (
+          <span style={{ marginLeft: 8, color: 'var(--color-gray-400)' }}>
+            ({cplDipilih.filter(id => {
+              const cpl = cplFiltered.find(c => c.id === id);
+              return cpl && cplOtomatis.includes(cpl.nomor_cpl);
+            }).length} sesuai kurikulum)
+          </span>
+        )}
+      </div>
     </div>
   );
 }
