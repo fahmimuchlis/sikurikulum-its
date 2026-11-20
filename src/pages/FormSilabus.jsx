@@ -335,6 +335,9 @@ export default function FormSilabus({ user }) {
             <Step4CPMK
               cpmk={cpmk}
               onChange={setCpmk}
+              cplDipilih={cplDipilih}
+              daftarCPL={daftarCPL}
+              jenjang={mkDipilih?.jenjang}
             />
           )}
           {step === 5 && (
@@ -1113,7 +1116,20 @@ function Step3CPL({ cplFiltered, cplDipilih, onChange, jenjang, kodeTipeMk, cplO
   );
 }
 
-// ─── Builder helpers (sama dengan CpmkGenerator) ──────────────────────────
+// ─── CPMK Builder helpers ─────────────────────────────────────────────────
+
+// Template AFEKSI ITS: kalimat baku + max 2 kegiatan + topik
+const AFEKSI_PREFIX = 'Mampu menunjukkan sikap dan menjunjung tinggi etika akademik pada kegiatan';
+
+const KEGIATAN_AFEKSI = [
+  'perkuliahan dan diskusi',
+  'bimbingan dan diskusi',
+  'pembuatan tugas',
+  'diskusi dan presentasi tugas',
+  'pembuatan, diskusi dan presentasi tugas',
+  'ujian',
+];
+
 function buildCpmkStatement(tipe, fields) {
   if (tipe === 'kognitif') {
     const parts = ['Mampu'];
@@ -1123,7 +1139,7 @@ function buildCpmkStatement(tipe, fields) {
     if (fields.elemen_2) parts.push(fields.elemen_2);
     if (fields.rincian) parts.push(fields.rincian);
     if (fields.ukuran) parts.push(fields.ukuran);
-    return parts.join(' ');
+    return parts.length > 1 ? parts.join(' ') + '.' : '';
   }
   if (tipe === 'kognitif_psiko') {
     const parts = ['Mampu'];
@@ -1133,90 +1149,175 @@ function buildCpmkStatement(tipe, fields) {
     if (fields.elemen_2) parts.push(fields.elemen_2);
     if (fields.rincian) parts.push(fields.rincian);
     if (fields.ukuran) parts.push(fields.ukuran);
-    return parts.join(' ');
+    return parts.length > 1 ? parts.join(' ') + '.' : '';
   }
   if (tipe === 'afeksi') {
-    const parts = ['Mampu'];
-    if (fields.afeksi) parts.push(fields.afeksi);
-    parts.push('pada kegiatan');
-    if (fields.kegiatan_1) parts.push(fields.kegiatan_1);
-    if (fields.kata_hubung && fields.kegiatan_2) { parts.push(fields.kata_hubung); parts.push(fields.kegiatan_2); }
-    parts.push('materi/topik');
-    if (fields.rincian) parts.push(fields.rincian);
-    return parts.join(' ');
+    // Template baku ITS: "Mampu menunjukkan sikap... pada kegiatan X dan Y materi/topik Z."
+    const kegiatan = [fields.kegiatan_1, fields.kegiatan_2].filter(Boolean);
+    if (!kegiatan.length) return '';
+    let keg = kegiatan.length === 1 ? kegiatan[0] : kegiatan[0] + ' dan ' + kegiatan[1];
+    let result = `${AFEKSI_PREFIX} ${keg}`;
+    if (fields.rincian) result += ` materi/topik ${fields.rincian}`;
+    return result + '.';
   }
   return '';
 }
 
-function SelInline({ label, value, onChange, options, required = false }) {
+// Render highlighted kalimat (tebal bagian yang dipilih, abu bagian template)
+function CpmkPreviewHighlight({ tipe, fields }) {
+  const stmt = buildCpmkStatement(tipe, fields);
+  if (!stmt) return <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Pilih komponen di kiri untuk melihat kalimat CPMK...</span>;
+
+  if (tipe === 'afeksi') {
+    // Sorot bagian yang diedit dosen
+    const kegiatan = [fields.kegiatan_1, fields.kegiatan_2].filter(Boolean);
+    const kegStr = kegiatan.length === 1 ? kegiatan[0] : kegiatan.length === 2 ? kegiatan[0] + ' dan ' + kegiatan[1] : '';
+    return (
+      <span style={{ fontSize: 15, lineHeight: 1.8 }}>
+        <span style={{ color: '#64748b' }}>{AFEKSI_PREFIX} </span>
+        {kegStr && <span style={{ color: '#1d4ed8', fontWeight: 700 }}>{kegStr}</span>}
+        {fields.rincian && <><span style={{ color: '#64748b' }}> materi/topik </span><span style={{ color: '#7c3aed', fontWeight: 700 }}>{fields.rincian}</span></>}
+        <span style={{ color: '#64748b' }}>.</span>
+      </span>
+    );
+  }
+
+  // Kognitif / Kognitif+Psiko: sorot setiap token yang diisi
+  return <span style={{ fontSize: 15, lineHeight: 1.8, color: '#1e293b' }}>{stmt}</span>;
+}
+
+// Selector dropdown bergaya
+function SelDrop({ label, value, onChange, options, required = false, placeholder = '— pilih —' }) {
   return (
-    <div style={{ marginBottom: 10 }}>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
         {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
       </label>
-      <select className="form-select" style={{ fontSize: 13 }} value={value} onChange={e => onChange(e.target.value)}>
-        <option value="">— pilih —</option>
+      <select
+        className="form-select"
+        style={{ fontSize: 13, borderColor: value ? '#6366f1' : undefined, background: value ? '#fafaf9' : undefined }}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+      >
+        <option value="">{placeholder}</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </div>
   );
 }
 
-function CpmkBuilderForm({ tipe, fields, vocab, onChange }) {
-  const preview = buildCpmkStatement(tipe, fields);
+// Form builder dalam modal
+function CpmkBuilderFields({ tipe, fields, vocab, onChange }) {
   const allKog = [...(vocab.kognitif_c1||[]), ...(vocab.kognitif_c2||[]), ...(vocab.kognitif_c3||[]),
     ...(vocab.kognitif_c4||[]), ...(vocab.kognitif_c5||[]), ...(vocab.kognitif_c6||[])];
+  const upd = patch => onChange({ ...fields, ...patch });
 
-  return (
-    <div style={{ padding: '12px 0' }}>
-      {tipe === 'kognitif' && <>
-        <SelInline label="Kata Kerja Kognitif-1 (C1–C6)" value={fields.kognitif_1||''} onChange={v => onChange({...fields, kognitif_1: v})} options={allKog} required />
-        <SelInline label="Elemen Pengetahuan-1" value={fields.elemen_1||''} onChange={v => onChange({...fields, elemen_1: v})} options={vocab.elemen_pengetahuan||[]} required />
-        <SelInline label="Kata Hubung (opsional)" value={fields.kata_hubung||''} onChange={v => onChange({...fields, kata_hubung: v})} options={vocab.kata_hubung||[]} />
-        {fields.kata_hubung && <>
-          <SelInline label="Kata Kerja Kognitif-2" value={fields.kognitif_2||''} onChange={v => onChange({...fields, kognitif_2: v})} options={allKog} />
-          <SelInline label="Elemen Pengetahuan-2" value={fields.elemen_2||''} onChange={v => onChange({...fields, elemen_2: v})} options={vocab.elemen_pengetahuan||[]} />
-        </>}
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>Rincian / Topik Bahan Kajian <span style={{ color: '#ef4444' }}>*</span></label>
-          <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => onChange({...fields, rincian: e.target.value})} placeholder="mis: digitalisasi konteks arsitektur" />
-        </div>
-        <SelInline label="Ukuran / Kriteria" value={fields.ukuran||''} onChange={v => onChange({...fields, ukuran: v})} options={vocab.ukuran||[]} required />
+  if (tipe === 'kognitif') return (
+    <>
+      <SelDrop label="① Kata Kerja Kognitif (C1–C6)" value={fields.kognitif_1||''} onChange={v => upd({kognitif_1: v})} options={allKog} required />
+      <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={vocab.elemen_pengetahuan||[]} required />
+      <SelDrop label="③ Kata Hubung (opsional — tambah kata kerja ke-2)" value={fields.kata_hubung||''} onChange={v => upd({kata_hubung: v, kognitif_2: '', elemen_2: ''})} options={vocab.kata_hubung||[]} />
+      {fields.kata_hubung && <>
+        <SelDrop label="④ Kata Kerja Kognitif-2" value={fields.kognitif_2||''} onChange={v => upd({kognitif_2: v})} options={allKog} />
+        <SelDrop label="⑤ Elemen Pengetahuan-2" value={fields.elemen_2||''} onChange={v => upd({elemen_2: v})} options={vocab.elemen_pengetahuan||[]} />
       </>}
-
-      {tipe === 'kognitif_psiko' && <>
-        <SelInline label="Kata Kerja Kognitif" value={fields.kognitif||''} onChange={v => onChange({...fields, kognitif: v})} options={[...(vocab.kognitif_c4||[]), ...(vocab.kognitif_c5||[]), ...(vocab.kognitif_c6||[])]} required />
-        <SelInline label="Elemen Pengetahuan-1" value={fields.elemen_1||''} onChange={v => onChange({...fields, elemen_1: v})} options={vocab.elemen_pengetahuan||[]} required />
-        <SelInline label="Kata Hubung" value={fields.kata_hubung||''} onChange={v => onChange({...fields, kata_hubung: v})} options={vocab.kata_hubung||[]} />
-        <SelInline label="Kata Kerja Psikomotorik" value={fields.psikomotorik||''} onChange={v => onChange({...fields, psikomotorik: v})} options={vocab.psikomotorik||[]} required />
-        <SelInline label="Elemen-2 / Obyek" value={fields.elemen_2||''} onChange={v => onChange({...fields, elemen_2: v})} options={vocab.elemen_pengetahuan||[]} />
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>Rincian / Topik <span style={{ color: '#ef4444' }}>*</span></label>
-          <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => onChange({...fields, rincian: e.target.value})} placeholder="mis: cara berpikir merancang digital" />
-        </div>
-        <SelInline label="Ukuran / Kriteria" value={fields.ukuran||''} onChange={v => onChange({...fields, ukuran: v})} options={vocab.ukuran||[]} required />
-      </>}
-
-      {tipe === 'afeksi' && <>
-        <SelInline label="Sikap Afektif" value={fields.afeksi||''} onChange={v => onChange({...fields, afeksi: v})} options={vocab.afektif||[]} required />
-        <SelInline label="Kegiatan-1" value={fields.kegiatan_1||''} onChange={v => onChange({...fields, kegiatan_1: v})} options={vocab.kegiatan||[]} required />
-        <SelInline label="Kata Hubung (opsional)" value={fields.kata_hubung||''} onChange={v => onChange({...fields, kata_hubung: v})} options={vocab.kata_hubung_afeksi||[]} />
-        {fields.kata_hubung && <SelInline label="Kegiatan-2" value={fields.kegiatan_2||''} onChange={v => onChange({...fields, kegiatan_2: v})} options={vocab.kegiatan||[]} />}
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>Topik / Rincian <span style={{ color: '#ef4444' }}>*</span></label>
-          <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => onChange({...fields, rincian: e.target.value})} placeholder="mis: berpikir merancang digital" />
-        </div>
-      </>}
-
-      {/* Preview */}
-      {preview && preview !== 'Mampu' && (
-        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', fontSize: 13, lineHeight: 1.6, color: '#1e293b', marginTop: 8, fontStyle: 'italic' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', fontStyle: 'normal' }}>Preview: </span>
-          {preview}
-        </div>
-      )}
-    </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+          {fields.kata_hubung ? '⑥' : '④'} Rincian / Topik Bahan Kajian <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => upd({rincian: e.target.value})} placeholder="mis: digitalisasi dalam konteks arsitektur tropis" />
+      </div>
+      <SelDrop label={`${fields.kata_hubung ? '⑦' : '⑤'} Ukuran / Kriteria Penilaian`} value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={vocab.ukuran||[]} required />
+    </>
   );
+
+  if (tipe === 'kognitif_psiko') return (
+    <>
+      <SelDrop label="① Kata Kerja Kognitif (C4–C6)" value={fields.kognitif||''} onChange={v => upd({kognitif: v})} options={[...(vocab.kognitif_c4||[]), ...(vocab.kognitif_c5||[]), ...(vocab.kognitif_c6||[])]} required />
+      <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={vocab.elemen_pengetahuan||[]} required />
+      <SelDrop label="③ Kata Hubung" value={fields.kata_hubung||''} onChange={v => upd({kata_hubung: v})} options={vocab.kata_hubung||[]} />
+      <SelDrop label="④ Kata Kerja Psikomotorik" value={fields.psikomotorik||''} onChange={v => upd({psikomotorik: v})} options={vocab.psikomotorik||[]} required />
+      <SelDrop label="⑤ Elemen / Obyek" value={fields.elemen_2||''} onChange={v => upd({elemen_2: v})} options={vocab.elemen_pengetahuan||[]} />
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>⑥ Rincian / Topik <span style={{ color: '#ef4444' }}>*</span></label>
+        <input className="form-input" style={{ fontSize: 13 }} value={fields.rincian||''} onChange={e => upd({rincian: e.target.value})} placeholder="mis: cara berpikir merancang digital" />
+      </div>
+      <SelDrop label="⑦ Ukuran / Kriteria Penilaian" value={fields.ukuran||''} onChange={v => upd({ukuran: v})} options={vocab.ukuran||[]} required />
+    </>
+  );
+
+  if (tipe === 'afeksi') return (
+    <>
+      {/* Kalimat baku — read only */}
+      <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>📌 Kalimat Baku (tetap)</span>
+        <em>{AFEKSI_PREFIX}...</em>
+      </div>
+
+      {/* Pilih 1–2 kegiatan */}
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+          ① Jenis Kegiatan <span style={{ color: '#ef4444' }}>*</span>
+          <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>(pilih maks. 2)</span>
+        </label>
+        <div style={{ display: 'grid', gap: 6 }}>
+          {KEGIATAN_AFEKSI.map(k => {
+            const isK1 = fields.kegiatan_1 === k;
+            const isK2 = fields.kegiatan_2 === k;
+            const isSelected = isK1 || isK2;
+            const canSelect = isSelected || !(fields.kegiatan_1 && fields.kegiatan_2);
+            return (
+              <label
+                key={k}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 8, cursor: canSelect ? 'pointer' : 'not-allowed',
+                  border: `1.5px solid ${isSelected ? '#6366f1' : '#e2e8f0'}`,
+                  background: isSelected ? '#eef2ff' : '#fafafa',
+                  opacity: !canSelect ? 0.4 : 1,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  disabled={!canSelect}
+                  onChange={() => {
+                    if (isK1) upd({ kegiatan_1: fields.kegiatan_2 || '', kegiatan_2: '' });
+                    else if (isK2) upd({ kegiatan_2: '' });
+                    else if (!fields.kegiatan_1) upd({ kegiatan_1: k });
+                    else upd({ kegiatan_2: k });
+                  }}
+                  style={{ flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 400, color: isSelected ? '#4338ca' : '#374151' }}>
+                  {k}
+                  {isK1 && fields.kegiatan_2 && <span style={{ fontSize: 11, color: '#6366f1', marginLeft: 6 }}>kegiatan 1</span>}
+                  {isK2 && <span style={{ fontSize: 11, color: '#6366f1', marginLeft: 6 }}>kegiatan 2</span>}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+          ② Topik / Materi <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input
+          className="form-input"
+          style={{ fontSize: 13 }}
+          value={fields.rincian||''}
+          onChange={e => upd({ rincian: e.target.value })}
+          placeholder="mis: berpikir merancang digital"
+        />
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Isi topik/materi MK yang spesifik sesuai konteks</p>
+      </div>
+    </>
+  );
+
+  return null;
 }
 
 const EMPTY_CPMK_FIELDS = {
@@ -1225,17 +1326,204 @@ const EMPTY_CPMK_FIELDS = {
   kognitif: '', psikomotorik: '',
   rincian: '', ukuran: '',
   afeksi: '', kegiatan_1: '', kegiatan_2: '',
+  cpl_ids: [], // CPL yang dipetakan ke CPMK ini
 };
 
+// Modal generator CPMK
+function CpmkGeneratorModal({ item, idx, vocab, cplDipilih, daftarCPL, onSave, onClose }) {
+  const [draft, setDraft] = useState({ ...EMPTY_CPMK_FIELDS, ...item });
+  const tipe = draft.tipe || 'kognitif';
+  const preview = buildCpmkStatement(tipe, draft);
+
+  const TIPE_OPTS = [
+    { value: 'kognitif', label: '🧠 Kognitif', color: '#2563eb', bg: '#eff6ff', desc: 'C1–C6: mengingat, memahami, menerapkan, menganalisis, mengevaluasi, menciptakan' },
+    { value: 'kognitif_psiko', label: '🤝 Kognitif + Psiko', color: '#7c3aed', bg: '#f5f3ff', desc: 'Menggabungkan kemampuan berpikir dan melakukan / membuat fisik' },
+    { value: 'afeksi', label: '❤️ Afeksi', color: '#dc2626', bg: '#fef2f2', desc: 'Sikap, etika akademik, nilai-nilai profesional' },
+  ];
+
+  // CPL yang bisa dipetakan (hanya CPL yang sudah dipilih di Step3)
+  const cplTersedia = daftarCPL.filter(c => cplDipilih.includes(c.id));
+
+  const toggleCpl = (id) => {
+    setDraft(prev => ({
+      ...prev,
+      cpl_ids: (prev.cpl_ids||[]).includes(id)
+        ? (prev.cpl_ids||[]).filter(x => x !== id)
+        : [...(prev.cpl_ids||[]), id],
+    }));
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 9999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+    }}>
+      <div style={{
+        background: 'white', borderRadius: 16, width: '100%', maxWidth: 900,
+        maxHeight: '92vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+      }}>
+        {/* Header modal */}
+        <div style={{ padding: '20px 28px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <div>
+            <h3 style={{ fontWeight: 700, fontSize: 17, color: '#1e293b', margin: 0 }}>
+              🏗️ Generator CPMK-{idx + 1}
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
+              Susun kalimat CPMK sesuai pola standar ITS — preview tampil otomatis
+            </p>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8', lineHeight: 1, padding: 4 }}>✕</button>
+        </div>
+
+        {/* Body: 2 kolom */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+
+          {/* Kolom kiri: form */}
+          <div style={{ padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid #f1f5f9' }}>
+            {/* Kode CPMK */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Kode CPMK</label>
+              <input className="form-input" style={{ fontSize: 13, maxWidth: 140 }} value={draft.no||`CPMK-${idx+1}`} onChange={e => setDraft(p => ({...p, no: e.target.value}))} />
+            </div>
+
+            {/* Pilih Tipe */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Tipe CPMK <span style={{ color: '#ef4444' }}>*</span></label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                {TIPE_OPTS.map(t => (
+                  <button key={t.value} type="button" title={t.desc}
+                    onClick={() => setDraft(p => ({ ...EMPTY_CPMK_FIELDS, no: p.no, cpl_ids: p.cpl_ids||[], tipe: t.value }))}
+                    style={{
+                      padding: '8px 6px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
+                      border: `2px solid ${tipe === t.value ? t.color : '#e2e8f0'}`,
+                      background: tipe === t.value ? t.bg : 'white',
+                      color: tipe === t.value ? t.color : '#64748b',
+                      fontWeight: tipe === t.value ? 700 : 400, fontSize: 12,
+                      transition: 'all 0.15s',
+                    }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: '#f1f5f9', margin: '0 0 16px' }} />
+
+            {/* Fields sesuai tipe */}
+            <CpmkBuilderFields tipe={tipe} fields={draft} vocab={vocab} onChange={d => setDraft(p => ({...p, ...d}))} />
+
+            {/* Pemetaan CPL */}
+            {cplTersedia.length > 0 && (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                  Pemetaan ke CPL <span style={{ color: '#ef4444' }}>*</span>
+                  <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>(dari CPL yang sudah dipilih)</span>
+                </label>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {cplTersedia.map(cpl => (
+                    <label key={cpl.id} style={{
+                      display: 'flex', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+                      border: `1.5px solid ${(draft.cpl_ids||[]).includes(cpl.id) ? '#16a34a' : '#e2e8f0'}`,
+                      background: (draft.cpl_ids||[]).includes(cpl.id) ? '#f0fdf4' : '#fafafa',
+                      transition: 'all 0.15s',
+                    }}>
+                      <input type="checkbox" checked={(draft.cpl_ids||[]).includes(cpl.id)} onChange={() => toggleCpl(cpl.id)} style={{ flexShrink: 0, marginTop: 2 }} />
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>{cpl.nomor_cpl}</div>
+                        <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.4 }}>{cpl.deskripsi_id}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Kolom kanan: preview sticky */}
+          <div style={{ padding: '20px 24px', overflowY: 'auto', background: '#fafbff', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>📋 Pratinjau Kalimat</div>
+
+              {/* Indonesia */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, background: '#1d4ed8', color: 'white', padding: '3px 10px', borderRadius: 20, display: 'inline-block', marginBottom: 8 }}>🇮🇩 Bahasa Indonesia</div>
+                <div style={{
+                  minHeight: 72, padding: '14px 16px', borderRadius: 10,
+                  border: `1.5px solid ${preview ? '#6366f1' : '#e2e8f0'}`,
+                  background: preview ? '#fafaf9' : '#f8fafc',
+                  fontSize: 15, lineHeight: 1.75, fontWeight: preview ? 500 : 400,
+                }}>
+                  <CpmkPreviewHighlight tipe={tipe} fields={draft} />
+                </div>
+              </div>
+
+              {/* English */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, background: '#92400e', color: 'white', padding: '3px 10px', borderRadius: 20, display: 'inline-block', marginBottom: 8 }}>🇬🇧 English</div>
+                <textarea
+                  className="form-textarea"
+                  rows={3}
+                  style={{ fontSize: 13, lineHeight: 1.6 }}
+                  value={draft.deskripsi_en||''}
+                  onChange={e => setDraft(p => ({...p, deskripsi_en: e.target.value}))}
+                  placeholder="Students are able to..."
+                />
+                <p style={{ fontSize: 11, color: '#94a3b8' }}>Isi terjemahan Inggris secara manual</p>
+              </div>
+            </div>
+
+            {/* Summary komponen */}
+            {preview && (
+              <div style={{ background: '#ecfdf5', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 8 }}>✅ Komponen Terpilih</div>
+                <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
+                  <div>• Tipe: <strong>{tipe}</strong></div>
+                  {draft.kognitif_1 && <div>• Kata kerja: <strong>{draft.kognitif_1}</strong></div>}
+                  {draft.kognitif && <div>• Kognitif: <strong>{draft.kognitif}</strong></div>}
+                  {draft.psikomotorik && <div>• Psikomotorik: <strong>{draft.psikomotorik}</strong></div>}
+                  {draft.elemen_1 && <div>• Elemen: <strong>{draft.elemen_1}</strong></div>}
+                  {draft.rincian && <div>• Topik: <strong>{draft.rincian}</strong></div>}
+                  {draft.ukuran && <div>• Kriteria: <strong>{draft.ukuran}</strong></div>}
+                  {tipe === 'afeksi' && draft.kegiatan_1 && <div>• Kegiatan: <strong>{[draft.kegiatan_1, draft.kegiatan_2].filter(Boolean).join(' + ')}</strong></div>}
+                  {(draft.cpl_ids||[]).length > 0 && (
+                    <div>• Dipetakan ke: <strong>{cplTersedia.filter(c => (draft.cpl_ids||[]).includes(c.id)).map(c => c.nomor_cpl).join(', ')}</strong></div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '16px 28px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 10, flexShrink: 0 }}>
+          <button onClick={onClose} className="btn btn-secondary">Batal</button>
+          <button
+            onClick={() => {
+              const stmt = buildCpmkStatement(draft.tipe || 'kognitif', draft);
+              onSave({ ...draft, deskripsi_id: stmt });
+            }}
+            className="btn btn-primary"
+            disabled={!preview}
+            style={{ opacity: preview ? 1 : 0.5 }}
+          >
+            ✅ Simpan CPMK-{idx + 1}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Langkah 4: CPMK ─────────────────────────────────────────────────────
-function Step4CPMK({ cpmk, onChange }) {
+function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang }) {
   const [vocab, setVocab] = useState({});
   const [vocabLoaded, setVocabLoaded] = useState(false);
-  const [expanded, setExpanded] = useState(0); // index yang terbuka
+  const [modalIdx, setModalIdx] = useState(null); // null = tutup
 
   useEffect(() => {
-    supabase.from('source_vocabulary').select('*').then(({ data, error }) => {
-      if (error) console.error('vocab load error:', error);
+    supabase.from('source_vocabulary').select('*').then(({ data }) => {
       if (data) {
         const v = {};
         data.forEach(r => {
@@ -1244,133 +1532,101 @@ function Step4CPMK({ cpmk, onChange }) {
         });
         setVocab(v);
       }
-      setVocabLoaded(true); // selalu set, agar spinner tidak hang selamanya
+      setVocabLoaded(true);
     });
   }, []);
 
-  const updateItem = (idx, patch) => {
-    const updated = [...cpmk];
-    updated[idx] = { ...updated[idx], ...patch };
-    // sync deskripsi_id dari builder
-    if (patch.tipe !== undefined || Object.keys(patch).some(k => k !== 'no' && k !== 'deskripsi_en')) {
-      const item = updated[idx];
-      const stmt = buildCpmkStatement(item.tipe || 'kognitif', item);
-      if (stmt && stmt !== 'Mampu') updated[idx].deskripsi_id = stmt;
-    }
-    onChange(updated);
-  };
-
   const addCPMK = () => {
     const newIdx = cpmk.length;
-    onChange([...cpmk, { ...EMPTY_CPMK_FIELDS, no: `CPMK-${newIdx + 1}`, deskripsi_id: '', deskripsi_en: '' }]);
-    setExpanded(newIdx);
+    onChange([...cpmk, { ...EMPTY_CPMK_FIELDS, no: `CPMK-${newIdx + 1}` }]);
+    setModalIdx(newIdx);
   };
 
   const removeCPMK = (idx) => {
     if (cpmk.length <= 1) return;
     onChange(cpmk.filter((_, i) => i !== idx));
-    setExpanded(Math.max(0, idx - 1));
   };
 
-  const TIPE_OPTS = [
-    { value: 'kognitif', label: '🧠 Kognitif', desc: 'Memahami / menganalisis / merancang' },
-    { value: 'kognitif_psiko', label: '🤝 Kognitif + Psikomotorik', desc: 'Menganalisis + melakukan/membuat' },
-    { value: 'afeksi', label: '❤️ Afeksi / Sikap', desc: 'Menunjukkan sikap etika, kemandirian' },
-  ];
+  const saveFromModal = (idx, item) => {
+    const updated = [...cpmk];
+    updated[idx] = item;
+    onChange(updated);
+    setModalIdx(null);
+  };
+
+  // CPL yang sudah dipilih di Step 3 (sesuai jenjang)
+  const cplTersedia = daftarCPL.filter(c => cplDipilih.includes(c.id));
 
   return (
     <div>
-      <p style={{ color: 'var(--color-gray-500)', fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
-        Susun CPMK menggunakan <strong>pola kalimat ITS</strong> — pilih tipe, isi dropdown, preview otomatis tampil.
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 14 }}>
+        ℹ️ Setiap CPMK dibuat menggunakan <strong>Generator CPMK</strong> — klik tombol <em>✏️ Buka Generator</em> untuk menyusun kalimat standar ITS. Petakan setiap CPMK ke CPL yang relevan.
         {!vocabLoaded && <span style={{ color: '#f59e0b', marginLeft: 8 }}>⏳ Memuat kosakata...</span>}
-      </p>
+      </div>
 
+      {/* Daftar CPMK */}
       {cpmk.map((item, idx) => {
-        const isOpen = expanded === idx;
         const preview = buildCpmkStatement(item.tipe || 'kognitif', item);
-        const hasContent = preview && preview !== 'Mampu';
+        const hasContent = !!(preview);
+        const cplMapped = cplTersedia.filter(c => (item.cpl_ids||[]).includes(c.id));
+
+        // Badge warna per tipe
+        const tipeBadge = {
+          kognitif: { label: '🧠 Kognitif', color: '#1d4ed8', bg: '#eff6ff' },
+          kognitif_psiko: { label: '🤝 K+P', color: '#7c3aed', bg: '#f5f3ff' },
+          afeksi: { label: '❤️ Afeksi', color: '#dc2626', bg: '#fef2f2' },
+        }[item.tipe || 'kognitif'] || { label: '—', color: '#64748b', bg: '#f1f5f9' };
 
         return (
-          <div key={idx} style={{ border: `2px solid ${isOpen ? 'var(--color-primary)' : '#e2e8f0'}`, borderRadius: 10, marginBottom: 12, overflow: 'hidden' }}>
-            {/* Header accordion */}
-            <div
-              onClick={() => setExpanded(isOpen ? -1 : idx)}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: isOpen ? '#eff6ff' : '#f8fafc', cursor: 'pointer' }}
-            >
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: isOpen ? 'var(--color-primary)' : '#cbd5e1', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+          <div key={idx} style={{
+            border: `2px solid ${hasContent ? '#c7d2fe' : '#e2e8f0'}`,
+            borderRadius: 12, marginBottom: 12, overflow: 'hidden',
+          }}>
+            {/* Row CPMK */}
+            <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr auto', gap: 0, alignItems: 'stretch' }}>
+              {/* Nomor */}
+              <div style={{ background: hasContent ? '#6366f1' : '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
                 {idx + 1}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>CPMK-{idx + 1}</div>
-                <div style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {hasContent ? preview : '— belum diisi —'}
+              {/* Konten */}
+              <div style={{ padding: '12px 16px' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{item.no || `CPMK-${idx+1}`}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, background: tipeBadge.bg, color: tipeBadge.color, padding: '2px 8px', borderRadius: 20 }}>{tipeBadge.label}</span>
+                  {hasContent && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', fontWeight: 600, padding: '2px 8px', borderRadius: 20 }}>✓ Terisi</span>}
+                  {!hasContent && <span style={{ fontSize: 11, background: '#fef9c3', color: '#a16207', padding: '2px 8px', borderRadius: 20 }}>Belum diisi</span>}
                 </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {hasContent && <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20 }}>✓ Terisi</span>}
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
-              </div>
-            </div>
-
-            {/* Body accordion */}
-            {isOpen && (
-              <div style={{ padding: '16px 20px', borderTop: '1px solid #e2e8f0' }}>
-                {/* Kode & Tipe */}
-                <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: '0 0 120px' }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>Kode</label>
-                    <input className="form-input" style={{ fontSize: 13 }} value={item.no || `CPMK-${idx+1}`}
-                      onChange={e => updateItem(idx, { no: e.target.value })} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 220 }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>Tipe CPMK</label>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {TIPE_OPTS.map(t => (
-                        <button key={t.value} type="button"
-                          onClick={() => updateItem(idx, { tipe: t.value })}
-                          title={t.desc}
-                          style={{ padding: '5px 12px', borderRadius: 20, border: `1.5px solid ${(item.tipe||'kognitif') === t.value ? 'var(--color-primary)' : '#cbd5e1'}`, background: (item.tipe||'kognitif') === t.value ? '#eff6ff' : 'white', color: (item.tipe||'kognitif') === t.value ? 'var(--color-primary)' : '#64748b', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Builder form */}
-                {vocabLoaded ? (
-                  <CpmkBuilderForm
-                    tipe={item.tipe || 'kognitif'}
-                    fields={item}
-                    vocab={vocab}
-                    onChange={fields => updateItem(idx, fields)}
-                  />
+                {hasContent ? (
+                  <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }}>{preview}</p>
                 ) : (
-                  <div style={{ padding: '16px', background: '#fefce8', borderRadius: 8, fontSize: 13, color: '#92400e' }}>
-                    ⏳ Memuat kosakata dari database...
+                  <p style={{ fontSize: 13, color: '#94a3b8', margin: 0, fontStyle: 'italic' }}>Klik ✏️ Buka Generator untuk menyusun kalimat CPMK ini</p>
+                )}
+                {cplMapped.length > 0 && (
+                  <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {cplMapped.map(c => (
+                      <span key={c.id} style={{ fontSize: 11, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>↔ {c.nomor_cpl}</span>
+                    ))}
                   </div>
                 )}
-
-                {/* Deskripsi English */}
-                <div style={{ marginTop: 12 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 3 }}>
-                    Deskripsi (English) <span style={{ opacity: 0.6, fontWeight: 400 }}>opsional</span>
-                  </label>
-                  <textarea className="form-textarea" rows={2} style={{ fontSize: 13 }}
-                    value={item.deskripsi_en || ''}
-                    onChange={e => updateItem(idx, { deskripsi_en: e.target.value })}
-                    placeholder="Students are able to..." />
-                </div>
-
-                {/* Hapus */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                  <button onClick={() => removeCPMK(idx)} disabled={cpmk.length <= 1}
-                    style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 6, padding: '5px 14px', fontSize: 13, cursor: cpmk.length <= 1 ? 'not-allowed' : 'pointer', opacity: cpmk.length <= 1 ? 0.3 : 1 }}>
-                    🗑 Hapus CPMK ini
-                  </button>
-                </div>
               </div>
-            )}
+              {/* Aksi */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderLeft: '1px solid #f1f5f9' }}>
+                <button
+                  onClick={() => setModalIdx(idx)}
+                  disabled={!vocabLoaded}
+                  style={{ flex: 1, padding: '0 16px', background: 'none', border: 'none', cursor: vocabLoaded ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600, color: '#4f46e5', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}
+                >
+                  ✏️ {hasContent ? 'Edit' : 'Buka Generator'}
+                </button>
+                <button
+                  onClick={() => removeCPMK(idx)}
+                  disabled={cpmk.length <= 1}
+                  style={{ flex: 1, padding: '0 16px', background: 'none', border: 'none', cursor: cpmk.length <= 1 ? 'not-allowed' : 'pointer', fontSize: 12, color: '#ef4444', opacity: cpmk.length <= 1 ? 0.3 : 1 }}
+                >
+                  🗑 Hapus
+                </button>
+              </div>
+            </div>
           </div>
         );
       })}
@@ -1378,6 +1634,43 @@ function Step4CPMK({ cpmk, onChange }) {
       <button className="btn btn-secondary" onClick={addCPMK} style={{ marginTop: 4 }}>
         + Tambah CPMK
       </button>
+
+      {/* Ringkasan pemetaan */}
+      {cplTersedia.length > 0 && (
+        <div style={{ marginTop: 20, padding: '14px 16px', background: 'var(--color-gray-50)', border: '1px solid var(--color-gray-200)', borderRadius: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-gray-600)', marginBottom: 10 }}>📊 Ringkasan Pemetaan CPL ↔ CPMK</div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {cplTersedia.map(cpl => {
+              const mapped = cpmk.filter(c => (c.cpl_ids||[]).includes(cpl.id));
+              return (
+                <div key={cpl.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12 }}>
+                  <span style={{ fontWeight: 700, color: '#15803d', flexShrink: 0, minWidth: 60 }}>{cpl.nomor_cpl}</span>
+                  {mapped.length > 0 ? (
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {mapped.map(c => <span key={c.no} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>{c.no || 'CPMK'}</span>)}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#f59e0b' }}>⚠️ Belum ada CPMK yang dipetakan</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Modal */}
+      {modalIdx !== null && vocabLoaded && (
+        <CpmkGeneratorModal
+          item={cpmk[modalIdx] || EMPTY_CPMK_FIELDS}
+          idx={modalIdx}
+          vocab={vocab}
+          cplDipilih={cplDipilih}
+          daftarCPL={daftarCPL}
+          onSave={(item) => saveFromModal(modalIdx, item)}
+          onClose={() => setModalIdx(null)}
+        />
+      )}
     </div>
   );
 }
