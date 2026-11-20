@@ -361,12 +361,22 @@ export default function CpmkGenerator({ user }) {
     const loadSilabus = async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('dokumen_silabus')
-          .select('id, nama_mk, jenjang, semester, status')
+          .select('id, status, created_at, mk_id, master_mata_kuliah(nama_mk, jenjang, semester, kode_mk, sks)')
           .eq('dosen_id', user.id)
           .order('created_at', { ascending: false });
-        setDaftarSilabus(data || []);
+        if (error) console.error('loadSilabus query error:', error);
+        // Flatten relasi agar komponen tetap bisa pakai silabus.nama_mk dll
+        const flat = (data || []).map(s => ({
+          ...s,
+          nama_mk: s.master_mata_kuliah?.nama_mk || '—',
+          jenjang: s.master_mata_kuliah?.jenjang || '—',
+          semester: s.master_mata_kuliah?.semester || '—',
+          kode_mk: s.master_mata_kuliah?.kode_mk || '—',
+          sks: s.master_mata_kuliah?.sks || '—',
+        }));
+        setDaftarSilabus(flat);
       } catch (err) {
         console.error('loadSilabus error:', err);
       } finally {

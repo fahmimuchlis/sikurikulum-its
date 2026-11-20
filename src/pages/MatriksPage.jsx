@@ -52,10 +52,19 @@ export default function MatriksPage({ user }) {
     if (!user) return;
     supabase
       .from('dokumen_silabus')
-      .select('id, nama_mk, kode_mk, jenjang, semester')
-      .eq('user_id', user.id)
+      .select('id, status, created_at, mk_id, master_mata_kuliah(nama_mk, kode_mk, jenjang, semester, sks)')
+      .eq('dosen_id', user.id)
       .order('created_at', { ascending: false })
-      .then(({ data }) => setSilabusOptions(data || []));
+      .then(({ data }) => {
+        const flat = (data || []).map(s => ({
+          ...s,
+          nama_mk: s.master_mata_kuliah?.nama_mk || '—',
+          kode_mk: s.master_mata_kuliah?.kode_mk || '—',
+          jenjang: s.master_mata_kuliah?.jenjang || '—',
+          semester: s.master_mata_kuliah?.semester || '—',
+        }));
+        setSilabusOptions(flat);
+      });
   }, [user]);
 
   // Load data saat silabus dipilih
