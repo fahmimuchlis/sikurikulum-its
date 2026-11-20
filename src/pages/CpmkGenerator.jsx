@@ -342,7 +342,8 @@ export default function CpmkGenerator({ user }) {
   // Load vocabulary
   useEffect(() => {
     const loadVocab = async () => {
-      const { data } = await supabase.from('source_vocabulary').select('*').order('urutan');
+      const { data, error } = await supabase.from('source_vocabulary').select('*').order('urutan');
+      if (error) console.error('vocab load error:', error);
       if (data) {
         const v = {};
         data.forEach(row => {
@@ -359,13 +360,18 @@ export default function CpmkGenerator({ user }) {
   useEffect(() => {
     const loadSilabus = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('dokumen_silabus')
-        .select('id, nama_mk, jenjang, semester, status')
-        .eq('dosen_id', user.id)
-        .order('created_at', { ascending: false });
-      setDaftarSilabus(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('dokumen_silabus')
+          .select('id, nama_mk, jenjang, semester, status')
+          .eq('dosen_id', user.id)
+          .order('created_at', { ascending: false });
+        setDaftarSilabus(data || []);
+      } catch (err) {
+        console.error('loadSilabus error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     loadSilabus();
   }, [user.id]);
