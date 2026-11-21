@@ -1742,6 +1742,48 @@ const EMPTY_SUB_CPMK_PSIKO = {
   rincian_sub: '', penugasan: 'secara mandiri', kriteria: '',
 };
 
+// ── Sub-CPMK Afeksi ───────────────────────────────────────────────────────────
+// A. Kata sikap (setelah "Mampu")
+const KATA_SIKAP_AFEKSI = [
+  'menunjukkan perhatian',
+  'berpartisipasi',
+  'menghargai upaya/pendapat',
+  'mempertimbangkan sikap',
+  'mengambil sikap',
+];
+
+// B. Jenis kegiatan (setelah "pada kegiatan")
+const KEGIATAN_AFEKSI_SUB = [
+  'perkuliahan dan diskusi',
+  'bimbingan dan diskusi',
+  'pembuatan tugas',
+  'diskusi dan presentasi tugas',
+  'pembuatan, diskusi dan presentasi tugas',
+  'ujian',
+];
+
+// D. Bentuk penugasan (berbeda dari kognitif/psiko — konteks kelas)
+const PENUGASAN_AFEKSI = [
+  'di dalam kelompok',
+  'di dalam kelas',
+  'di dalam kelompok dan kelas',
+];
+
+// Rakit kalimat Sub-CPMK Afeksi
+// Pola: "Mampu [kata_sikap] pada kegiatan [kegiatan] materi/topik [rincian_sub] [penugasan]."
+function buildSubCpmkAfeksiStatement(fields) {
+  const { kata_sikap, kegiatan, rincian_sub, penugasan } = fields;
+  if (!kata_sikap || !kegiatan) return '';
+  const parts = ['Mampu', kata_sikap, 'pada kegiatan', kegiatan];
+  if (rincian_sub) parts.push('materi/topik', rincian_sub);
+  if (penugasan) parts.push(penugasan);
+  return parts.join(' ') + '.';
+}
+
+const EMPTY_SUB_CPMK_AFEKSI = {
+  kata_sikap: '', kegiatan: '', rincian_sub: '', penugasan: 'di dalam kelas',
+};
+
 const EMPTY_CPMK_FIELDS = {
   tipe: 'kognitif',
   // Kognitif
@@ -1755,6 +1797,7 @@ const EMPTY_CPMK_FIELDS = {
   cpl_ids: [], // CPL yang dipetakan ke CPMK ini
   sub_cpmk_kog: [],   // array of EMPTY_SUB_CPMK_KOG
   sub_cpmk_psiko: [], // array of EMPTY_SUB_CPMK_PSIKO
+  sub_cpmk_afeksi: [], // array of EMPTY_SUB_CPMK_AFEKSI
 };
 
 // ── Generator Sub-CPMK Kognitif (panel di dalam modal CPMK) ──────────────────
@@ -2173,16 +2216,186 @@ function SubCpmkPsikoPanel({ subList, onChange, parentFields }) {
   );
 }
 
+// ── Generator Sub-CPMK Afeksi (panel di dalam modal CPMK) ────────────────────
+function SubCpmkAfeksiPanel({ subList, onChange, parentFields }) {
+  const [expandedIdx, setExpandedIdx] = useState(null);
+
+  const addSub = () => {
+    const newList = [...subList, { ...EMPTY_SUB_CPMK_AFEKSI }];
+    onChange(newList);
+    setExpandedIdx(newList.length - 1);
+  };
+
+  const removeSub = (i) => {
+    onChange(subList.filter((_, idx) => idx !== i));
+    setExpandedIdx(null);
+  };
+
+  const updateSub = (i, patch) => {
+    const updated = [...subList];
+    updated[i] = { ...updated[i], ...patch };
+    onChange(updated);
+  };
+
+  return (
+    <div>
+      <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#991b1b', marginBottom: 10 }}>
+        📌 Sub-CPMK Afeksi dari CPMK <strong>{parentFields.no || 'ini'}</strong> — merinci sikap dan kegiatan akademik yang diharapkan.
+      </div>
+
+      {subList.map((sub, i) => {
+        const stmt = buildSubCpmkAfeksiStatement(sub);
+        const isOpen = expandedIdx === i;
+        return (
+          <div key={i} style={{ border: `2px solid ${stmt ? '#fca5a5' : '#e2e8f0'}`, borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+            {/* Header sub */}
+            <div
+              style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: 'pointer', background: isOpen ? '#fef2f2' : 'white', gap: 8 }}
+              onClick={() => setExpandedIdx(isOpen ? null : i)}
+            >
+              <span style={{ fontWeight: 700, fontSize: 12, color: '#dc2626', flexShrink: 0 }}>Sub-CPMK {i + 1}</span>
+              {stmt ? (
+                <span style={{ fontSize: 12, color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stmt}</span>
+              ) : (
+                <span style={{ fontSize: 12, color: '#94a3b8', flex: 1, fontStyle: 'italic' }}>Belum diisi</span>
+              )}
+              <span style={{ fontSize: 11, color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
+              <button
+                onClick={e => { e.stopPropagation(); removeSub(i); }}
+                style={{ background: 'none', border: 'none', fontSize: 14, color: '#ef4444', cursor: 'pointer', padding: '0 4px', flexShrink: 0 }}
+                title="Hapus Sub-CPMK ini"
+              >✕</button>
+            </div>
+
+            {/* Form detail */}
+            {isOpen && (
+              <div style={{ padding: '12px 14px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                {/* A. Kata sikap */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                    A. Kata Sikap <span style={{ color: '#ef4444' }}>*</span>
+                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>(setelah "Mampu")</span>
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    {KATA_SIKAP_AFEKSI.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => updateSub(i, { kata_sikap: opt })}
+                        style={{
+                          padding: '7px 10px', fontSize: 12, borderRadius: 8, cursor: 'pointer',
+                          border: `2px solid ${sub.kata_sikap === opt ? '#dc2626' : '#e2e8f0'}`,
+                          background: sub.kata_sikap === opt ? '#fef2f2' : 'white',
+                          color: sub.kata_sikap === opt ? '#b91c1c' : '#64748b',
+                          fontWeight: sub.kata_sikap === opt ? 700 : 400,
+                          textAlign: 'left', transition: 'all 0.15s',
+                        }}
+                      >{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* B. Kegiatan (setelah "pada kegiatan") */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    B. Jenis Kegiatan <span style={{ color: '#ef4444' }}>*</span>
+                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>(setelah "pada kegiatan")</span>
+                  </label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: 13 }}
+                    value={sub.kegiatan}
+                    onChange={e => updateSub(i, { kegiatan: e.target.value })}
+                  >
+                    <option value="">— Pilih kegiatan —</option>
+                    {KEGIATAN_AFEKSI_SUB.map(k => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* C. Rincian sub-bahan kajian (materi/topik) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    C. Rincian Sub-Bahan Kajian
+                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>(akan diawali "materi/topik")</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    style={{ fontSize: 13 }}
+                    value={sub.rincian_sub}
+                    onChange={e => updateSub(i, { rincian_sub: e.target.value })}
+                    placeholder="cth: berpikir merancang digital"
+                  />
+                </div>
+
+                {/* D. Bentuk penugasan */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                    D. Bentuk Penugasan <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {PENUGASAN_AFEKSI.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => updateSub(i, { penugasan: opt })}
+                        style={{
+                          padding: '6px 12px', fontSize: 12, borderRadius: 8, cursor: 'pointer', border: '2px solid',
+                          borderColor: sub.penugasan === opt ? '#dc2626' : '#e2e8f0',
+                          background: sub.penugasan === opt ? '#fef2f2' : 'white',
+                          color: sub.penugasan === opt ? '#b91c1c' : '#64748b',
+                          fontWeight: sub.penugasan === opt ? 700 : 400,
+                          transition: 'all 0.15s',
+                        }}
+                      >{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Preview kalimat */}
+                {buildSubCpmkAfeksiStatement(sub) ? (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>✅ Pratinjau Sub-CPMK {i + 1}</div>
+                    <p style={{ fontSize: 13, color: '#7f1d1d', margin: 0, lineHeight: 1.65, fontStyle: 'italic' }}>
+                      {buildSubCpmkAfeksiStatement(sub)}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#92400e' }}>
+                    ⚠️ Pilih kata sikap dan kegiatan untuk melihat pratinjau kalimat.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <button
+        type="button"
+        onClick={addSub}
+        style={{ marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#dc2626', background: '#fef2f2', border: '1.5px dashed #fca5a5', borderRadius: 8, cursor: 'pointer' }}
+      >
+        + Tambah Sub-CPMK Afeksi
+      </button>
+    </div>
+  );
+}
+
 // Modal generator CPMK
 function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose, jenjang, kodeTipe }) {
   const [draft, setDraft] = useState({ ...EMPTY_CPMK_FIELDS, ...item });
-  const [activeTab, setActiveTab] = useState('cpmk'); // 'cpmk' | 'subcpmk_kog' | 'subcpmk_psiko'
+  const [activeTab, setActiveTab] = useState('cpmk'); // 'cpmk' | 'subcpmk_kog' | 'subcpmk_psiko' | 'subcpmk_afeksi'
   const tipe = draft.tipe || 'kognitif';
   const preview = buildCpmkStatement(tipe, draft);
   const subCpmkKogList = draft.sub_cpmk_kog || [];
   const subCpmkPsikoList = draft.sub_cpmk_psiko || [];
+  const subCpmkAfeksiList = draft.sub_cpmk_afeksi || [];
   const isKog = tipe === 'kognitif' || tipe === 'kognitif_psiko';
   const isPsiko = tipe === 'psikomotorik' || tipe === 'kognitif_psiko';
+  const isAfeksi = tipe === 'afeksi';
 
   const TIPE_OPTS = [
     { value: 'kognitif',       label: '🧠 Kognitif',        color: '#2563eb', bg: '#eff6ff',  desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
@@ -2241,9 +2454,10 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
           {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 4, marginTop: 12, flexWrap: 'wrap' }}>
             {[
-              { id: 'cpmk',          label: '🏗️ CPMK', disabled: false },
-              { id: 'subcpmk_kog',   label: `🧠 Sub-CPMK Kognitif${subCpmkKogList.length > 0 ? ` (${subCpmkKogList.length})` : ''}`,   disabled: !isKog },
-              { id: 'subcpmk_psiko', label: `🤝 Sub-CPMK Psikomotorik${subCpmkPsikoList.length > 0 ? ` (${subCpmkPsikoList.length})` : ''}`, disabled: !isPsiko },
+              { id: 'cpmk',           label: '🏗️ CPMK', disabled: false },
+              { id: 'subcpmk_kog',    label: `🧠 Sub-CPMK Kognitif${subCpmkKogList.length > 0 ? ` (${subCpmkKogList.length})` : ''}`,       disabled: !isKog },
+              { id: 'subcpmk_psiko',  label: `🤝 Sub-CPMK Psikomotorik${subCpmkPsikoList.length > 0 ? ` (${subCpmkPsikoList.length})` : ''}`, disabled: !isPsiko },
+              { id: 'subcpmk_afeksi', label: `❤️ Sub-CPMK Afeksi${subCpmkAfeksiList.length > 0 ? ` (${subCpmkAfeksiList.length})` : ''}`,    disabled: !isAfeksi },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -2283,6 +2497,17 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
               <SubCpmkPsikoPanel
                 subList={subCpmkPsikoList}
                 onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_psiko: list }))}
+                parentFields={draft}
+              />
+            </div>
+          )}
+
+          {/* Panel Sub-CPMK Afeksi */}
+          {activeTab === 'subcpmk_afeksi' && (
+            <div style={{ padding: '20px 28px', overflowY: 'auto', height: '100%' }}>
+              <SubCpmkAfeksiPanel
+                subList={subCpmkAfeksiList}
+                onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_afeksi: list }))}
                 parentFields={draft}
               />
             </div>
@@ -2420,6 +2645,11 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
             {subCpmkPsikoList.length > 0 && (
               <span style={{ background: '#f5f3ff', color: '#7c3aed', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
                 🤝 {subCpmkPsikoList.length} Sub-CPMK Psikomotorik
+              </span>
+            )}
+            {subCpmkAfeksiList.length > 0 && (
+              <span style={{ background: '#fef2f2', color: '#dc2626', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                ❤️ {subCpmkAfeksiList.length} Sub-CPMK Afeksi
               </span>
             )}
           </div>
@@ -2566,7 +2796,7 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, i
                   </div>
                 )}
                 {/* Badge sub-CPMK */}
-                {((item.sub_cpmk_kog||[]).length > 0 || (item.sub_cpmk_psiko||[]).length > 0) && (
+                {((item.sub_cpmk_kog||[]).length > 0 || (item.sub_cpmk_psiko||[]).length > 0 || (item.sub_cpmk_afeksi||[]).length > 0) && (
                   <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {(item.sub_cpmk_kog||[]).length > 0 && (
                       <span style={{ fontSize: 11, background: '#f0f4ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '1px 8px', borderRadius: 10, fontWeight: 600 }}>
@@ -2576,6 +2806,11 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, i
                     {(item.sub_cpmk_psiko||[]).length > 0 && (
                       <span style={{ fontSize: 11, background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', padding: '1px 8px', borderRadius: 10, fontWeight: 600 }}>
                         🤝 {(item.sub_cpmk_psiko).length} Sub-CPMK Psiko
+                      </span>
+                    )}
+                    {(item.sub_cpmk_afeksi||[]).length > 0 && (
+                      <span style={{ fontSize: 11, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '1px 8px', borderRadius: 10, fontWeight: 600 }}>
+                        ❤️ {(item.sub_cpmk_afeksi).length} Sub-CPMK Afeksi
                       </span>
                     )}
                   </div>
