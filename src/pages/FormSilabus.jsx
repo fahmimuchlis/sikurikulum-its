@@ -1692,7 +1692,7 @@ const KRITERIA_KETERCAPAIAN_SUBCPMK = [
 ];
 
 // Rakit kalimat Sub-CPMK Kognitif
-// Pola: "Mampu [sub_kk] [elemen_pengetahuan] [rincian_sub_bk] [penugasan] berdasarkan acuan yang sahih dan dikerjakan dengan [kriteria]."
+// Pola: "Mampu [sub_kk] [elemen] [rincian_sub] [penugasan] berdasarkan acuan yang sahih dan dikerjakan dengan [kriteria]."
 function buildSubCpmkKognitifStatement(fields) {
   const { sub_kk, elemen, rincian_sub, penugasan, kriteria } = fields;
   if (!sub_kk) return '';
@@ -1710,6 +1710,38 @@ const EMPTY_SUB_CPMK_KOG = {
   sub_kk: '', elemen: '', rincian_sub: '', penugasan: 'secara mandiri', kriteria: '',
 };
 
+// ── Sub-CPMK Psikomotorik ─────────────────────────────────────────────────────
+// A. Kemampuan psikomotorik (dari kata kerja CPMK parent)
+// B. Penjelasan kegiatan
+const PENJELASAN_KEGIATAN_PSIKO = ['membuat', 'mengoperasikan', 'menggunakan', 'mempertunjukan'];
+// C. Objek kegiatan (sama dengan yang ada di CPMK parent)
+const OBJEK_KEGIATAN_PSIKO_SUB = [
+  'dokumen teknis', 'model', 'sajian grafis', 'kajian',
+  'kritik', 'apresiasi pada', 'riset/penelitian', 'presentasi',
+  'poster', 'diskusi', 'alat/perangkat', 'pameran',
+];
+// D. Bentuk penugasan (sama dengan kognitif)
+// E. Kriteria ketercapaian (sama dengan kognitif)
+
+// Rakit kalimat Sub-CPMK Psikomotorik
+// Pola: "Mampu [kemampuan_psiko] [penjelasan_keg] [objek] pada tugas [rincian_sub] [penugasan] berdasarkan panduan yang sahih dan dikerjakan dengan [kriteria]."
+function buildSubCpmkPsikoStatement(fields) {
+  const { kemampuan_psiko, penjelasan_keg, objek_sub, rincian_sub, penugasan, kriteria } = fields;
+  if (!kemampuan_psiko || !penjelasan_keg || !objek_sub) return '';
+  const parts = ['Mampu', kemampuan_psiko, penjelasan_keg, objek_sub];
+  if (rincian_sub) parts.push('pada tugas', rincian_sub);
+  if (penugasan) parts.push(penugasan);
+  parts.push('berdasarkan panduan yang sahih dan dikerjakan dengan');
+  if (kriteria) parts.push(kriteria);
+  else return '';
+  return parts.join(' ') + '.';
+}
+
+const EMPTY_SUB_CPMK_PSIKO = {
+  kemampuan_psiko: '', penjelasan_keg: '', objek_sub: '',
+  rincian_sub: '', penugasan: 'secara mandiri', kriteria: '',
+};
+
 const EMPTY_CPMK_FIELDS = {
   tipe: 'kognitif',
   // Kognitif
@@ -1721,7 +1753,8 @@ const EMPTY_CPMK_FIELDS = {
   // Afeksi
   kegiatan_1: '', kegiatan_2: '',
   cpl_ids: [], // CPL yang dipetakan ke CPMK ini
-  sub_cpmk_kog: [], // array of EMPTY_SUB_CPMK_KOG
+  sub_cpmk_kog: [],   // array of EMPTY_SUB_CPMK_KOG
+  sub_cpmk_psiko: [], // array of EMPTY_SUB_CPMK_PSIKO
 };
 
 // ── Generator Sub-CPMK Kognitif (panel di dalam modal CPMK) ──────────────────
@@ -1920,13 +1953,236 @@ function SubCpmkKognitifPanel({ subList, onChange, parentFields }) {
   );
 }
 
+// ── Generator Sub-CPMK Psikomotorik (panel di dalam modal CPMK) ──────────────
+function SubCpmkPsikoPanel({ subList, onChange, parentFields }) {
+  const [expandedIdx, setExpandedIdx] = useState(null);
+
+  // Kata kerja psikomotorik dari parent CPMK (1 atau 2)
+  const kkPsikoParent = [parentFields.psiko_1, parentFields.psiko_2].filter(Boolean);
+
+  if (kkPsikoParent.length === 0) {
+    return (
+      <div style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e' }}>
+        ⚠️ Pilih kata kerja psikomotorik pada CPMK ini terlebih dahulu untuk bisa mengisi Sub-CPMK.
+      </div>
+    );
+  }
+
+  const addSub = () => {
+    const newList = [...subList, { ...EMPTY_SUB_CPMK_PSIKO }];
+    onChange(newList);
+    setExpandedIdx(newList.length - 1);
+  };
+
+  const removeSub = (i) => {
+    onChange(subList.filter((_, idx) => idx !== i));
+    setExpandedIdx(null);
+  };
+
+  const updateSub = (i, patch) => {
+    const updated = [...subList];
+    updated[i] = { ...updated[i], ...patch };
+    onChange(updated);
+  };
+
+  return (
+    <div>
+      <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#5b21b6', marginBottom: 10 }}>
+        📌 Sub-CPMK merupakan rincian dari CPMK <strong>{parentFields.no || 'ini'}</strong>.
+        Kata kerja psikomotorik: <strong>{kkPsikoParent.join(', ')}</strong>.
+      </div>
+
+      {subList.map((sub, i) => {
+        const stmt = buildSubCpmkPsikoStatement(sub);
+        const isOpen = expandedIdx === i;
+        return (
+          <div key={i} style={{ border: `2px solid ${stmt ? '#c4b5fd' : '#e2e8f0'}`, borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+            {/* Header sub */}
+            <div
+              style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: 'pointer', background: isOpen ? '#f5f3ff' : 'white', gap: 8 }}
+              onClick={() => setExpandedIdx(isOpen ? null : i)}
+            >
+              <span style={{ fontWeight: 700, fontSize: 12, color: '#7c3aed', flexShrink: 0 }}>Sub-CPMK {i + 1}</span>
+              {stmt ? (
+                <span style={{ fontSize: 12, color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stmt}</span>
+              ) : (
+                <span style={{ fontSize: 12, color: '#94a3b8', flex: 1, fontStyle: 'italic' }}>Belum diisi</span>
+              )}
+              <span style={{ fontSize: 11, color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
+              <button
+                onClick={e => { e.stopPropagation(); removeSub(i); }}
+                style={{ background: 'none', border: 'none', fontSize: 14, color: '#ef4444', cursor: 'pointer', padding: '0 4px', flexShrink: 0 }}
+                title="Hapus Sub-CPMK ini"
+              >✕</button>
+            </div>
+
+            {/* Form detail */}
+            {isOpen && (
+              <div style={{ padding: '12px 14px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                {/* A. Kemampuan psikomotorik (dari kata kerja CPMK parent) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    A. Kemampuan Psikomotorik <span style={{ color: '#ef4444' }}>*</span>
+                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>(dari kata kerja CPMK)</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {kkPsikoParent.map(kk => (
+                      <button
+                        key={kk}
+                        type="button"
+                        onClick={() => updateSub(i, { kemampuan_psiko: kk })}
+                        style={{
+                          padding: '6px 14px', fontSize: 12, borderRadius: 8, cursor: 'pointer', border: '2px solid',
+                          borderColor: sub.kemampuan_psiko === kk ? '#7c3aed' : '#e2e8f0',
+                          background: sub.kemampuan_psiko === kk ? '#f5f3ff' : 'white',
+                          color: sub.kemampuan_psiko === kk ? '#6d28d9' : '#64748b',
+                          fontWeight: sub.kemampuan_psiko === kk ? 700 : 400,
+                        }}
+                      >{kk}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* B. Penjelasan kegiatan */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    B. Penjelasan Kegiatan <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {PENJELASAN_KEGIATAN_PSIKO.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => updateSub(i, { penjelasan_keg: opt })}
+                        style={{
+                          padding: '6px 12px', fontSize: 12, borderRadius: 8, cursor: 'pointer', border: '2px solid',
+                          borderColor: sub.penjelasan_keg === opt ? '#7c3aed' : '#e2e8f0',
+                          background: sub.penjelasan_keg === opt ? '#f5f3ff' : 'white',
+                          color: sub.penjelasan_keg === opt ? '#6d28d9' : '#64748b',
+                          fontWeight: sub.penjelasan_keg === opt ? 700 : 400,
+                        }}
+                      >{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* C. Objek kegiatan */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    C. Objek Kegiatan <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: 13 }}
+                    value={sub.objek_sub}
+                    onChange={e => updateSub(i, { objek_sub: e.target.value })}
+                  >
+                    <option value="">— Pilih objek kegiatan —</option>
+                    {OBJEK_KEGIATAN_PSIKO_SUB.map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Rincian tugas (opsional) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    Rincian Tugas / Sub-Bahan Kajian
+                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>(opsional — akan diawali "pada tugas")</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    style={{ fontSize: 13 }}
+                    value={sub.rincian_sub}
+                    onChange={e => updateSub(i, { rincian_sub: e.target.value })}
+                    placeholder="cth: digitalisasi dan komputerisasi arsitektur"
+                  />
+                </div>
+
+                {/* D. Bentuk penugasan */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                    D. Bentuk Penugasan <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {BENTUK_PENUGASAN_SUBCPMK.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => updateSub(i, { penugasan: opt })}
+                        style={{
+                          padding: '6px 12px', fontSize: 12, borderRadius: 8, cursor: 'pointer', border: '2px solid',
+                          borderColor: sub.penugasan === opt ? '#7c3aed' : '#e2e8f0',
+                          background: sub.penugasan === opt ? '#f5f3ff' : 'white',
+                          color: sub.penugasan === opt ? '#6d28d9' : '#64748b',
+                          fontWeight: sub.penugasan === opt ? 700 : 400,
+                          transition: 'all 0.15s',
+                        }}
+                      >{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* E. Kriteria ketercapaian */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                    E. Kriteria Ketercapaian <span style={{ color: '#ef4444' }}>*</span>
+                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>(akan diawali "...dikerjakan dengan")</span>
+                  </label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: 13 }}
+                    value={sub.kriteria}
+                    onChange={e => updateSub(i, { kriteria: e.target.value })}
+                  >
+                    <option value="">— Pilih kriteria —</option>
+                    {KRITERIA_KETERCAPAIAN_SUBCPMK.map(k => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Preview kalimat */}
+                {buildSubCpmkPsikoStatement(sub) ? (
+                  <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>✅ Pratinjau Sub-CPMK {i + 1}</div>
+                    <p style={{ fontSize: 13, color: '#4c1d95', margin: 0, lineHeight: 1.65, fontStyle: 'italic' }}>
+                      {buildSubCpmkPsikoStatement(sub)}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#92400e' }}>
+                    ⚠️ Lengkapi kemampuan, penjelasan kegiatan, objek, dan kriteria untuk melihat pratinjau.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <button
+        type="button"
+        onClick={addSub}
+        style={{ marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#7c3aed', background: '#f5f3ff', border: '1.5px dashed #a78bfa', borderRadius: 8, cursor: 'pointer' }}
+      >
+        + Tambah Sub-CPMK Psikomotorik
+      </button>
+    </div>
+  );
+}
+
 // Modal generator CPMK
 function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose, jenjang, kodeTipe }) {
   const [draft, setDraft] = useState({ ...EMPTY_CPMK_FIELDS, ...item });
-  const [activeTab, setActiveTab] = useState('cpmk'); // 'cpmk' | 'subcpmk'
+  const [activeTab, setActiveTab] = useState('cpmk'); // 'cpmk' | 'subcpmk_kog' | 'subcpmk_psiko'
   const tipe = draft.tipe || 'kognitif';
   const preview = buildCpmkStatement(tipe, draft);
-  const subCpmkList = draft.sub_cpmk_kog || [];
+  const subCpmkKogList = draft.sub_cpmk_kog || [];
+  const subCpmkPsikoList = draft.sub_cpmk_psiko || [];
+  const isKog = tipe === 'kognitif' || tipe === 'kognitif_psiko';
+  const isPsiko = tipe === 'psikomotorik' || tipe === 'kognitif_psiko';
 
   const TIPE_OPTS = [
     { value: 'kognitif',       label: '🧠 Kognitif',        color: '#2563eb', bg: '#eff6ff',  desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
@@ -1983,10 +2239,11 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
           </div>
 
           {/* Tab switcher */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 4, marginTop: 12, flexWrap: 'wrap' }}>
             {[
-              { id: 'cpmk', label: '🏗️ CPMK' },
-              { id: 'subcpmk', label: `📋 Sub-CPMK Kognitif${subCpmkList.length > 0 ? ` (${subCpmkList.length})` : ''}`, disabled: tipe !== 'kognitif' && tipe !== 'kognitif_psiko' },
+              { id: 'cpmk',          label: '🏗️ CPMK', disabled: false },
+              { id: 'subcpmk_kog',   label: `🧠 Sub-CPMK Kognitif${subCpmkKogList.length > 0 ? ` (${subCpmkKogList.length})` : ''}`,   disabled: !isKog },
+              { id: 'subcpmk_psiko', label: `🤝 Sub-CPMK Psikomotorik${subCpmkPsikoList.length > 0 ? ` (${subCpmkPsikoList.length})` : ''}`, disabled: !isPsiko },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -1994,7 +2251,7 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                 disabled={tab.disabled}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: '6px 16px', fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500,
+                  padding: '6px 14px', fontSize: 12, fontWeight: activeTab === tab.id ? 700 : 500,
                   borderRadius: '8px 8px 0 0', cursor: tab.disabled ? 'not-allowed' : 'pointer',
                   border: 'none', borderBottom: activeTab === tab.id ? '3px solid #4f46e5' : '3px solid transparent',
                   background: activeTab === tab.id ? '#f0f4ff' : 'transparent',
@@ -2003,23 +2260,29 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                 }}
               >{tab.label}</button>
             ))}
-            {tipe !== 'kognitif' && tipe !== 'kognitif_psiko' && (
-              <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', marginLeft: 4 }}>
-                (Sub-CPMK hanya untuk tipe Kognitif)
-              </span>
-            )}
           </div>
         </div>
 
         {/* Body: 2 kolom (tab CPMK) atau full width (tab Sub-CPMK) */}
-        <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'subcpmk' ? 'block' : 'grid', gridTemplateColumns: activeTab === 'cpmk' ? '1fr 1fr' : undefined }}>
+        <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'cpmk' ? 'grid' : 'block', gridTemplateColumns: '1fr 1fr' }}>
 
-          {/* Panel Sub-CPMK Kognitif (tab kedua) */}
-          {activeTab === 'subcpmk' && (
+          {/* Panel Sub-CPMK Kognitif */}
+          {activeTab === 'subcpmk_kog' && (
             <div style={{ padding: '20px 28px', overflowY: 'auto', height: '100%' }}>
               <SubCpmkKognitifPanel
-                subList={subCpmkList}
+                subList={subCpmkKogList}
                 onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_kog: list }))}
+                parentFields={draft}
+              />
+            </div>
+          )}
+
+          {/* Panel Sub-CPMK Psikomotorik */}
+          {activeTab === 'subcpmk_psiko' && (
+            <div style={{ padding: '20px 28px', overflowY: 'auto', height: '100%' }}>
+              <SubCpmkPsikoPanel
+                subList={subCpmkPsikoList}
+                onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_psiko: list }))}
                 parentFields={draft}
               />
             </div>
@@ -2148,9 +2411,16 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
 
         {/* Footer */}
         <div style={{ padding: '16px 28px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>
-            {subCpmkList.length > 0 && (
-              <span>📋 {subCpmkList.length} Sub-CPMK Kognitif tersimpan</span>
+          <div style={{ fontSize: 12, color: '#64748b', display: 'flex', gap: 10 }}>
+            {subCpmkKogList.length > 0 && (
+              <span style={{ background: '#eff0ff', color: '#4338ca', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                🧠 {subCpmkKogList.length} Sub-CPMK Kognitif
+              </span>
+            )}
+            {subCpmkPsikoList.length > 0 && (
+              <span style={{ background: '#f5f3ff', color: '#7c3aed', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                🤝 {subCpmkPsikoList.length} Sub-CPMK Psikomotorik
+              </span>
             )}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -2295,12 +2565,19 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, i
                     ))}
                   </div>
                 )}
-                {/* Badge sub-CPMK kognitif */}
-                {(item.tipe === 'kognitif' || item.tipe === 'kognitif_psiko') && (item.sub_cpmk_kog||[]).length > 0 && (
-                  <div style={{ marginTop: 6 }}>
-                    <span style={{ fontSize: 11, background: '#f0f4ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '1px 8px', borderRadius: 10, fontWeight: 600 }}>
-                      📋 {(item.sub_cpmk_kog).length} Sub-CPMK Kognitif
-                    </span>
+                {/* Badge sub-CPMK */}
+                {((item.sub_cpmk_kog||[]).length > 0 || (item.sub_cpmk_psiko||[]).length > 0) && (
+                  <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {(item.sub_cpmk_kog||[]).length > 0 && (
+                      <span style={{ fontSize: 11, background: '#f0f4ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '1px 8px', borderRadius: 10, fontWeight: 600 }}>
+                        🧠 {(item.sub_cpmk_kog).length} Sub-CPMK Kog
+                      </span>
+                    )}
+                    {(item.sub_cpmk_psiko||[]).length > 0 && (
+                      <span style={{ fontSize: 11, background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', padding: '1px 8px', borderRadius: 10, fontWeight: 600 }}>
+                        🤝 {(item.sub_cpmk_psiko).length} Sub-CPMK Psiko
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
