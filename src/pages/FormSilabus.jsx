@@ -1127,6 +1127,38 @@ const KATA_KERJA_KOGNITIF = [
   'menganalisis', 'mengevaluasi', 'merancang', 'mengembangkan',
 ];
 
+// Filter kata kerja kognitif per jenjang (KKNI Level):
+// S1 (L6): C1-C4 → memahami, menerapkan, menganalisis (+ menyebut)
+// Profesi (L7): C3-C5 → menerapkan, menganalisis, mengevaluasi, merancang
+// S2 (L8): C4-C6 → menganalisis, mengevaluasi, merancang, mengembangkan
+// S3 (L9): C5-C6 → mengevaluasi, merancang, mengembangkan
+const KATA_KERJA_KOGNITIF_BY_JENJANG = {
+  'S1':      ['menyebut', 'memahami', 'menerapkan', 'menganalisis'],
+  'Profesi': ['menerapkan', 'menganalisis', 'mengevaluasi', 'merancang'],
+  'S2':      ['menganalisis', 'mengevaluasi', 'merancang', 'mengembangkan'],
+  'S3':      ['mengevaluasi', 'merancang', 'mengembangkan'],
+};
+
+// Filter kata kerja psikomotorik per jenjang:
+// S1: semua (melakukan, membuat, mengoperasikan, menggunakan, mempertunjukan)
+// Profesi: fokus praktik profesi (membuat, menggunakan, mempertunjukan)
+// S2: fokus riset/advanced (membuat, mempertunjukan)
+// S3: fokus inovasi/original (membuat, mempertunjukan)
+const KATA_KERJA_PSIKO_BY_JENJANG = {
+  'S1':      ['melakukan', 'membuat', 'mengoperasikan', 'menggunakan', 'mempertunjukan'],
+  'Profesi': ['melakukan', 'membuat', 'menggunakan', 'mempertunjukan'],
+  'S2':      ['membuat', 'mempertunjukan'],
+  'S3':      ['membuat', 'mempertunjukan'],
+};
+
+// Helper: ambil kata kerja yang sesuai jenjang (fallback ke semua jika tidak ada jenjang)
+function getKataKerjaKog(jenjang) {
+  return KATA_KERJA_KOGNITIF_BY_JENJANG[jenjang] || KATA_KERJA_KOGNITIF;
+}
+function getKataKerjaPsiko(jenjang) {
+  return KATA_KERJA_PSIKO_BY_JENJANG[jenjang] || KATA_KERJA_PSIKO;
+}
+
 // KOGNITIF: elemen pengetahuan
 const ELEMEN_PENGETAHUAN = [
   'pengetahuan', 'data', 'cara berpikir', 'desain',
@@ -1358,15 +1390,18 @@ function CheckboxSelector({ label, options, val1, val2, onChange1, onChange2, re
 }
 
 // Form builder dalam modal
-function CpmkBuilderFields({ tipe, fields, onChange }) {
+function CpmkBuilderFields({ tipe, fields, onChange, jenjang }) {
   const upd = patch => onChange({ ...fields, ...patch });
+  // Kata kerja yang difilter sesuai jenjang MK
+  const kkKog = getKataKerjaKog(jenjang);
+  const kkPsiko = getKataKerjaPsiko(jenjang);
 
   if (tipe === 'kognitif') return (
     <>
       {/* A: Kata Kerja Kognitif — maks 2 */}
       <CheckboxSelector
         label="① Kata Kerja Kognitif"
-        options={KATA_KERJA_KOGNITIF}
+        options={kkKog}
         val1={fields.kognitif_1||''} val2={fields.kognitif_2||''}
         onChange1={v => upd({ kognitif_1: v })}
         onChange2={v => upd({ kognitif_2: v })}
@@ -1394,7 +1429,7 @@ function CpmkBuilderFields({ tipe, fields, onChange }) {
       {/* A: Kata Kerja Psikomotorik — maks 2 */}
       <CheckboxSelector
         label="① Kata Kerja Psikomotorik"
-        options={KATA_KERJA_PSIKO}
+        options={kkPsiko}
         val1={fields.psiko_1||''} val2={fields.psiko_2||''}
         onChange1={v => upd({ psiko_1: v })}
         onChange2={v => upd({ psiko_2: v })}
@@ -1428,7 +1463,7 @@ function CpmkBuilderFields({ tipe, fields, onChange }) {
       {/* Bagian Kognitif */}
       <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 10 }}>🧠 BAGIAN KOGNITIF</div>
-        <SelDrop label="① Kata Kerja Kognitif" value={fields.kognitif_1||''} onChange={v => upd({kognitif_1: v})} options={KATA_KERJA_KOGNITIF} required />
+        <SelDrop label="① Kata Kerja Kognitif" value={fields.kognitif_1||''} onChange={v => upd({kognitif_1: v})} options={kkKog} required />
         <SelDrop label="② Elemen Pengetahuan" value={fields.elemen_1||''} onChange={v => upd({elemen_1: v})} options={ELEMEN_PENGETAHUAN} required />
       </div>
 
@@ -1440,7 +1475,7 @@ function CpmkBuilderFields({ tipe, fields, onChange }) {
       {/* Bagian Psikomotorik */}
       <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#6d28d9', marginBottom: 10 }}>🤝 BAGIAN PSIKOMOTORIK</div>
-        <SelDrop label="③ Kata Kerja Psikomotorik" value={fields.psiko_1||''} onChange={v => upd({psiko_1: v})} options={KATA_KERJA_PSIKO} required />
+        <SelDrop label="③ Kata Kerja Psikomotorik" value={fields.psiko_1||''} onChange={v => upd({psiko_1: v})} options={kkPsiko} required />
         <SelDrop label="④ Objek Kegiatan" value={fields.objek_psiko||''} onChange={v => upd({objek_psiko: v})} options={OBJEK_KEGIATAN_PSIKO} required />
       </div>
 
@@ -1546,7 +1581,7 @@ const EMPTY_CPMK_FIELDS = {
 };
 
 // Modal generator CPMK
-function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose }) {
+function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose, jenjang }) {
   const [draft, setDraft] = useState({ ...EMPTY_CPMK_FIELDS, ...item });
   const tipe = draft.tipe || 'kognitif';
   const preview = buildCpmkStatement(tipe, draft);
@@ -1585,9 +1620,20 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose 
           <div>
             <h3 style={{ fontWeight: 700, fontSize: 17, color: '#1e293b', margin: 0 }}>
               🏗️ Generator CPMK-{idx + 1}
+              {jenjang && (
+                <span style={{
+                  marginLeft: 10, fontSize: 12, fontWeight: 600,
+                  background: jenjang === 'S3' ? '#fef3c7' : jenjang === 'S2' ? '#ede9fe' : jenjang === 'Profesi' ? '#dcfce7' : '#dbeafe',
+                  color: jenjang === 'S3' ? '#92400e' : jenjang === 'S2' ? '#5b21b6' : jenjang === 'Profesi' ? '#166534' : '#1e40af',
+                  padding: '2px 10px', borderRadius: 999, verticalAlign: 'middle',
+                }}>
+                  {jenjang}
+                </span>
+              )}
             </h3>
             <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
               Susun kalimat CPMK sesuai pola standar ITS — preview tampil otomatis
+              {jenjang && <span style={{ marginLeft: 6, color: '#94a3b8', fontSize: 12 }}>• Kata kerja difilter untuk jenjang {jenjang}</span>}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8', lineHeight: 1, padding: 4 }}>✕</button>
@@ -1629,7 +1675,7 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose 
             <div style={{ height: 1, background: '#f1f5f9', margin: '0 0 16px' }} />
 
             {/* Fields sesuai tipe */}
-            <CpmkBuilderFields tipe={tipe} fields={draft} onChange={d => setDraft(p => ({...p, ...d}))} />
+            <CpmkBuilderFields tipe={tipe} fields={draft} onChange={d => setDraft(p => ({...p, ...d}))} jenjang={jenjang} />
 
             {/* Pemetaan CPL */}
             {cplTersedia.length > 0 && (
@@ -1740,6 +1786,27 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose 
 // ─── Langkah 4: CPMK ─────────────────────────────────────────────────────
 function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, isStudio }) {
   const [modalIdx, setModalIdx] = useState(null); // null = tutup
+
+  // Jika jenjang berubah, reset kata kerja yang tidak valid untuk jenjang baru
+  useEffect(() => {
+    if (!jenjang) return;
+    const validKog = getKataKerjaKog(jenjang);
+    const validPsiko = getKataKerjaPsiko(jenjang);
+    const updated = cpmk.map(c => ({
+      ...c,
+      kognitif_1: validKog.includes(c.kognitif_1) ? c.kognitif_1 : '',
+      kognitif_2: validKog.includes(c.kognitif_2) ? c.kognitif_2 : '',
+      psiko_1:    validPsiko.includes(c.psiko_1)   ? c.psiko_1   : '',
+      psiko_2:    validPsiko.includes(c.psiko_2)   ? c.psiko_2   : '',
+    }));
+    // Hanya update jika ada perubahan (hindari loop)
+    const changed = updated.some((c, i) =>
+      c.kognitif_1 !== cpmk[i].kognitif_1 || c.kognitif_2 !== cpmk[i].kognitif_2 ||
+      c.psiko_1 !== cpmk[i].psiko_1 || c.psiko_2 !== cpmk[i].psiko_2
+    );
+    if (changed) onChange(updated);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jenjang]);
 
   const addCPMK = () => {
     const newIdx = cpmk.length;
@@ -1899,6 +1966,7 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, isStudio })
           daftarCPL={daftarCPL}
           onSave={(item) => saveFromModal(modalIdx, item)}
           onClose={() => setModalIdx(null)}
+          jenjang={jenjang}
         />
       )}
     </div>
