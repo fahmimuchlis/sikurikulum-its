@@ -41,9 +41,7 @@ export default function FormSilabus({ user }) {
     bahan_kajian_des: '',
     penugasan_des: '',
     metoda_1: '',
-    tanda_baca_1: '.',
     metoda_2: '',
-    tanda_baca_2: '',
     metoda_3: '',
     deskripsi_tambahan: '',
   });
@@ -111,9 +109,7 @@ export default function FormSilabus({ user }) {
               bahan_kajian_des: dok.bahan_kajian_des || '',
               penugasan_des: dok.penugasan_des || '',
               metoda_1: dok.metoda_1 || '',
-              tanda_baca_1: '.',
               metoda_2: dok.metoda_2 || '',
-              tanda_baca_2: '',
               metoda_3: dok.metoda_3 || '',
               deskripsi_tambahan: dok.deskripsi_tambahan || '',
             });
@@ -668,7 +664,7 @@ const KEMAMPUAN_OPTS = ['mendalami', 'memahami', 'menerapkan', 'menganalisis', '
 const JENIS_PENGETAHUAN_OPTS = ['teori dan prinsip', 'teori dan konteks', 'teori dasar', 'konsep teoritis', 'konsep rancangan', 'prinsip', 'proses', 'prosedur', 'strategi', 'metoda', 'desain'];
 const PENUGASAN_DES_OPTS = ['secara mandiri', 'secara berkelompok', 'secara mandiri dan berkelompok'];
 const METODA_OPTS = ['diskusi kelompok', 'studi kasus', 'berbasis permasalahan', 'berbasis proyek', 'simulasi', 'penemuan/discovery', 'kontekstual', 'kooperatif', 'kolaboratif', 'mandiri', 'bertukar matra/flipped', 'bauran/blended', 'non-SCL (kuliah dan diskusi kelas)', 'ujian/evaluasi'];
-const TANDA_BACA_OPTS = ['.', ',', '; ', 'dan', 'serta'];
+// Tanda baca antar metoda ditentukan otomatis (koma + "dan") — tidak perlu input manual
 
 const SUPABASE_FN_URL = 'https://hohzdezcdcpjjpabuhge.supabase.co/functions/v1/translate-desc';
 
@@ -691,7 +687,9 @@ function buildDeskripsiStatement(mk, des) {
   if (des.penugasan_des) parts.push(des.penugasan_des);
   parts.push('melalui perkuliahan dan pembelajaran');
   const metodaList = [des.metoda_1, des.metoda_2, des.metoda_3].filter(Boolean);
-  if (metodaList.length) parts.push(metodaList.join(', '));
+  if (metodaList.length === 1) parts.push(metodaList[0]);
+  else if (metodaList.length === 2) parts.push(`${metodaList[0]} dan ${metodaList[1]}`);
+  else if (metodaList.length === 3) parts.push(`${metodaList[0]}, ${metodaList[1]}, dan ${metodaList[2]}`);
   return parts.join(' ') + '.';
 }
 
@@ -844,24 +842,19 @@ function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk, 
               </select>
             </div>
             {[1, 2, 3].map(n => (
-              <div key={n} style={{ display: 'grid', gridTemplateColumns: n < 3 ? '3fr 1fr' : '1fr', gap: 6, marginBottom: 6 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: 12 }}>② Metoda {n === 1 ? '' : n === 2 ? '2 ' : '3 '}{n > 1 ? '(opsional)' : ''}</label>
-                  <select className="form-select" style={{ fontSize: 12 }} value={desMk[`metoda_${n}`]} onChange={e => upd(`metoda_${n}`, e.target.value)}>
-                    <option value="">— pilih —</option>
-                    {METODA_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                {n < 3 && (
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: 12 }}>Pemisah</label>
-                    <select className="form-select" style={{ fontSize: 12 }} value={desMk[`tanda_baca_${n}`]} onChange={e => upd(`tanda_baca_${n}`, e.target.value)}>
-                      {TANDA_BACA_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
-                )}
+              <div key={n} className="form-group" style={{ marginBottom: 6 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>
+                  ② Metoda Pembelajaran{n > 1 ? ` ${n}` : ''} {n > 1 && <span style={{ fontWeight: 400, color: '#94a3b8' }}>(opsional)</span>}
+                </label>
+                <select className="form-select" style={{ fontSize: 12 }} value={desMk[`metoda_${n}`]} onChange={e => upd(`metoda_${n}`, e.target.value)}>
+                  <option value="">— pilih —</option>
+                  {METODA_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
               </div>
             ))}
+            <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, marginBottom: 0 }}>
+              Jika lebih dari 1 metoda dipilih, tanda baca otomatis disesuaikan (koma dan "dan").
+            </p>
           </div>
 
           {/* C. Deskripsi Tambahan */}
