@@ -672,9 +672,18 @@ const TANDA_BACA_OPTS = ['.', ',', '; ', 'dan', 'serta'];
 
 const SUPABASE_FN_URL = 'https://hohzdezcdcpjjpabuhge.supabase.co/functions/v1/translate-desc';
 
+// Tentukan jenis MK (wajib/pilihan) secara otomatis dari kode_tipe
+function getJenisMkOtomatis(mk) {
+  if (!mk) return 'wajib';
+  const tipe = (mk.kode_tipe || '').toLowerCase();
+  // Tipe yang termasuk "pilihan": pilihan, p-dasar, p-bidang, dis (doktor)
+  if (['pilihan', 'p-dasar', 'p-bidang', 'dis'].includes(tipe)) return 'pilihan';
+  return 'wajib';
+}
+
 function buildDeskripsiStatement(mk, des) {
   if (!mk || !des.kemampuan) return '';
-  const jenis = des.jenis_mk || 'wajib';
+  const jenis = getJenisMkOtomatis(mk);
   const parts = [`Mata kuliah ${jenis} yang mengembangkan kemampuan mahasiswa dalam`];
   parts.push(des.kemampuan);
   if (des.jenis_pengetahuan) parts.push(des.jenis_pengetahuan);
@@ -766,42 +775,32 @@ function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk, 
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '5px 10px', background: '#EEF4FF', borderRadius: 6, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>A</span> Pengetahuan &amp; Ketrampilan
             </div>
+            {/* Jenis MK otomatis dari tipe MK yang dipilih */}
+            <div style={{ marginBottom: 8, padding: '6px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, color: '#475569' }}>
+              <span style={{ fontWeight: 600 }}>Jenis MK:</span>{' '}
+              <span style={{ textTransform: 'capitalize', color: 'var(--color-primary)', fontWeight: 700 }}>
+                {getJenisMkOtomatis(mkDipilih)}
+              </span>
+              <span style={{ color: '#94a3b8', marginLeft: 6 }}>(otomatis dari tipe MK "{mkDipilih?.kode_tipe || '-'}")</span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12 }}>① Jenis MK</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {['wajib', 'pilihan'].map(j => (
-                    <button key={j} type="button"
-                      onClick={() => upd('jenis_mk', j)}
-                      style={{
-                        flex: 1, padding: '7px', borderRadius: 6, border: `1px solid ${desMk.jenis_mk === j ? 'var(--color-primary)' : 'var(--color-gray-300)'}`,
-                        cursor: 'pointer', fontSize: 12, fontWeight: desMk.jenis_mk === j ? 700 : 400,
-                        background: desMk.jenis_mk === j ? 'var(--color-primary)' : 'white',
-                        color: desMk.jenis_mk === j ? 'white' : 'var(--color-gray-600)',
-                      }}
-                    >
-                      {j.charAt(0).toUpperCase() + j.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12 }}>② Kemampuan <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+                <label className="form-label" style={{ fontSize: 12 }}>① Kemampuan <span style={{ color: 'var(--color-danger)' }}>*</span></label>
                 <select className="form-select" style={{ fontSize: 12 }} value={desMk.kemampuan} onChange={e => upd('kemampuan', e.target.value)}>
                   <option value="">— pilih —</option>
                   {KEMAMPUAN_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>② Jenis Pengetahuan <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+                <select className="form-select" style={{ fontSize: 12 }} value={desMk.jenis_pengetahuan} onChange={e => upd('jenis_pengetahuan', e.target.value)}>
+                  <option value="">— pilih —</option>
+                  {JENIS_PENGETAHUAN_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
             </div>
-            <div className="form-group" style={{ marginBottom: 8, marginTop: 8 }}>
-              <label className="form-label" style={{ fontSize: 12 }}>③ Jenis Pengetahuan <span style={{ color: 'var(--color-danger)' }}>*</span></label>
-              <select className="form-select" style={{ fontSize: 12 }} value={desMk.jenis_pengetahuan} onChange={e => upd('jenis_pengetahuan', e.target.value)}>
-                <option value="">— pilih —</option>
-                {JENIS_PENGETAHUAN_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 12 }}>④ Kelompok Bahan Kajian <span style={{ fontSize: 11, color: 'var(--color-gray-400)', fontWeight: 400 }}>(ketik bebas)</span></label>
+            <div className="form-group" style={{ marginBottom: 0, marginTop: 8 }}>
+              <label className="form-label" style={{ fontSize: 12 }}>③ Kelompok Bahan Kajian <span style={{ fontSize: 11, color: 'var(--color-gray-400)', fontWeight: 400 }}>(ketik bebas)</span></label>
               <textarea className="form-textarea" rows={2} style={{ fontSize: 12 }}
                 placeholder="mis: aspek lingkungan dan keberlanjutan dalam perancangan arsitektur tropis..."
                 value={desMk.bahan_kajian_des}
