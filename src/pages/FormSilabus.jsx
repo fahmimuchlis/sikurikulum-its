@@ -338,6 +338,7 @@ export default function FormSilabus({ user }) {
               cplDipilih={cplDipilih}
               daftarCPL={daftarCPL}
               jenjang={mkDipilih?.jenjang}
+              kodeTipe={mkDipilih?.kode_tipe}
               isStudio={mkDipilih?.tipe === 'studio'}
             />
           )}
@@ -1121,42 +1122,144 @@ function Step3CPL({ cplFiltered, cplDipilih, onChange, jenjang, kodeTipeMk, cplO
 
 // ── Vocab ITS (sesuai template resmi) ──────────────────────────────────────
 
-// KOGNITIF: maks 2 kata kerja
+// KOGNITIF: semua kata kerja (C1-C6, sesuai tabel ITS)
 const KATA_KERJA_KOGNITIF = [
-  'menyebut', 'memahami', 'menerapkan',
-  'menganalisis', 'mengevaluasi', 'merancang', 'mengembangkan',
+  'menyebut',           // C1 Remember
+  'menjelaskan',        // C2 Understand
+  'menerapkan',         // C3 Apply
+  'menguraikan',        // C4 Analyse
+  'mengevaluasi',       // C5 Evaluate
+  'menghasilkan gagasan', // C6 Create
 ];
 
-// Filter kata kerja kognitif per jenjang (KKNI Level):
-// S1 (L6): C1-C4 → memahami, menerapkan, menganalisis (+ menyebut)
-// Profesi (L7): C3-C5 → menerapkan, menganalisis, mengevaluasi, merancang
-// S2 (L8): C4-C6 → menganalisis, mengevaluasi, merancang, mengembangkan
-// S3 (L9): C5-C6 → mengevaluasi, merancang, mengembangkan
-const KATA_KERJA_KOGNITIF_BY_JENJANG = {
-  'S1':      ['menyebut', 'memahami', 'menerapkan', 'menganalisis'],
-  'Profesi': ['menerapkan', 'menganalisis', 'mengevaluasi', 'merancang'],
-  'S2':      ['menganalisis', 'mengevaluasi', 'merancang', 'mengembangkan'],
-  'S3':      ['mengevaluasi', 'merancang', 'mengembangkan'],
+// ── Filter Kemampuan per Jenjang × Tipe MK (sesuai tabel resmi ITS) ─────────
+//
+// Kognitif: C1=menyebut, C2=menjelaskan, C3=menerapkan,
+//           C4=menguraikan, C5=mengevaluasi, C6=menghasilkan gagasan
+// Psikomotorik: P1=meniru, P2=melakukan sebagian, P3=menggabungkan,
+//               P4=melakukan semua, P5=melakukan otomatis
+//
+// Kunci: `${jenjang}__${kode_tipe}` → { kog: [...], psiko: [...] }
+//
+// PROGRAM SARJANA (S1):
+//   Pengantar: C1,C2 | P1,P2,P3
+//   Dasar:     C1,C2,C3 | P1,P2,P3
+//   Bidang:    C1,C2,C3,C4 | P1,P2,P3,P4
+//   Pilihan:   C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   DPA1:      C1,C2,C3,C4 | P1,P2,P3
+//   DPA2:      C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   PA:        C1,C2,C3,C4,C5 | P1,P2,P3,P4,P5
+//   Prop-TA:   C1,C2,C3,C4,C5 | P1,P2,P3,P4,P5
+//   TA:        C1,C2,C3,C4,C5,C6 | P1,P2,P3,P4,P5
+//
+// PROGRAM PROFESI (Profesi):
+//   Dasar:     C1,C2,C3 | P1,P2,P3,P4
+//   Bidang:    C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   PPA:       C1,C2,C3,C4,C5 | P1,P2,P3,P4,P5
+//
+// PROGRAM MAGISTER (S2):
+//   Umum:      C1,C2,C3,C4 | P1,P2,P3,P4
+//   P-Dasar:   C1,C2,C3,C4 | P1,P2,P3,P4
+//   P-Bidang:  C1,C2,C3,C4,C5 | P1,P2,P3,P4,P5
+//   W-shop:    C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   Prop-R:    C1,C2,C3,C4,C5,C6 | P1,P2,P3,P4,P5
+//   Tesis-R:   C1,C2,C3,C4,C5,C6 | P1,P2,P3,P4,P5
+//   PAL:       C1,C2,C3,C4 | P1,P2,P3,P4,P5
+//   W-shop(P): C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   Prop-PA:   C1,C2,C3,C4,C5,C6 | P1,P2,P3,P4,P5
+//   Tesis-PA:  C1,C2,C3,C4,C5,C6 | P1,P2,P3,P4,P5
+//
+// PROGRAM DOKTOR (S3):
+//   Umum:      C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   Pilihan:   C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   Prop-D:    C1,C2,C3,C4,C5 | P1,P2,P3,P4
+//   DIS:       C1,C2,C3,C4,C5 | P1,P2,P3,P4,P5
+
+const KK = {
+  // Kognitif (C1-C6)
+  kog: {
+    C1:  'menyebut',
+    C2:  'menjelaskan',
+    C3:  'menerapkan',
+    C4:  'menguraikan',
+    C5:  'mengevaluasi',
+    C6:  'menghasilkan gagasan',
+  },
+  // Psikomotorik (P1-P5)
+  psi: {
+    P1:  'meniru kegiatan',
+    P2:  'melakukan sebagian kegiatan',
+    P3:  'menggabungkan kegiatan',
+    P4:  'melakukan semua kegiatan',
+    P5:  'melakukan otomatis kegiatan',
+  },
 };
 
-// Filter kata kerja psikomotorik per jenjang:
-// S1: semua (melakukan, membuat, mengoperasikan, menggunakan, mempertunjukan)
-// Profesi: fokus praktik profesi (membuat, menggunakan, mempertunjukan)
-// S2: fokus riset/advanced (membuat, mempertunjukan)
-// S3: fokus inovasi/original (membuat, mempertunjukan)
-const KATA_KERJA_PSIKO_BY_JENJANG = {
-  'S1':      ['melakukan', 'membuat', 'mengoperasikan', 'menggunakan', 'mempertunjukan'],
-  'Profesi': ['melakukan', 'membuat', 'menggunakan', 'mempertunjukan'],
-  'S2':      ['membuat', 'mempertunjukan'],
-  'S3':      ['membuat', 'mempertunjukan'],
+// Shorthand builder
+const k = (...levels) => levels.map(l => KK.kog[l]);
+const p = (...levels) => levels.map(l => KK.psi[l]);
+
+const KEMAMPUAN_BY_JENJANG_TIPE = {
+  // ── SARJANA ──────────────────────────────────────────────────────────
+  'S1__pengantar':  { kog: k('C1','C2'),                       psiko: p('P1','P2','P3') },
+  'S1__dasar':      { kog: k('C1','C2','C3'),                  psiko: p('P1','P2','P3') },
+  'S1__bidang':     { kog: k('C1','C2','C3','C4'),             psiko: p('P1','P2','P3','P4') },
+  'S1__pilihan':    { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S1__dpa1':       { kog: k('C1','C2','C3','C4'),             psiko: p('P1','P2','P3') },
+  'S1__dpa2':       { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S1__pa':         { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4','P5') },
+  'S1__prop-ta':    { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4','P5') },
+  'S1__ta':         { kog: k('C1','C2','C3','C4','C5','C6'),   psiko: p('P1','P2','P3','P4','P5') },
+
+  // ── PROFESI ──────────────────────────────────────────────────────────
+  'Profesi__dasar':  { kog: k('C1','C2','C3'),                 psiko: p('P1','P2','P3','P4') },
+  'Profesi__bidang': { kog: k('C1','C2','C3','C4','C5'),       psiko: p('P1','P2','P3','P4') },
+  'Profesi__ppa':    { kog: k('C1','C2','C3','C4','C5'),       psiko: p('P1','P2','P3','P4','P5') },
+
+  // ── MAGISTER ─────────────────────────────────────────────────────────
+  'S2__umum':       { kog: k('C1','C2','C3','C4'),             psiko: p('P1','P2','P3','P4') },
+  'S2__p-dasar':    { kog: k('C1','C2','C3','C4'),             psiko: p('P1','P2','P3','P4') },
+  'S2__p-bidang':   { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4','P5') },
+  'S2__w-shop':     { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S2__prop-r':     { kog: k('C1','C2','C3','C4','C5','C6'),   psiko: p('P1','P2','P3','P4','P5') },
+  'S2__tesis-r':    { kog: k('C1','C2','C3','C4','C5','C6'),   psiko: p('P1','P2','P3','P4','P5') },
+  'S2__pal':        { kog: k('C1','C2','C3','C4'),             psiko: p('P1','P2','P3','P4','P5') },
+  'S2__w-shop-p':   { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S2__prop-pa':    { kog: k('C1','C2','C3','C4','C5','C6'),   psiko: p('P1','P2','P3','P4','P5') },
+  'S2__tesis-pa':   { kog: k('C1','C2','C3','C4','C5','C6'),   psiko: p('P1','P2','P3','P4','P5') },
+
+  // ── DOKTOR ───────────────────────────────────────────────────────────
+  'S3__umum':       { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S3__pilihan':    { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S3__prop-d':     { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4') },
+  'S3__dis':        { kog: k('C1','C2','C3','C4','C5'),        psiko: p('P1','P2','P3','P4','P5') },
 };
 
-// Helper: ambil kata kerja yang sesuai jenjang (fallback ke semua jika tidak ada jenjang)
-function getKataKerjaKog(jenjang) {
-  return KATA_KERJA_KOGNITIF_BY_JENJANG[jenjang] || KATA_KERJA_KOGNITIF;
+// Helper: ambil kemampuan sesuai jenjang + kode_tipe (case-insensitive)
+function getKemampuan(jenjang, kodeTipe) {
+  if (!jenjang) return { kog: KATA_KERJA_KOGNITIF, psiko: KATA_KERJA_PSIKO };
+  const key = `${jenjang}__${(kodeTipe || '').toLowerCase()}`;
+  const found = KEMAMPUAN_BY_JENJANG_TIPE[key];
+  if (found) return found;
+  // Fallback: cari berdasarkan jenjang saja (ambil semua kata kerja jenjang tsb)
+  const allForJenjang = Object.entries(KEMAMPUAN_BY_JENJANG_TIPE)
+    .filter(([k]) => k.startsWith(`${jenjang}__`))
+    .map(([, v]) => v);
+  if (allForJenjang.length) {
+    // Gabungkan semua pilihan (union) sebagai fallback
+    const kogSet = new Set(allForJenjang.flatMap(v => v.kog));
+    const psiSet = new Set(allForJenjang.flatMap(v => v.psiko));
+    return { kog: [...kogSet], psiko: [...psiSet] };
+  }
+  return { kog: KATA_KERJA_KOGNITIF, psiko: KATA_KERJA_PSIKO };
 }
-function getKataKerjaPsiko(jenjang) {
-  return KATA_KERJA_PSIKO_BY_JENJANG[jenjang] || KATA_KERJA_PSIKO;
+
+// Compat helper (digunakan oleh useEffect reset di Step4CPMK)
+function getKataKerjaKog(jenjang, kodeTipe) {
+  return getKemampuan(jenjang, kodeTipe).kog;
+}
+function getKataKerjaPsiko(jenjang, kodeTipe) {
+  return getKemampuan(jenjang, kodeTipe).psiko;
 }
 
 // KOGNITIF: elemen pengetahuan
@@ -1174,10 +1277,13 @@ const UKURAN_KETERCAPAIAN = [
   'sesuai literatur dan pedoman baku mutu',
 ];
 
-// PSIKOMOTORIK: maks 2 kata kerja
+// PSIKOMOTORIK: semua kata kerja (P1-P5, sesuai tabel ITS)
 const KATA_KERJA_PSIKO = [
-  'melakukan', 'membuat', 'mengoperasikan',
-  'menggunakan', 'mempertunjukan',
+  'meniru kegiatan',              // P1 Procedural
+  'melakukan sebagian kegiatan',  // P2 Partial-performance
+  'menggabungkan kegiatan',       // P3 Coord-performance
+  'melakukan semua kegiatan',     // P4 Conscious control
+  'melakukan otomatis kegiatan',  // P5 Mastery
 ];
 
 // PSIKOMOTORIK: objek kegiatan
@@ -1390,11 +1496,10 @@ function CheckboxSelector({ label, options, val1, val2, onChange1, onChange2, re
 }
 
 // Form builder dalam modal
-function CpmkBuilderFields({ tipe, fields, onChange, jenjang }) {
+function CpmkBuilderFields({ tipe, fields, onChange, jenjang, kodeTipe }) {
   const upd = patch => onChange({ ...fields, ...patch });
-  // Kata kerja yang difilter sesuai jenjang MK
-  const kkKog = getKataKerjaKog(jenjang);
-  const kkPsiko = getKataKerjaPsiko(jenjang);
+  // Kata kerja yang difilter sesuai jenjang × tipe MK
+  const { kog: kkKog, psiko: kkPsiko } = getKemampuan(jenjang, kodeTipe);
 
   if (tipe === 'kognitif') return (
     <>
@@ -1581,7 +1686,7 @@ const EMPTY_CPMK_FIELDS = {
 };
 
 // Modal generator CPMK
-function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose, jenjang }) {
+function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose, jenjang, kodeTipe }) {
   const [draft, setDraft] = useState({ ...EMPTY_CPMK_FIELDS, ...item });
   const tipe = draft.tipe || 'kognitif';
   const preview = buildCpmkStatement(tipe, draft);
@@ -1627,7 +1732,7 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                   color: jenjang === 'S3' ? '#92400e' : jenjang === 'S2' ? '#5b21b6' : jenjang === 'Profesi' ? '#166534' : '#1e40af',
                   padding: '2px 10px', borderRadius: 999, verticalAlign: 'middle',
                 }}>
-                  {jenjang}
+                  {jenjang}{kodeTipe ? ` · ${kodeTipe.toUpperCase()}` : ''}
                 </span>
               )}
             </h3>
@@ -1675,7 +1780,7 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
             <div style={{ height: 1, background: '#f1f5f9', margin: '0 0 16px' }} />
 
             {/* Fields sesuai tipe */}
-            <CpmkBuilderFields tipe={tipe} fields={draft} onChange={d => setDraft(p => ({...p, ...d}))} jenjang={jenjang} />
+            <CpmkBuilderFields tipe={tipe} fields={draft} onChange={d => setDraft(p => ({...p, ...d}))} jenjang={jenjang} kodeTipe={kodeTipe} />
 
             {/* Pemetaan CPL */}
             {cplTersedia.length > 0 && (
@@ -1784,14 +1889,13 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
 }
 
 // ─── Langkah 4: CPMK ─────────────────────────────────────────────────────
-function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, isStudio }) {
+function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, isStudio }) {
   const [modalIdx, setModalIdx] = useState(null); // null = tutup
 
-  // Jika jenjang berubah, reset kata kerja yang tidak valid untuk jenjang baru
+  // Jika jenjang atau tipe MK berubah, reset kata kerja yang tidak valid
   useEffect(() => {
     if (!jenjang) return;
-    const validKog = getKataKerjaKog(jenjang);
-    const validPsiko = getKataKerjaPsiko(jenjang);
+    const { kog: validKog, psiko: validPsiko } = getKemampuan(jenjang, kodeTipe);
     const updated = cpmk.map(c => ({
       ...c,
       kognitif_1: validKog.includes(c.kognitif_1) ? c.kognitif_1 : '',
@@ -1799,14 +1903,13 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, isStudio })
       psiko_1:    validPsiko.includes(c.psiko_1)   ? c.psiko_1   : '',
       psiko_2:    validPsiko.includes(c.psiko_2)   ? c.psiko_2   : '',
     }));
-    // Hanya update jika ada perubahan (hindari loop)
     const changed = updated.some((c, i) =>
       c.kognitif_1 !== cpmk[i].kognitif_1 || c.kognitif_2 !== cpmk[i].kognitif_2 ||
       c.psiko_1 !== cpmk[i].psiko_1 || c.psiko_2 !== cpmk[i].psiko_2
     );
     if (changed) onChange(updated);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jenjang]);
+  }, [jenjang, kodeTipe]);
 
   const addCPMK = () => {
     const newIdx = cpmk.length;
@@ -1967,6 +2070,7 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, isStudio })
           onSave={(item) => saveFromModal(modalIdx, item)}
           onClose={() => setModalIdx(null)}
           jenjang={jenjang}
+          kodeTipe={kodeTipe}
         />
       )}
     </div>
