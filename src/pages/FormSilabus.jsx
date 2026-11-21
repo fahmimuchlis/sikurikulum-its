@@ -761,8 +761,31 @@ function Step2Deskripsi({ mkDipilih, deskripsi, onChange, desMk, onChangeDesMk, 
         </div>
       )}
 
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 20, fontSize: 13 }}>
-        ℹ️ Pilih komponen di bawah — deskripsi MK terbentuk otomatis sesuai <strong>pola standar ITS</strong>, lalu Anda bisa tambahkan narasi bebas. Terjemahan Inggris disarankan otomatis di panel kanan.
+      {/* Panduan mengisi Step 2 */}
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '14px 16px', marginBottom: 20, fontSize: 13 }}>
+        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: 8 }}>📝 Panduan Pengisian Deskripsi Mata Kuliah</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12, color: '#1e3a8a' }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>🅰 Bagian A — Pengetahuan &amp; Ketrampilan</div>
+            <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7, color: '#374151' }}>
+              <li><strong>① Kemampuan:</strong> pilih kata kerja aktif yang menggambarkan level kognitif lulusan (cth: <em>memahami, menerapkan, menghasilkan</em>)</li>
+              <li><strong>② Jenis Pengetahuan:</strong> pilih jenis materi MK (faktual, konseptual, prosedural, atau meta-kognitif)</li>
+              <li><strong>③ Kelompok Bahan Kajian:</strong> tuliskan tema/topik utama yang dipelajari, dalam 1–2 frasa singkat (cth: <em>aspek keberlanjutan dalam perancangan arsitektur tropis</em>)</li>
+            </ul>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>🅱 Bagian B — Sikap &amp; Metoda</div>
+            <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7, color: '#374151' }}>
+              <li><strong>④ Bentuk Penugasan:</strong> cara mahasiswa mengerjakan (mandiri/kelompok)</li>
+              <li><strong>⑤ Lingkup Kegiatan:</strong> jenis kegiatan akademik (kuliah, studio, penelitian, dll.)</li>
+              <li><strong>⑥ Sikap/Etika:</strong> nilai-nilai yang ditanamkan selama proses belajar</li>
+              <li><strong>⑦ Deskripsi Tambahan (opsional):</strong> narasi bebas untuk memperkaya deskripsi — konteks, pendekatan, atau keunikan MK ini</li>
+            </ul>
+          </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#3b82f6' }}>
+          💡 Kalimat deskripsi terbentuk <strong>otomatis</strong> dari pilihan Anda sesuai pola standar ITS. Terjemahan Inggris otomatis tersedia di panel kanan.
+        </div>
       </div>
 
       {/* Layout utama: form kiri, preview dua kolom kanan */}
@@ -1842,9 +1865,33 @@ function SubCpmkKognitifPanel({ subList, onChange, parentFields, tipe, totalSubC
 
   return (
     <div>
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#1e40af', marginBottom: 10 }}>
-        📌 Sub-CPMK merupakan rincian dari CPMK <strong>{parentFields.no || 'ini'}</strong>.
-        {elemenParent && <> Elemen pengetahuan diwariskan: <strong>{elemenParent}</strong>.</>}
+      {/* Panduan Sub-CPMK Kognitif */}
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 14px', fontSize: 12, marginBottom: 14 }}>
+        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: 6 }}>🧠 Panduan Sub-CPMK Kognitif — {parentFields.no || 'CPMK ini'}</div>
+        <div style={{ color: '#1e3a8a', lineHeight: 1.7 }}>
+          Sub-CPMK adalah <strong>rincian operasional</strong> dari CPMK induk yang memandu aktivitas pembelajaran per sesi/pertemuan.
+        </div>
+        <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 600, color: '#1d4ed8', marginBottom: 3 }}>🔤 Sub-Kata Kerja</div>
+            <div style={{ color: '#374151' }}>Pilih kata kerja turunan Bloom yang lebih spesifik dari kata kerja CPMK induk (cth: induk <em>menjelaskan</em> → sub <em>mengklasifikasikan</em>)</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 600, color: '#1d4ed8', marginBottom: 3 }}>📚 Elemen Pengetahuan</div>
+            <div style={{ color: '#374151' }}>Topik spesifik yang dipelajari — diwariskan dari CPMK induk{elemenParent ? <>, saat ini: <em>"{elemenParent}"</em></> : ', bisa diubah sesuai rincian pertemuan'}.</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 600, color: '#1d4ed8', marginBottom: 3 }}>🗒 Rincian Sub-Bahan Kajian</div>
+            <div style={{ color: '#374151' }}>Topik/materi yang lebih rinci untuk pertemuan ini (cth: <em>"teori dasar digitalisasi sebagai data rancang"</em>)</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 600, color: '#1d4ed8', marginBottom: 3 }}>📝 Bentuk Penugasan &amp; Kriteria</div>
+            <div style={{ color: '#374151' }}>Cara mahasiswa mengerjakan (mandiri/kelompok) dan standar kualitas hasil (cth: <em>lengkap, sistematik, komunikatif dan akurat</em>)</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: '#3b82f6' }}>
+          💡 Pola kalimat otomatis: <em>"Mampu [sub-kata kerja] [elemen] [rincian] [penugasan] berdasarkan acuan yang sahih dan dikerjakan dengan [kriteria]."</em>
+        </div>
       </div>
 
       {/* Daftar sub-CPMK */}
@@ -2056,9 +2103,33 @@ function SubCpmkPsikoPanel({ subList, onChange, parentFields, tipe, totalSubCpmk
 
   return (
     <div>
-      <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#5b21b6', marginBottom: 10 }}>
-        📌 Sub-CPMK merupakan rincian dari CPMK <strong>{parentFields.no || 'ini'}</strong>.
-        Kata kerja psikomotorik: <strong>{kkPsikoParent.join(', ')}</strong>.
+      {/* Panduan Sub-CPMK Psikomotorik */}
+      <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 10, padding: '12px 14px', fontSize: 12, marginBottom: 14 }}>
+        <div style={{ fontWeight: 700, color: '#5b21b6', marginBottom: 6 }}>🤝 Panduan Sub-CPMK Psikomotorik — {parentFields.no || 'CPMK ini'}</div>
+        <div style={{ color: '#4c1d95', lineHeight: 1.7 }}>
+          Sub-CPMK Psikomotorik merinci <strong>keterampilan/aktivitas praktis</strong> yang dilakukan mahasiswa pada setiap sesi.
+        </div>
+        <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #ddd6fe' }}>
+            <div style={{ fontWeight: 600, color: '#7c3aed', marginBottom: 3 }}>💪 Kemampuan Psiko (dari CPMK)</div>
+            <div style={{ color: '#374151' }}>Kata kerja psikomotorik dari CPMK induk — klik salah satu untuk memilih. Kata kerja aktif: {kkPsikoParent.join(', ')}.</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #ddd6fe' }}>
+            <div style={{ fontWeight: 600, color: '#7c3aed', marginBottom: 3 }}>🔧 Penjelasan Kegiatan</div>
+            <div style={{ color: '#374151' }}>Kata kerja spesifik aktivitas (cth: <em>membuat, mengoperasikan, mempertunjukan</em>). Pilih dari daftar yang tersedia.</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #ddd6fe' }}>
+            <div style={{ fontWeight: 600, color: '#7c3aed', marginBottom: 3 }}>📦 Objek Kegiatan</div>
+            <div style={{ color: '#374151' }}>Produk/artefak yang dihasilkan (cth: <em>dokumen teknis, model, sajian grafis, presentasi, poster</em>)</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #ddd6fe' }}>
+            <div style={{ fontWeight: 600, color: '#7c3aed', marginBottom: 3 }}>🗒 Rincian Tugas &amp; Kriteria</div>
+            <div style={{ color: '#374151' }}>Topik spesifik tugas dan standar kualitas pengerjaan (cth: <em>lengkap dan sesuai prosedur</em>)</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: '#7c3aed' }}>
+          💡 Pola kalimat otomatis: <em>"Mampu [kemampuan] [penjelasan_keg] [objek] pada tugas [rincian] [penugasan] berdasarkan panduan yang sahih dan dikerjakan dengan [kriteria]."</em>
+        </div>
       </div>
 
       {subList.map((sub, i) => {
@@ -2284,8 +2355,33 @@ function SubCpmkAfeksiPanel({ subList, onChange, parentFields, tipe, totalSubCpm
 
   return (
     <div>
-      <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#991b1b', marginBottom: 10 }}>
-        📌 Sub-CPMK Afeksi dari CPMK <strong>{parentFields.no || 'ini'}</strong> — merinci sikap dan kegiatan akademik yang diharapkan.
+      {/* Panduan Sub-CPMK Afeksi */}
+      <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 14px', fontSize: 12, marginBottom: 14 }}>
+        <div style={{ fontWeight: 700, color: '#991b1b', marginBottom: 6 }}>❤️ Panduan Sub-CPMK Afeksi/Sikap — {parentFields.no || 'CPMK ini'}</div>
+        <div style={{ color: '#7f1d1d', lineHeight: 1.7 }}>
+          Sub-CPMK Afeksi merinci <strong>sikap, nilai, dan etika akademik</strong> yang diharapkan dari mahasiswa selama pembelajaran berlangsung.
+        </div>
+        <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #fecaca' }}>
+            <div style={{ fontWeight: 600, color: '#dc2626', marginBottom: 3 }}>💬 Kata Sikap</div>
+            <div style={{ color: '#374151' }}>Kata kerja afektif yang menggambarkan sikap mahasiswa (cth: <em>menunjukkan perhatian, berpartisipasi, menghargai upaya/pendapat</em>)</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #fecaca' }}>
+            <div style={{ fontWeight: 600, color: '#dc2626', marginBottom: 3 }}>🎯 Jenis Kegiatan</div>
+            <div style={{ color: '#374151' }}>Konteks kegiatan di mana sikap ditunjukkan (cth: <em>perkuliahan dan diskusi, pembuatan tugas, ujian</em>). Pilih <strong>ujian</strong> untuk penilaian sikap saat ujian.</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #fecaca' }}>
+            <div style={{ fontWeight: 600, color: '#dc2626', marginBottom: 3 }}>📖 Rincian Materi/Topik</div>
+            <div style={{ color: '#374151' }}>Topik/materi yang menjadi konteks sikap (cth: <em>berpikir merancang digital</em> atau <em>keberlanjutan arsitektur</em>)</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 7, padding: '7px 10px', border: '1px solid #fecaca' }}>
+            <div style={{ fontWeight: 600, color: '#dc2626', marginBottom: 3 }}>📐 Lingkup Penilaian</div>
+            <div style={{ color: '#374151' }}>Tempat/lingkup penilaian sikap: <em>di dalam kelompok</em>, <em>di dalam kelas</em>, atau keduanya. Isi <strong>1 Sub-CPMK</strong> jika tugas/ujian saja; <strong>2</strong> jika keduanya.</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: '#dc2626' }}>
+          💡 Pola kalimat otomatis: <em>"Mampu [kata_sikap] pada kegiatan [kegiatan] materi/topik [rincian] [lingkup penilaian]."</em>
+        </div>
       </div>
 
       {subList.map((sub, i) => {
@@ -2588,13 +2684,15 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
           {activeTab === 'cpmk' && <div style={{ padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid #f1f5f9' }}>
             {/* Kode CPMK */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Kode CPMK</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 2 }}>Kode CPMK</label>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>Nomor urut CPMK ini — bisa diubah, cth: CPMK-1, C1, dll.</div>
               <input className="form-input" style={{ fontSize: 13, maxWidth: 140 }} value={draft.no||`CPMK-${idx+1}`} onChange={e => setDraft(p => ({...p, no: e.target.value}))} />
             </div>
 
             {/* Pilih Tipe */}
             <div style={{ marginBottom: 18 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Tipe CPMK <span style={{ color: '#ef4444' }}>*</span></label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 2 }}>Tipe CPMK <span style={{ color: '#ef4444' }}>*</span></label>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>Pilih tipe domain kemampuan — tipe menentukan field dan pola kalimat yang digunakan.</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 {TIPE_OPTS.map(t => (
                   <button key={t.value} type="button" title={t.desc}
@@ -2622,10 +2720,12 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
             {/* Pemetaan CPL */}
             {cplTersedia.length > 0 && (
               <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 2 }}>
                   Pemetaan ke CPL <span style={{ color: '#ef4444' }}>*</span>
-                  <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>(dari CPL yang sudah dipilih)</span>
                 </label>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
+                  Centang CPL yang <strong>dicapai</strong> oleh CPMK ini — 1 CPMK bisa dipetakan ke beberapa CPL. CPL yang tersedia adalah yang sudah Anda pilih di Langkah 3.
+                </div>
                 <div style={{ display: 'grid', gap: 6 }}>
                   {cplTersedia.map(cpl => (
                     <label key={cpl.id} style={{
@@ -2820,8 +2920,30 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, i
         )}
       </div>
 
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', marginBottom: 20, fontSize: 13 }}>
-        ℹ️ Klik <em>✏️ Buka Generator</em> untuk menyusun kalimat standar ITS. Petakan setiap CPMK ke CPL yang relevan.
+      {/* Panduan mengisi Step 4 CPMK */}
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: 8, fontSize: 13 }}>📌 Panduan Pengisian CPMK</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12 }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: '8px 12px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>🧠 Kognitif</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>Kemampuan berpikir mahasiswa. Isi: <strong>kata kerja kognitif</strong> (C1–C6 Bloom), <strong>elemen pengetahuan</strong>, dan <strong>rincian topik</strong>. Contoh: <em>"Mampu menjelaskan konsep digitalisasi..."</em></div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '8px 12px', border: '1px solid #ddd6fe' }}>
+            <div style={{ fontWeight: 700, color: '#7c3aed', marginBottom: 4 }}>🤝 Psikomotorik</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>Kemampuan praktis/keterampilan. Isi: <strong>kata kerja psiko</strong>, <strong>objek kegiatan</strong>, dan <strong>rincian produk</strong>. Contoh: <em>"Mampu membuat model arsitektur..."</em></div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '8px 12px', border: '1px solid #bae6fd' }}>
+            <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: 4 }}>🧠🤝 Gabungan</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>Satu CPMK menggabungkan kognitif + psikomotorik dalam satu kalimat. Dapat dipecah menjadi <strong>1 Sub-CPMK Kognitif</strong> + <strong>1 Sub-CPMK Psikomotorik</strong>.</div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '8px 12px', border: '1px solid #fecaca' }}>
+            <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>❤️ Afeksi</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>Sikap &amp; etika akademik. Isi: <strong>kata sikap</strong>, <strong>jenis kegiatan</strong>, dan <strong>topik/materi</strong>. Biasanya <strong>1 nomor per MK</strong>, bisa diisi 1 (tugas/ujian) atau 2 Sub-CPMK.</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#3b82f6' }}>
+          💡 Klik <em>✏️ Buka Generator</em> pada setiap CPMK untuk menyusun kalimat. Setelah mengisi CPMK, buka tab <strong>Sub-CPMK</strong> (maks. 2 per CPMK) lalu petakan ke <strong>CPL</strong> yang relevan.
+        </div>
       </div>
 
       {/* Daftar CPMK */}
@@ -2978,6 +3100,44 @@ function Step5BahanKajian({ bahanKajian, setBahanKajian, prasyarat, setPrasyarat
 
   return (
     <div>
+      {/* Panduan Step 5 */}
+      <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+        <div style={{ fontWeight: 700, color: '#14532d', marginBottom: 8, fontSize: 13 }}>📚 Panduan Pengisian Bahan Kajian &amp; Pustaka</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: 12 }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #86efac' }}>
+            <div style={{ fontWeight: 700, color: '#15803d', marginBottom: 4 }}>📋 Bahan Kajian / Pokok Bahasan</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>
+              Daftar topik/materi utama yang dibahas dalam MK ini. Setiap entri adalah <strong>satu pokok bahasan</strong> yang akan muncul di SAP (jadwal per minggu). Contoh:
+              <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
+                <li>Pengantar digitalisasi arsitektur</li>
+                <li>Teknik pemodelan parametrik</li>
+                <li>Simulasi energi bangunan</li>
+              </ul>
+            </div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #86efac' }}>
+            <div style={{ fontWeight: 700, color: '#15803d', marginBottom: 4 }}>🔗 Mata Kuliah Prasyarat</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>
+              MK yang harus sudah lulus sebelum mengambil MK ini. Pisahkan dengan koma jika lebih dari satu. Opsional — kosongkan jika tidak ada prasyarat.
+            </div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #86efac' }}>
+            <div style={{ fontWeight: 700, color: '#15803d', marginBottom: 4 }}>📖 Pustaka Utama (Wajib)</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>
+              Referensi utama yang <strong>wajib</strong> dibaca mahasiswa. Gunakan format APA:<br/>
+              <em>Nama. (Tahun). Judul Buku. Penerbit.</em><br/>
+              Minimal 1 referensi, disarankan 2–5 buku/artikel.
+            </div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #86efac' }}>
+            <div style={{ fontWeight: 700, color: '#15803d', marginBottom: 4 }}>📰 Pustaka Pendukung (Opsional)</div>
+            <div style={{ color: '#374151', lineHeight: 1.6 }}>
+              Referensi tambahan yang dianjurkan — jurnal, artikel, modul, website resmi, atau buku penunjang. Format sama dengan pustaka utama.
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Bahan Kajian */}
       <div className="form-group">
         <label className="form-label">Bahan Kajian / Pokok Bahasan</label>
