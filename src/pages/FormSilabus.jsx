@@ -1801,7 +1801,7 @@ const EMPTY_CPMK_FIELDS = {
 };
 
 // ── Generator Sub-CPMK Kognitif (panel di dalam modal CPMK) ──────────────────
-function SubCpmkKognitifPanel({ subList, onChange, parentFields }) {
+function SubCpmkKognitifPanel({ subList, onChange, parentFields, tipe, totalSubCpmk }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
 
   // Kumpulkan kata kerja kognitif dari parent CPMK (1 atau 2)
@@ -1809,7 +1809,13 @@ function SubCpmkKognitifPanel({ subList, onChange, parentFields }) {
   // Elemen pengetahuan diwariskan dari parent
   const elemenParent = parentFields.elemen_1 || '';
 
+  // Limit: kognitif_psiko → max 1 Sub-CPMK kog; lainnya max 2 total
+  const isGabungan = tipe === 'kognitif_psiko';
+  const maxKog = isGabungan ? 1 : 2;
+  const canAdd = subList.length < maxKog && (isGabungan || totalSubCpmk < 2);
+
   const addSub = () => {
+    if (!canAdd) return;
     const newList = [...subList, { ...EMPTY_SUB_CPMK_KOG, elemen: elemenParent }];
     onChange(newList);
     setExpandedIdx(newList.length - 1);
@@ -1988,20 +1994,39 @@ function SubCpmkKognitifPanel({ subList, onChange, parentFields }) {
       <button
         type="button"
         onClick={addSub}
-        style={{ marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#4f46e5', background: '#eff0ff', border: '1.5px dashed #818cf8', borderRadius: 8, cursor: 'pointer' }}
+        disabled={!canAdd}
+        title={
+          !canAdd
+            ? isGabungan
+              ? 'CPMK Gabungan hanya dapat memiliki 1 Sub-CPMK Kognitif'
+              : 'Maks. 2 Sub-CPMK per CPMK (total semua tipe)'
+            : ''
+        }
+        style={{
+          marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+          color: canAdd ? '#4f46e5' : '#94a3b8',
+          background: canAdd ? '#eff0ff' : '#f1f5f9',
+          border: `1.5px dashed ${canAdd ? '#818cf8' : '#cbd5e1'}`,
+          borderRadius: 8, cursor: canAdd ? 'pointer' : 'not-allowed',
+        }}
       >
-        + Tambah Sub-CPMK Kognitif
+        {canAdd ? '+ Tambah Sub-CPMK Kognitif' : `✋ Maks. ${maxKog} Sub-CPMK Kognitif${!isGabungan && totalSubCpmk >= 2 ? ' (total 2 tercapai)' : ''}`}
       </button>
     </div>
   );
 }
 
 // ── Generator Sub-CPMK Psikomotorik (panel di dalam modal CPMK) ──────────────
-function SubCpmkPsikoPanel({ subList, onChange, parentFields }) {
+function SubCpmkPsikoPanel({ subList, onChange, parentFields, tipe, totalSubCpmk }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
 
   // Kata kerja psikomotorik dari parent CPMK (1 atau 2)
   const kkPsikoParent = [parentFields.psiko_1, parentFields.psiko_2].filter(Boolean);
+
+  // Limit: kognitif_psiko → max 1 Sub-CPMK psiko; lainnya max 2 total
+  const isGabungan = tipe === 'kognitif_psiko';
+  const maxPsiko = isGabungan ? 1 : 2;
+  const canAdd = subList.length < maxPsiko && (isGabungan || totalSubCpmk < 2);
 
   if (kkPsikoParent.length === 0) {
     return (
@@ -2012,6 +2037,7 @@ function SubCpmkPsikoPanel({ subList, onChange, parentFields }) {
   }
 
   const addSub = () => {
+    if (!canAdd) return;
     const newList = [...subList, { ...EMPTY_SUB_CPMK_PSIKO }];
     onChange(newList);
     setExpandedIdx(newList.length - 1);
@@ -2208,19 +2234,38 @@ function SubCpmkPsikoPanel({ subList, onChange, parentFields }) {
       <button
         type="button"
         onClick={addSub}
-        style={{ marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#7c3aed', background: '#f5f3ff', border: '1.5px dashed #a78bfa', borderRadius: 8, cursor: 'pointer' }}
+        disabled={!canAdd}
+        title={
+          !canAdd
+            ? isGabungan
+              ? 'CPMK Gabungan hanya dapat memiliki 1 Sub-CPMK Psikomotorik'
+              : 'Maks. 2 Sub-CPMK per CPMK (total semua tipe)'
+            : ''
+        }
+        style={{
+          marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+          color: canAdd ? '#7c3aed' : '#94a3b8',
+          background: canAdd ? '#f5f3ff' : '#f1f5f9',
+          border: `1.5px dashed ${canAdd ? '#a78bfa' : '#cbd5e1'}`,
+          borderRadius: 8, cursor: canAdd ? 'pointer' : 'not-allowed',
+        }}
       >
-        + Tambah Sub-CPMK Psikomotorik
+        {canAdd ? '+ Tambah Sub-CPMK Psikomotorik' : `✋ Maks. ${maxPsiko} Sub-CPMK Psiko${!isGabungan && totalSubCpmk >= 2 ? ' (total 2 tercapai)' : ''}`}
       </button>
     </div>
   );
 }
 
 // ── Generator Sub-CPMK Afeksi (panel di dalam modal CPMK) ────────────────────
-function SubCpmkAfeksiPanel({ subList, onChange, parentFields }) {
+function SubCpmkAfeksiPanel({ subList, onChange, parentFields, tipe, totalSubCpmk }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
 
+  // Max 2 Sub-CPMK Afeksi (1=tugas ATAU ujian, 2=tugas DAN ujian)
+  const MAX_AFEKSI = 2;
+  const canAdd = subList.length < MAX_AFEKSI;
+
   const addSub = () => {
+    if (!canAdd) return;
     const newList = [...subList, { ...EMPTY_SUB_CPMK_AFEKSI }];
     onChange(newList);
     setExpandedIdx(newList.length - 1);
@@ -2373,12 +2418,32 @@ function SubCpmkAfeksiPanel({ subList, onChange, parentFields }) {
         );
       })}
 
+      {/* Info panduan afeksi */}
+      {subList.length === 0 && (
+        <div style={{ marginBottom: 12, background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#78350f' }}>
+          💡 Sub-CPMK Afeksi bisa diisi 1 (Tugas <em>atau</em> Ujian) atau 2 (Tugas <em>dan</em> Ujian) — maks. 2 entri.
+        </div>
+      )}
+      {subList.length === 1 && (
+        <div style={{ marginBottom: 12, background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#065f46' }}>
+          ✅ 1 Sub-CPMK Afeksi terisi. Tambah 1 lagi jika ada penilaian tugas <em>dan</em> ujian.
+        </div>
+      )}
+
       <button
         type="button"
         onClick={addSub}
-        style={{ marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#dc2626', background: '#fef2f2', border: '1.5px dashed #fca5a5', borderRadius: 8, cursor: 'pointer' }}
+        disabled={!canAdd}
+        title={!canAdd ? 'Maks. 2 Sub-CPMK Afeksi (tugas + ujian)' : ''}
+        style={{
+          marginTop: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+          color: canAdd ? '#dc2626' : '#94a3b8',
+          background: canAdd ? '#fef2f2' : '#f1f5f9',
+          border: `1.5px dashed ${canAdd ? '#fca5a5' : '#cbd5e1'}`,
+          borderRadius: 8, cursor: canAdd ? 'pointer' : 'not-allowed',
+        }}
       >
-        + Tambah Sub-CPMK Afeksi
+        {canAdd ? `+ Tambah Sub-CPMK Afeksi (${subList.length}/2)` : '✋ Maks. 2 Sub-CPMK Afeksi tercapai'}
       </button>
     </div>
   );
@@ -2487,6 +2552,8 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                 subList={subCpmkKogList}
                 onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_kog: list }))}
                 parentFields={draft}
+                tipe={tipe}
+                totalSubCpmk={subCpmkKogList.length + subCpmkPsikoList.length + subCpmkAfeksiList.length}
               />
             </div>
           )}
@@ -2498,6 +2565,8 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                 subList={subCpmkPsikoList}
                 onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_psiko: list }))}
                 parentFields={draft}
+                tipe={tipe}
+                totalSubCpmk={subCpmkKogList.length + subCpmkPsikoList.length + subCpmkAfeksiList.length}
               />
             </div>
           )}
@@ -2509,6 +2578,8 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                 subList={subCpmkAfeksiList}
                 onChange={(list) => setDraft(p => ({ ...p, sub_cpmk_afeksi: list }))}
                 parentFields={draft}
+                tipe={tipe}
+                totalSubCpmk={subCpmkKogList.length + subCpmkPsikoList.length + subCpmkAfeksiList.length}
               />
             </div>
           )}
@@ -2696,7 +2767,10 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, i
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jenjang, kodeTipe]);
 
+  const MAX_CPMK = 6;
+
   const addCPMK = () => {
+    if (cpmk.length >= MAX_CPMK) return;
     const newIdx = cpmk.length;
     onChange([...cpmk, { ...EMPTY_CPMK_FIELDS, no: `CPMK-${newIdx + 1}` }]);
     setModalIdx(newIdx);
@@ -2837,8 +2911,14 @@ function Step4CPMK({ cpmk, onChange, cplDipilih, daftarCPL, jenjang, kodeTipe, i
         );
       })}
 
-      <button className="btn btn-secondary" onClick={addCPMK} style={{ marginTop: 4 }}>
-        + Tambah CPMK
+      <button
+        className="btn btn-secondary"
+        onClick={addCPMK}
+        disabled={cpmk.length >= MAX_CPMK}
+        title={cpmk.length >= MAX_CPMK ? `Maksimal ${MAX_CPMK} CPMK per mata kuliah` : ''}
+        style={{ marginTop: 4, opacity: cpmk.length >= MAX_CPMK ? 0.45 : 1, cursor: cpmk.length >= MAX_CPMK ? 'not-allowed' : 'pointer' }}
+      >
+        + Tambah CPMK {cpmk.length >= MAX_CPMK && `(Maks. ${MAX_CPMK} tercapai)`}
       </button>
 
       {/* Ringkasan pemetaan */}
