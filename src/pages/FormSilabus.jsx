@@ -6,13 +6,13 @@ import FormLayout, { SectionTooltip } from '../components/FormLayout';
 
 // Daftar nama langkah wizard
 const STEPS = [
-  { id: 1, label: 'Pilih MK', title: 'Pilih Mata Kuliah' },
-  { id: 2, label: 'Deskripsi', title: 'Deskripsi Mata Kuliah' },
-  { id: 3, label: 'CPL', title: 'Capaian Pembelajaran Lulusan (CPL)' },
-  { id: 4, label: 'CPMK', title: 'Capaian Pembelajaran Mata Kuliah (CPMK)' },
-  { id: 5, label: 'Bahan Kajian', title: 'Bahan Kajian & Pustaka' },
-  { id: 6, label: 'SAP', title: 'Rencana Perkuliahan per Minggu' },
-  { id: 7, label: 'Selesai', title: 'Simpan & Selesai' },
+  { id: 1, label: 'Pilih MK',      short: 'MK',   title: 'Pilih Mata Kuliah' },
+  { id: 2, label: 'Deskripsi',     short: 'Des',  title: 'Deskripsi Mata Kuliah' },
+  { id: 3, label: 'CPL',           short: 'CPL',  title: 'Capaian Pembelajaran Lulusan (CPL)' },
+  { id: 4, label: 'CPMK',          short: 'CPMK', title: 'Capaian Pembelajaran Mata Kuliah (CPMK)' },
+  { id: 5, label: 'Bahan Kajian',  short: 'BK',   title: 'Bahan Kajian & Pustaka' },
+  { id: 6, label: 'SAP',           short: 'SAP',  title: 'Rencana Perkuliahan per Minggu' },
+  { id: 7, label: 'Selesai',       short: 'Done', title: 'Simpan & Selesai' },
 ];
 
 // ── Panduan tooltip per langkah ───────────────────────────────────────────────
@@ -340,29 +340,33 @@ export default function FormSilabus({ user }) {
   return (
     <>
       <Navbar user={user} />
-      <FormLayout silabusId={currentSilabusId} canvasProps={canvasProps}>
+      <FormLayout
+        silabusId={currentSilabusId}
+        canvasProps={canvasProps}
+        tabs={STEPS}
+        activeTab={step - 1}
+        onTabChange={(i) => {
+          // Hanya izinkan jump ke step yang sudah dilalui atau 1 step ke depan
+          if (i <= step - 1 || i === step) setStep(i + 1);
+        }}
+      >
 
         {/* ── Tombol kembali + judul ── */}
-        <div style={{ padding: '10px 16px 0', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ padding: '8px 16px 6px', borderBottom: '1px solid #f1f5f9' }}>
           <button
             onClick={() => navigate('/dashboard')}
-            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}
+            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}
           >
             ← Dasbor
           </button>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', marginBottom: 1 }}>
             {isEdit ? 'Edit Dokumen' : 'Dokumen Baru'}
           </div>
           {mkDipilih && (
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: '#64748b' }}>
               {mkDipilih.kode_mk} — {mkDipilih.nama_mk}
             </div>
           )}
-        </div>
-
-        {/* ── Progress wizard kompak ── */}
-        <div style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
-          <WizardProgressCompact steps={STEPS} currentStep={step} />
         </div>
 
         {/* ── Step header dengan tooltip ── */}
@@ -371,16 +375,13 @@ export default function FormSilabus({ user }) {
           hint={STEP_HINTS[step]}
         >
           <div style={{
-            padding: '10px 16px',
+            padding: '8px 16px',
             background: '#f8fafc',
-            borderBottom: '2px solid #e2e8f0',
+            borderBottom: '1px solid #e2e8f0',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
             <div>
-              <span style={{ fontSize: 10, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase' }}>
-                Langkah {step} / {STEPS.length}
-              </span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginTop: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b' }}>
                 {STEPS[step - 1].title}
               </div>
             </div>
