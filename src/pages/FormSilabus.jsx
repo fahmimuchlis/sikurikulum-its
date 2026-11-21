@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
+import FormLayout, { SectionTooltip } from '../components/FormLayout';
 
 // Daftar nama langkah wizard
 const STEPS = [
@@ -13,6 +14,75 @@ const STEPS = [
   { id: 6, label: 'SAP', title: 'Rencana Perkuliahan per Minggu' },
   { id: 7, label: 'Selesai', title: 'Simpan & Selesai' },
 ];
+
+// ── Panduan tooltip per langkah ───────────────────────────────────────────────
+const STEP_HINTS = {
+  1: (
+    <div>
+      <b>Pilih Mata Kuliah</b> yang akan Anda susun kurikulumnya.
+      <br /><br />
+      Daftar MK sudah terfilter sesuai mata kuliah yang Anda ampu. Jenjang dan semester akan menentukan pilihan CPL di langkah berikutnya.
+    </div>
+  ),
+  2: (
+    <div>
+      <b>Deskripsi Mata Kuliah</b> berisi gambaran umum isi, pendekatan, dan output MK.
+      <br /><br />
+      • <b>Pengetahuan & Ketrampilan:</b> pilih kata kerja kognitif (tahu, memahami, menerapkan…) dan jenis pengetahuan (faktual, prosedural, dll.)
+      <br />• <b>Kelompok Bahan Kajian:</b> topik/tema utama yang dipelajari, 1–2 frasa singkat
+      <br />• <b>Metoda Pembelajaran:</b> cara utama belajar (ceramah, studio, diskusi…)
+      <br />• <b>Deskripsi Tambahan:</b> narasi bebas untuk melengkapi konteks MK
+    </div>
+  ),
+  3: (
+    <div>
+      <b>Capaian Pembelajaran Lulusan (CPL)</b> adalah standar kemampuan lulusan program studi.
+      <br /><br />
+      Pilih CPL yang <i>dibebankan</i> ke MK ini. CPL yang sudah dipilih akan muncul di peta kurikulum sebelah kanan.
+      <br /><br />
+      Untuk jenjang S1: biasanya 2–4 CPL per MK. Untuk S2/S3: bisa lebih spesifik.
+    </div>
+  ),
+  4: (
+    <div>
+      <b>CPMK</b> adalah kemampuan spesifik yang ingin dicapai mahasiswa setelah mengikuti MK ini.
+      <br /><br />
+      • Maks. <b>6 CPMK</b> per mata kuliah
+      <br />• Setiap CPMK punya <b>tipe</b>: Kognitif, Psikomotorik, Gabungan, atau Afeksi
+      <br />• Kalimat CPMK dibangun otomatis dari pilihan kata kerja
+      <br />• Tambahkan <b>Sub-CPMK</b> (maks. 2 per CPMK) untuk rincian lebih spesifik
+    </div>
+  ),
+  5: (
+    <div>
+      <b>Bahan Kajian</b> adalah topik/materi yang akan dipelajari sepanjang semester.
+      <br /><br />
+      • Tulis 3–8 bahan kajian utama (tiap baris = satu topik)
+      <br />• <b>Prasyarat MK:</b> MK lain yang harus sudah diambil sebelum MK ini
+      <br />• <b>Pustaka Utama:</b> referensi wajib (buku teks, artikel standar)
+      <br />• <b>Pustaka Pendukung:</b> referensi tambahan/penunjang
+    </div>
+  ),
+  6: (
+    <div>
+      <b>SAP (Satuan Acara Perkuliahan)</b> adalah rencana perkuliahan 16 minggu.
+      <br /><br />
+      • Minggu 8 = UTS, Minggu 16 = UAS (sudah ditetapkan otomatis)
+      <br />• Kolom <b>Sub-CPMK</b>: pilih Sub-CPMK yang dicapai di minggu tersebut
+      <br />• Kolom <b>Bobot</b>: persentase penilaian. Total harus = 100%
+      <br />• Materi dan metoda bisa diisi berbeda tiap minggu
+    </div>
+  ),
+  7: (
+    <div>
+      <b>Langkah terakhir</b> — tinjau ringkasan dokumen Anda.
+      <br /><br />
+      Klik <b>Selesaikan Dokumen</b> untuk mengubah status dari Draf menjadi Final. Dokumen Final akan muncul di Direktori Kurikulum dan bisa dilihat dosen lain.
+      <br /><br />
+      Anda masih bisa kembali ke langkah sebelumnya untuk merevisi.
+    </div>
+  ),
+};
 
 export default function FormSilabus({ user }) {
   const navigate = useNavigate();
@@ -257,149 +327,112 @@ export default function FormSilabus({ user }) {
     );
   }
 
+  // Canvas props — dikirim ke KurikulumCanvas
+  const canvasProps = {
+    mkDipilih,
+    cplDipilih,
+    daftarCPL,
+    cpmk,
+    bahanKajian,
+    desMk,
+  };
+
   return (
     <>
       <Navbar user={user} />
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: 24 }}>
+      <FormLayout silabusId={currentSilabusId} canvasProps={canvasProps}>
+
+        {/* ── Tombol kembali + judul ── */}
+        <div style={{ padding: '10px 16px 0', borderBottom: '1px solid #f1f5f9' }}>
           <button
             onClick={() => navigate('/dashboard')}
-            style={{ background: 'none', border: 'none', color: 'var(--color-gray-500)', fontSize: 14, cursor: 'pointer', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}
           >
-            ← Kembali ke Dasbor
+            ← Dasbor
           </button>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)' }}>
-            {isEdit ? 'Edit Dokumen Kurikulum' : 'Buat Dokumen Kurikulum Baru'}
-          </h1>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+            {isEdit ? 'Edit Dokumen' : 'Dokumen Baru'}
+          </div>
           {mkDipilih && (
-            <p style={{ color: 'var(--color-gray-500)', fontSize: 14, marginTop: 4 }}>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
               {mkDipilih.kode_mk} — {mkDipilih.nama_mk}
-            </p>
+            </div>
           )}
         </div>
 
-        {/* Progress wizard */}
-        <WizardProgress steps={STEPS} currentStep={step} />
+        {/* ── Progress wizard kompak ── */}
+        <div style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
+          <WizardProgressCompact steps={STEPS} currentStep={step} />
+        </div>
 
-        {/* Form card */}
-        <div className="card" style={{ marginTop: 24, padding: '28px 32px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-            <h2 style={{ fontSize: 17, fontWeight: 600 }}>
-              Langkah {step}: {STEPS[step - 1].title}
-            </h2>
-            {saving && (
-              <span style={{ fontSize: 12, color: 'var(--color-gray-500)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div className="spinner spinner-primary" style={{ width: 14, height: 14 }}></div>
-                Menyimpan...
-              </span>
-            )}
-          </div>
-
-          {error && <div className="error-msg">⚠️ {error}</div>}
-
-          {/* Konten setiap langkah */}
-          {step === 1 && (
-            <Step1PilihMK
-              daftarMK={daftarMK}
-              mkDipilih={mkDipilih}
-              onChange={handleMkChange}
-            />
-          )}
-          {step === 2 && (
-            <Step2Deskripsi
-              mkDipilih={mkDipilih}
-              deskripsi={deskripsiMk}
-              onChange={setDeskripsiMk}
-              desMk={desMk}
-              onChangeDesMk={setDesMk}
-              deskripsiEn={deskripsiEn}
-              onChangeDeskripsiEn={setDeskripsiEn}
-            />
-          )}
-          {step === 3 && (
-            <Step3CPL
-              cplFiltered={cplFiltered}
-              cplDipilih={cplDipilih}
-              onChange={setCplDipilih}
-              jenjang={mkDipilih?.jenjang}
-              kodeTipeMk={mkDipilih?.kode_tipe}
-              cplOtomatis={cplOtomatis}
-            />
-          )}
-          {step === 4 && (
-            <Step4CPMK
-              cpmk={cpmk}
-              onChange={setCpmk}
-              cplDipilih={cplDipilih}
-              daftarCPL={daftarCPL}
-              jenjang={mkDipilih?.jenjang}
-              kodeTipe={mkDipilih?.kode_tipe}
-              isStudio={mkDipilih?.tipe === 'studio'}
-            />
-          )}
-          {step === 5 && (
-            <Step5BahanKajian
-              bahanKajian={bahanKajian}
-              setBahanKajian={setBahanKajian}
-              prasyarat={prasyarat}
-              setPrasyarat={setPrasyarat}
-              pustakaUtama={pustakaUtama}
-              setPustakaUtama={setPustakaUtama}
-              pustakaP={pustakaP}
-              setPustakaP={setPustakaP}
-            />
-          )}
-          {step === 6 && (
-            <Step6SAP
-              sapMinggu={sapMinggu}
-              onChange={setSapMinggu}
-              cpmk={cpmk}
-            />
-          )}
-          {step === 7 && (
-            <Step7Selesai
-              mkDipilih={mkDipilih}
-              cplDipilih={cplDipilih}
-              cpmk={cpmk}
-              bahanKajian={bahanKajian}
-              daftarCPL={daftarCPL}
-            />
-          )}
-
-          {/* Navigasi */}
+        {/* ── Step header dengan tooltip ── */}
+        <SectionTooltip
+          title={STEPS[step - 1].title}
+          hint={STEP_HINTS[step]}
+        >
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginTop: 32,
-            paddingTop: 20,
-            borderTop: '1px solid var(--color-gray-200)',
+            padding: '10px 16px',
+            background: '#f8fafc',
+            borderBottom: '2px solid #e2e8f0',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
-            <button
-              className="btn btn-secondary"
-              onClick={handleBack}
-              disabled={step === 1}
-            >
-              ← Sebelumnya
-            </button>
-
-            {step < 7 ? (
-              <button className="btn btn-primary" onClick={handleNext} disabled={saving}>
-                {saving ? <><div className="spinner" style={{ width: 16, height: 16 }}></div>Menyimpan...</> : 'Lanjut →'}
-              </button>
-            ) : (
-              <button
-                className="btn btn-primary"
-                onClick={handleSelesai}
-                disabled={saving}
-                style={{ background: 'var(--color-success)' }}
-              >
-                {saving ? <><div className="spinner" style={{ width: 16, height: 16 }}></div>Menyimpan...</> : '✅ Selesaikan Dokumen'}
-              </button>
-            )}
+            <div>
+              <span style={{ fontSize: 10, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase' }}>
+                Langkah {step} / {STEPS.length}
+              </span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginTop: 1 }}>
+                {STEPS[step - 1].title}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {saving && (
+                <span style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div className="spinner spinner-primary" style={{ width: 12, height: 12 }} />
+                  Menyimpan…
+                </span>
+              )}
+              <span style={{ fontSize: 10, color: '#94a3b8', background: '#e2e8f0', borderRadius: 10, padding: '2px 8px' }}>
+                💡 Hover untuk panduan
+              </span>
+            </div>
           </div>
+        </SectionTooltip>
+
+        {/* ── Error ── */}
+        {error && <div className="error-msg" style={{ margin: '10px 16px' }}>⚠️ {error}</div>}
+
+        {/* ── Konten step ── */}
+        <div style={{ padding: '12px 16px' }}>
+          {step === 1 && <Step1PilihMK daftarMK={daftarMK} mkDipilih={mkDipilih} onChange={handleMkChange} />}
+          {step === 2 && <Step2Deskripsi mkDipilih={mkDipilih} deskripsi={deskripsiMk} onChange={setDeskripsiMk} desMk={desMk} onChangeDesMk={setDesMk} deskripsiEn={deskripsiEn} onChangeDeskripsiEn={setDeskripsiEn} />}
+          {step === 3 && <Step3CPL cplFiltered={cplFiltered} cplDipilih={cplDipilih} onChange={setCplDipilih} jenjang={mkDipilih?.jenjang} kodeTipeMk={mkDipilih?.kode_tipe} cplOtomatis={cplOtomatis} />}
+          {step === 4 && <Step4CPMK cpmk={cpmk} onChange={setCpmk} cplDipilih={cplDipilih} daftarCPL={daftarCPL} jenjang={mkDipilih?.jenjang} kodeTipe={mkDipilih?.kode_tipe} isStudio={mkDipilih?.tipe === 'studio'} />}
+          {step === 5 && <Step5BahanKajian bahanKajian={bahanKajian} setBahanKajian={setBahanKajian} prasyarat={prasyarat} setPrasyarat={setPrasyarat} pustakaUtama={pustakaUtama} setPustakaUtama={setPustakaUtama} pustakaP={pustakaP} setPustakaP={setPustakaP} />}
+          {step === 6 && <Step6SAP sapMinggu={sapMinggu} onChange={setSapMinggu} cpmk={cpmk} />}
+          {step === 7 && <Step7Selesai mkDipilih={mkDipilih} cplDipilih={cplDipilih} cpmk={cpmk} bahanKajian={bahanKajian} daftarCPL={daftarCPL} />}
         </div>
-      </main>
+
+        {/* ── Navigasi (fixed di bawah panel) ── */}
+        <div style={{
+          position: 'sticky', bottom: 0, background: 'white',
+          borderTop: '1px solid #e2e8f0', padding: '10px 16px',
+          display: 'flex', justifyContent: 'space-between', gap: 8,
+        }}>
+          <button className="btn btn-secondary btn-sm" onClick={handleBack} disabled={step === 1}>
+            ← Sebelumnya
+          </button>
+          {step < 7 ? (
+            <button className="btn btn-primary btn-sm" onClick={handleNext} disabled={saving}>
+              {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} />Menyimpan…</> : 'Lanjut →'}
+            </button>
+          ) : (
+            <button className="btn btn-primary btn-sm" onClick={handleSelesai} disabled={saving} style={{ background: 'var(--color-success)' }}>
+              {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} />Menyimpan…</> : '✅ Selesaikan'}
+            </button>
+          )}
+        </div>
+
+      </FormLayout>
     </>
   );
 }
@@ -449,6 +482,33 @@ function WizardProgress({ steps, currentStep }) {
           )}
         </React.Fragment>
       ))}
+    </div>
+  );
+}
+
+// ─── Wizard progress kompak (untuk panel kiri) ───────────────────────────────
+function WizardProgressCompact({ steps, currentStep }) {
+  return (
+    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+      {steps.map((s) => {
+        const done = currentStep > s.id;
+        const active = currentStep === s.id;
+        return (
+          <div
+            key={s.id}
+            title={s.title}
+            style={{
+              flex: 1, height: 6, borderRadius: 3,
+              background: done ? '#16a34a' : active ? '#1d4ed8' : '#e2e8f0',
+              transition: 'background 0.2s',
+              position: 'relative',
+            }}
+          />
+        );
+      })}
+      <span style={{ fontSize: 10, color: '#94a3b8', flexShrink: 0, marginLeft: 6 }}>
+        {currentStep}/{steps.length}
+      </span>
     </div>
   );
 }
