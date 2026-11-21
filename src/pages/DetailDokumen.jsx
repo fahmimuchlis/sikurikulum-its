@@ -534,7 +534,7 @@ export default function DetailDokumen({ user }) {
   const [sap, setSap] = useState([]);
   const [daftarCPL, setDaftarCPL] = useState([]);
   const [activeDoc, setActiveDoc] = useState('silabus'); // 'silabus' | 'rps'
-  const [printMode, setPrintMode] = useState(false);     // cetak kedua dokumen
+  // printMode dihapus (tidak digunakan)
 
   useEffect(() => {
     const load = async () => {
