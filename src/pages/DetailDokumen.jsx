@@ -59,6 +59,40 @@ const TIPE_META = {
   afeksi:         { label: 'Afeksi',      color: '#dc2626', bg: '#fef2f2', icon: '❤️' },
 };
 
+// ── Builder Sub-CPMK (sama dengan FormSilabus) ───────────────────────────────
+function buildSubKog(s) {
+  const { sub_kk, elemen, rincian_sub, penugasan, kriteria } = s;
+  if (!sub_kk) return '';
+  const parts = ['Mampu', sub_kk];
+  if (elemen) parts.push(elemen);
+  if (rincian_sub) parts.push(rincian_sub);
+  if (penugasan) parts.push(penugasan);
+  if (kriteria) { parts.push('berdasarkan acuan yang sahih dan dikerjakan dengan'); parts.push(kriteria); }
+  return parts.join(' ') + '.';
+}
+
+function buildSubPsiko(s) {
+  const { kemampuan_psiko, penjelasan_keg, objek_sub, rincian_sub, penugasan, kriteria } = s;
+  if (!kemampuan_psiko) return '';
+  const parts = ['Mampu', kemampuan_psiko];
+  if (penjelasan_keg) parts.push(penjelasan_keg);
+  if (objek_sub) parts.push(objek_sub);
+  if (rincian_sub) { parts.push('pada tugas'); parts.push(rincian_sub); }
+  if (penugasan) parts.push(penugasan);
+  if (kriteria) { parts.push('berdasarkan panduan yang sahih dan dikerjakan dengan'); parts.push(kriteria); }
+  return parts.join(' ') + '.';
+}
+
+function buildSubAfeksi(s) {
+  const { kata_sikap, kegiatan, rincian_sub, penugasan } = s;
+  if (!kata_sikap) return '';
+  const parts = ['Mampu', kata_sikap];
+  if (kegiatan) { parts.push('pada kegiatan'); parts.push(kegiatan); }
+  if (rincian_sub) { parts.push('materi/topik'); parts.push(rincian_sub); }
+  if (penugasan) parts.push(penugasan);
+  return parts.join(' ') + '.';
+}
+
 // ── Sub-CPMK badges ───────────────────────────────────────────────────────────
 function SubCpmkBadges({ cpmk }) {
   const kogs = cpmk.sub_cpmk_kog || [];
@@ -67,24 +101,33 @@ function SubCpmkBadges({ cpmk }) {
   if (!kogs.length && !psis.length && !afks.length) return null;
   return (
     <div style={{ marginTop: 6, paddingLeft: 12, borderLeft: '3px solid #e2e8f0' }}>
-      {kogs.map((s, i) => s.statement || (s.sub_kk ? `Mampu ${s.sub_kk} ${s.elemen||''} ${s.rincian_sub||''} ${s.penugasan||''} berdasarkan acuan yang sahih dan dikerjakan dengan ${s.kriteria||''}.` : '') ? (
-        <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 4, display: 'flex', gap: 6 }}>
-          <span style={{ color: '#1d4ed8', fontWeight: 700, flexShrink: 0 }}>↳ Sub-Kog {i+1}</span>
-          <span>{s.statement || [s.sub_kk, s.elemen, s.rincian_sub, s.penugasan].filter(Boolean).join(' ') + (s.kriteria ? ` berdasarkan acuan yang sahih dan dikerjakan dengan ${s.kriteria}.` : '.')}</span>
-        </div>
-      ) : null)}
-      {psis.map((s, i) => (
-        <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 4, display: 'flex', gap: 6 }}>
-          <span style={{ color: '#7c3aed', fontWeight: 700, flexShrink: 0 }}>↳ Sub-Psi {i+1}</span>
-          <span>{[s.kemampuan_psiko, s.penjelasan_keg, s.objek_sub, s.rincian_sub ? `pada tugas ${s.rincian_sub}` : '', s.penugasan, s.kriteria ? `berdasarkan panduan yang sahih dan dikerjakan dengan ${s.kriteria}.` : '.'].filter(Boolean).join(' ')}</span>
-        </div>
-      ))}
-      {afks.map((s, i) => (
-        <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 4, display: 'flex', gap: 6 }}>
-          <span style={{ color: '#dc2626', fontWeight: 700, flexShrink: 0 }}>↳ Sub-Afk {i+1}</span>
-          <span>{['Mampu', s.kata_sikap, s.kegiatan ? `pada kegiatan ${s.kegiatan}` : '', s.rincian_sub ? `materi/topik ${s.rincian_sub}` : '', s.penugasan].filter(Boolean).join(' ') + '.'}</span>
-        </div>
-      ))}
+      {kogs.map((s, i) => {
+        const stmt = buildSubKog(s) || `(Sub-Kog ${i+1} belum lengkap)`;
+        return (
+          <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 4, display: 'flex', gap: 6 }}>
+            <span style={{ color: '#1d4ed8', fontWeight: 700, flexShrink: 0 }}>↳ Sub-Kog {i+1}</span>
+            <span>{stmt}</span>
+          </div>
+        );
+      })}
+      {psis.map((s, i) => {
+        const stmt = buildSubPsiko(s) || `(Sub-Psiko ${i+1} belum lengkap)`;
+        return (
+          <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 4, display: 'flex', gap: 6 }}>
+            <span style={{ color: '#7c3aed', fontWeight: 700, flexShrink: 0 }}>↳ Sub-Psi {i+1}</span>
+            <span>{stmt}</span>
+          </div>
+        );
+      })}
+      {afks.map((s, i) => {
+        const stmt = buildSubAfeksi(s) || `(Sub-Afeksi ${i+1} belum lengkap)`;
+        return (
+          <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 4, display: 'flex', gap: 6 }}>
+            <span style={{ color: '#dc2626', fontWeight: 700, flexShrink: 0 }}>↳ Sub-Afk {i+1}</span>
+            <span>{stmt}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
