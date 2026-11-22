@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 
@@ -318,9 +319,10 @@ const EMPTY_SUB = {
 };
 
 export default function CpmkGenerator({ user }) {
+  const { silabusId } = useParams();   // dari URL /form/:silabusId/cpmk
+  const navigate = useNavigate();
   const [vocab, setVocab] = useState(null);
-  const [silabusId, setSilabusId] = useState('');
-  const [daftarSilabus, setDaftarSilabus] = useState([]);
+  const [silabusInfo, setSilabusInfo] = useState(null); // info MK untuk header
   const [daftarCpmk, setDaftarCpmk] = useState([]);
   const [daftarSub, setDaftarSub] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -356,35 +358,35 @@ export default function CpmkGenerator({ user }) {
     loadVocab();
   }, []);
 
-  // Load silabus milik user
+  // Load info silabus dari URL param
   useEffect(() => {
-    const loadSilabus = async () => {
+    if (!silabusId) return;
+    const loadSilabusInfo = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('dokumen_silabus')
-          .select('id, status, created_at, mk_id, master_mata_kuliah(nama_mk, jenjang, semester, kode_mk, sks)')
-          .eq('dosen_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) console.error('loadSilabus query error:', error);
-        // Flatten relasi agar komponen tetap bisa pakai silabus.nama_mk dll
-        const flat = (data || []).map(s => ({
-          ...s,
-          nama_mk: s.master_mata_kuliah?.nama_mk || '—',
-          jenjang: s.master_mata_kuliah?.jenjang || '—',
-          semester: s.master_mata_kuliah?.semester || '—',
-          kode_mk: s.master_mata_kuliah?.kode_mk || '—',
-          sks: s.master_mata_kuliah?.sks || '—',
-        }));
-        setDaftarSilabus(flat);
+          .select('id, mk_id, master_mata_kuliah(nama_mk, jenjang, semester, kode_mk, sks)')
+          .eq('id', silabusId)
+          .single();
+        if (data) {
+          setSilabusInfo({
+            ...data,
+            nama_mk: data.master_mata_kuliah?.nama_mk || '—',
+            jenjang: data.master_mata_kuliah?.jenjang || '—',
+            semester: data.master_mata_kuliah?.semester || '—',
+            kode_mk: data.master_mata_kuliah?.kode_mk || '—',
+            sks: data.master_mata_kuliah?.sks || '—',
+          });
+        }
       } catch (err) {
-        console.error('loadSilabus error:', err);
+        console.error('loadSilabusInfo error:', err);
       } finally {
         setLoading(false);
       }
     };
-    loadSilabus();
-  }, [user.id]);
+    loadSilabusInfo();
+  }, [silabusId]);
 
   // Load CPMK & Sub-CPMK when silabus selected
   const loadCpmkData = useCallback(async (sid) => {
@@ -494,7 +496,6 @@ export default function CpmkGenerator({ user }) {
     );
   }
 
-  const selectedSilabus = daftarSilabus.find(s => s.id === silabusId); // eslint-disable-line no-unused-vars
   const tipeLabel = { kognitif: '🧠 Kognitif', kognitif_psiko: '🧠💪 Kognitif + Psiko', afeksi: '💛 Afeksi' };
   const tipeLabelSub = { kognitif: '🧠 Kognitif', psikomotorik: '💪 Psikomotorik', afeksi: '💛 Afeksi' };
 
@@ -502,36 +503,26 @@ export default function CpmkGenerator({ user }) {
     <>
       <Navbar user={user} />
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>
-            🎯 Generator CPMK & Sub-CPMK
-          </h1>
-          <p style={{ color: 'var(--color-gray-500)', fontSize: 14 }}>
-            Susun Capaian Pembelajaran Mata Kuliah dengan pilihan kata kerja Taksonomi Bloom sesuai panduan ITS.
-          </p>
+        {/* Header + tombol kembali */}
+        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+          <button onClick={() => navigate(`/form/${silabusId}`)}
+            style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', color: '#475569', flexShrink: 0 }}>
+            ← Kembali ke Form
+          </button>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>
+              🎯 Generator CPMK & Sub-CPMK
+            </h1>
+            {silabusInfo && (
+              <p style={{ color: 'var(--color-gray-500)', fontSize: 13, fontWeight: 500 }}>
+                {silabusInfo.kode_mk} — {silabusInfo.nama_mk} · {silabusInfo.jenjang} Sem. {silabusInfo.semester} · {silabusInfo.sks} SKS
+              </p>
+            )}
+          </div>
         </div>
 
         {msg && <div className="success-msg">{msg}</div>}
         {error && <div className="error-msg">{error}</div>}
-
-        {/* Pilih MK */}
-        <div className="card" style={{ padding: 20, marginBottom: 24 }}>
-          <label className="form-label" style={{ fontWeight: 600 }}>Pilih Mata Kuliah (Silabus)</label>
-          <select className="form-select" value={silabusId} onChange={e => { setSilabusId(e.target.value); setModeCpmk(false); setModeSub(false); }}>
-            <option value="">— pilih mata kuliah —</option>
-            {daftarSilabus.map(s => (
-              <option key={s.id} value={s.id}>
-                [{s.jenjang} Sem {s.semester}] {s.nama_mk}
-              </option>
-            ))}
-          </select>
-          {daftarSilabus.length === 0 && (
-            <p style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 8 }}>
-              Belum ada silabus. Buat silabus terlebih dahulu di menu Dasbor.
-            </p>
-          )}
-        </div>
 
         {silabusId && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>

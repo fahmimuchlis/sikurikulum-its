@@ -368,6 +368,31 @@ export default function FormSilabus({ user }) {
               {mkDipilih.kode_mk} — {mkDipilih.nama_mk}
             </div>
           )}
+          {/* Tombol akses CPMK & Matriks — hanya jika silabus sudah ada */}
+          {currentSilabusId && (
+            <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+              <button
+                onClick={() => navigate(`/form/${currentSilabusId}/cpmk`)}
+                style={{
+                  flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0',
+                  color: '#166534', borderRadius: 6, padding: '4px 8px',
+                  fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                🎯 CPMK Generator
+              </button>
+              <button
+                onClick={() => navigate(`/form/${currentSilabusId}/matriks`)}
+                style={{
+                  flex: 1, background: '#eff6ff', border: '1px solid #bfdbfe',
+                  color: '#1d4ed8', borderRadius: 6, padding: '4px 8px',
+                  fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                📊 Matriks CPL
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Step header dengan tooltip ── */}

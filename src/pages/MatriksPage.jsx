@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { supabase } from '../supabaseClient';
 
@@ -18,11 +18,10 @@ const JENIS_PENILAIAN_OPTS = ['Kognitif-Tugas', 'Kognitif-UAS', 'Kognitif-UTS', 
 
 export default function MatriksPage({ user }) {
   const navigate = useNavigate();
+  const { silabusId } = useParams();  // dari URL /form/:silabusId/matriks
 
   // Data master
-  const [silabusId, setSilabusId] = useState('');
-  const [silabusOptions, setSilabusOptions] = useState([]);
-  const [silabusInfo, setSilabusInfo] = useState(null); // eslint-disable-line no-unused-vars
+  const [silabusInfo, setSilabusInfo] = useState(null);
   const [cpmkList, setCpmkList] = useState([]); // dari dokumen_cpmk
 
   // Halaman aktif
@@ -47,25 +46,7 @@ export default function MatriksPage({ user }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
-  // Load daftar silabus user
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('dokumen_silabus')
-      .select('id, status, created_at, mk_id, master_mata_kuliah(nama_mk, kode_mk, jenjang, semester, sks)')
-      .eq('dosen_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        const flat = (data || []).map(s => ({
-          ...s,
-          nama_mk: s.master_mata_kuliah?.nama_mk || '—',
-          kode_mk: s.master_mata_kuliah?.kode_mk || '—',
-          jenjang: s.master_mata_kuliah?.jenjang || '—',
-          semester: s.master_mata_kuliah?.semester || '—',
-        }));
-        setSilabusOptions(flat);
-      });
-  }, [user]);
+  // silabusOptions tidak lagi diperlukan (silabusId dari URL param)
 
   // Load data saat silabus dipilih
   const loadData = useCallback(async (sid) => {
@@ -155,6 +136,15 @@ export default function MatriksPage({ user }) {
   useEffect(() => {
     if (silabusId) loadData(silabusId);
   }, [silabusId, loadData]);
+
+  // Flatten silabusInfo untuk render header
+  const mkInfo = silabusInfo ? {
+    kode_mk: silabusInfo.master_mata_kuliah?.kode_mk || silabusInfo.kode_mk || '—',
+    nama_mk: silabusInfo.master_mata_kuliah?.nama_mk || silabusInfo.nama_mk || '—',
+    jenjang: silabusInfo.master_mata_kuliah?.jenjang || silabusInfo.jenjang || '—',
+    semester: silabusInfo.master_mata_kuliah?.semester || silabusInfo.semester || '—',
+    sks: silabusInfo.master_mata_kuliah?.sks || silabusInfo.sks || '—',
+  } : null;
 
   // Toggle sel CPL
   const toggleCpl = (no) => {
@@ -375,48 +365,35 @@ export default function MatriksPage({ user }) {
         {/* Header */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-            <button onClick={() => navigate('/dashboard')} style={{ ...st.btn, ...st.btnGhost, padding: '6px 14px', fontSize: 13 }}>
-              ← Kembali
+            <button onClick={() => navigate(`/form/${silabusId}`)} style={{ ...st.btn, ...st.btnGhost, padding: '6px 14px', fontSize: 13 }}>
+              ← Kembali ke Form
             </button>
             <div>
               <h1 style={st.h1}>📊 Matriks CPL-CPMK & RAE</h1>
-              <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Peta hubungan CPL ↔ CPMK dan Rencana Asesmen Evaluasi</p>
-            </div>
-          </div>
-
-          {/* Pilih Silabus */}
-          <div style={{ ...st.card, padding: 16 }}>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 320px' }}>
-                <label style={st.label}>Pilih Mata Kuliah (Silabus)</label>
-                <select style={st.select} value={silabusId} onChange={e => setSilabusId(e.target.value)}>
-                  <option value="">— Pilih MK —</option>
-                  {silabusOptions.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.kode_mk} · {s.nama_mk} ({s.jenjang}, Sem {s.semester})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {silabusId && (
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  style={{ ...st.btn, ...st.btnPrimary, opacity: saving ? 0.7 : 1 }}
-                >
-                  {saving ? 'Menyimpan...' : '💾 Simpan Matriks'}
-                </button>
+              {mkInfo && (
+                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+                  {mkInfo.kode_mk} — {mkInfo.nama_mk} · {mkInfo.jenjang} Sem. {mkInfo.semester} · {mkInfo.sks} SKS
+                </p>
               )}
             </div>
-            {msg && <div style={{ marginTop: 10, fontSize: 13, color: msg.startsWith('✅') ? '#16a34a' : '#dc2626' }}>{msg}</div>}
+            <div style={{ marginLeft: 'auto' }}>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{ ...st.btn, ...st.btnPrimary, opacity: saving ? 0.7 : 1 }}
+              >
+                {saving ? 'Menyimpan...' : '💾 Simpan Matriks'}
+              </button>
+            </div>
           </div>
+          {msg && <div style={{ fontSize: 13, color: msg.startsWith('✅') ? '#16a34a' : '#dc2626', marginBottom: 8 }}>{msg}</div>}
         </div>
 
         {!silabusId && (
           <div style={{ ...st.card, textAlign: 'center', padding: 48, color: '#94a3b8' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Pilih mata kuliah terlebih dahulu</div>
-            <div style={{ fontSize: 13 }}>Data CPMK akan dimuat otomatis dari silabus yang telah disusun</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Silabus tidak ditemukan</div>
+            <div style={{ fontSize: 13 }}>Akses matriks dari halaman form mata kuliah</div>
           </div>
         )}
 

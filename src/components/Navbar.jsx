@@ -61,8 +61,6 @@ export default function Navbar({ user }) {
         {/* ── Nav links ── */}
         <nav style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
           <NavLink to="/dashboard" active={isActive('/dashboard')}>🏠 Dasbor</NavLink>
-          <NavLink to="/cpmk"      active={isActive('/cpmk')}>🎯 CPMK</NavLink>
-          <NavLink to="/matriks"   active={isActive('/matriks')}>📊 Matriks</NavLink>
           <NavLink to="/direktori" active={isActive('/direktori')}>📚 Direktori</NavLink>
         </nav>
 

@@ -79,18 +79,20 @@ export default function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/matriks" element={
-          <ProtectedRoute user={user}>
-            <MatriksPage user={user} />
-          </ProtectedRoute>
-        } />
-
-        {/* Redirect default */}
-        <Route path="/cpmk" element={
+        {/* CPMK & Matriks — hanya dari dalam MK (silabus context) */}
+        <Route path="/form/:silabusId/cpmk" element={
           <ProtectedRoute user={user}>
             <CpmkGenerator user={user} />
           </ProtectedRoute>
         } />
+        <Route path="/form/:silabusId/matriks" element={
+          <ProtectedRoute user={user}>
+            <MatriksPage user={user} />
+          </ProtectedRoute>
+        } />
+        {/* Legacy redirect — jika ada yang akses langsung */}
+        <Route path="/cpmk" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/matriks" element={<Navigate to="/dashboard" replace />} />
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
