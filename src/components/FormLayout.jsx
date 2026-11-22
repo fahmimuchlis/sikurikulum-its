@@ -1,23 +1,22 @@
 /**
- * FormLayout — 3-panel layout sesuai desain slide:
- * Kiri: Form wizard (280px, putih)
- * Tengah: Preview text area (flex)
- * Kanan: Node canvas (expandable)
+ * FormLayout — 3-panel layout sesuai slide referensi:
+ * Kiri: Form wizard (resizable, putih)
+ * Tengah: Preview (2 textarea besar)
+ * Kanan: Node canvas (terang #f0f0f0)
  */
 import React, { useState } from 'react';
 
-// ── Tab colors (pill tabs di atas form) ──────────────────────────────────────
+// ── Tab colors sesuai slide (pastel/salmon) ───────────────────────────────────
 const TAB_COLORS = [
-  { bg: '#f472b6', text: 'white' }, // MK — pink
-  { bg: '#a78bfa', text: 'white' }, // Des — violet
-  { bg: '#34d399', text: 'white' }, // CPL — green
-  { bg: '#fb923c', text: 'white' }, // CPMK — orange
-  { bg: '#f87171', text: 'white' }, // BK — red
-  { bg: '#60a5fa', text: 'white' }, // SAP — blue
-  { bg: '#a3e635', text: '#365314' }, // Done — lime
+  { bg: '#f48fb1', text: 'white' },       // Deskripsi — pink-salmon
+  { bg: '#ef9a9a', text: 'white' },       // CPL — salmon-red
+  { bg: '#ffab91', text: 'white' },       // CPMK — peach-orange
+  { bg: '#ffcc80', text: '#5d4037' },     // BK — amber
+  { bg: '#80deea', text: '#006064' },     // SAP — cyan-teal
+  { bg: '#a5d6a7', text: '#1b5e20' },     // Done — hijau muda
 ];
 
-// ── Tooltip komponen ─────────────────────────────────────────────────────────
+// ── Tooltip ──────────────────────────────────────────────────────────────────
 export function SectionTooltip({ title, children, hint }) {
   const [show, setShow] = useState(false);
   const timer = React.useRef(null);
@@ -65,19 +64,12 @@ function PreviewOverlay({ silabusId, onClose }) {
     <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ ...panelStyle, width: '90vw', maxWidth: 1100, height: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
         <MacTitlebar title="Pratinjau Dokumen" onClose={onClose}>
-          <a
-            href={`/dokumen/${silabusId}`}
-            target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', padding: '5px 12px', border: '1px solid #bfdbfe', borderRadius: 6, background: '#eff6ff' }}
-          >
+          <a href={`/dokumen/${silabusId}`} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', padding: '5px 12px', border: '1px solid #bfdbfe', borderRadius: 6, background: '#eff6ff' }}>
             🔗 Tab Baru
           </a>
         </MacTitlebar>
-        <iframe
-          src={`/dokumen/${silabusId}`}
-          style={{ flex: 1, border: 'none', background: '#f8fafc' }}
-          title="Pratinjau Dokumen"
-        />
+        <iframe src={`/dokumen/${silabusId}`} style={{ flex: 1, border: 'none', background: '#f8fafc' }} title="Pratinjau Dokumen" />
       </div>
     </div>
   );
@@ -85,11 +77,7 @@ function PreviewOverlay({ silabusId, onClose }) {
 
 function MacTitlebar({ title, onClose, children }) {
   return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '10px 16px', borderBottom: '1px solid #e2e8f0', flexShrink: 0,
-      background: '#f8fafc',
-    }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #e2e8f0', flexShrink: 0, background: '#f8fafc' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
@@ -104,28 +92,16 @@ function MacTitlebar({ title, onClose, children }) {
   );
 }
 
-const overlayStyle = {
-  position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.65)',
-  zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backdropFilter: 'blur(4px)',
-};
-const panelStyle = {
-  background: 'white', borderRadius: 14, padding: '20px 24px',
-  width: '95vw', maxWidth: 600, maxHeight: '90vh',
-  boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-};
-const closeBtnStyle = {
-  background: '#f1f5f9', border: 'none', borderRadius: 6,
-  padding: '5px 12px', cursor: 'pointer', fontSize: 12, color: '#475569',
-  fontWeight: 500,
-};
+const overlayStyle = { position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' };
+const panelStyle = { background: 'white', borderRadius: 14, padding: '20px 24px', width: '95vw', maxWidth: 600, maxHeight: '90vh', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' };
+const closeBtnStyle = { background: '#f1f5f9', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12, color: '#475569', fontWeight: 500 };
 
-// ── Pill Tab Bar (sesuai slide — warna-warni horizontal) ─────────────────────
+// ── Pill Tab Bar (sesuai slide — warna salmon/pastel) ─────────────────────────
 export function TabBar({ tabs, activeTab, onTabChange }) {
   return (
     <div style={{
-      display: 'flex', gap: 4, padding: '8px 12px',
-      borderBottom: '1px solid #f1f5f9',
+      display: 'flex', gap: 4, padding: '8px 10px',
+      borderBottom: '1px solid #f0f0f0',
       overflowX: 'auto', flexShrink: 0,
       scrollbarWidth: 'none',
     }}>
@@ -139,16 +115,15 @@ export function TabBar({ tabs, activeTab, onTabChange }) {
             title={tab.label}
             style={{
               flexShrink: 0,
-              padding: '4px 10px',
+              padding: '3px 10px',
               border: 'none',
               borderRadius: 20,
-              background: isActive ? color.bg : '#f1f5f9',
-              color: isActive ? color.text : '#94a3b8',
-              fontWeight: isActive ? 700 : 500,
+              background: isActive ? color.bg : '#f5f5f5',
+              color: isActive ? color.text : '#aaa',
+              fontWeight: isActive ? 600 : 500,
               fontSize: 11,
               cursor: 'pointer',
               transition: 'all 0.15s',
-              letterSpacing: 0.1,
               whiteSpace: 'nowrap',
             }}
           >
@@ -160,8 +135,8 @@ export function TabBar({ tabs, activeTab, onTabChange }) {
   );
 }
 
-// ── Drag handle component ─────────────────────────────────────────────────────
-function DragHandle({ onMouseDown, vertical = false }) {
+// ── Drag handle ───────────────────────────────────────────────────────────────
+function DragHandle({ onMouseDown }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -169,31 +144,18 @@ function DragHandle({ onMouseDown, vertical = false }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        width: vertical ? '100%' : 6,
-        height: vertical ? 6 : '100%',
-        flexShrink: 0,
-        cursor: vertical ? 'row-resize' : 'col-resize',
-        background: hovered ? 'rgba(99,179,237,0.5)' : 'rgba(0,0,0,0.08)',
+        width: 6, flexShrink: 0,
+        cursor: 'col-resize',
+        background: hovered ? 'rgba(233,30,140,0.25)' : '#e8e8e8',
         transition: 'background 0.15s',
-        position: 'relative',
-        zIndex: 20,
+        position: 'relative', zIndex: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
-      title="Geser untuk mengubah lebar"
+      title="Geser untuk mengubah lebar panel"
     >
-      {/* Grip dots */}
-      <div style={{
-        position: 'absolute',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        display: 'flex',
-        flexDirection: vertical ? 'row' : 'column',
-        gap: 3,
-      }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {[0,1,2].map(i => (
-          <div key={i} style={{
-            width: 3, height: 3, borderRadius: '50%',
-            background: hovered ? '#3b82f6' : '#9ca3af',
-          }} />
+          <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: hovered ? '#e91e8c' : '#bbb' }} />
         ))}
       </div>
     </div>
@@ -204,8 +166,7 @@ function DragHandle({ onMouseDown, vertical = false }) {
 export default function FormLayout({ children, silabusId, canvasProps, tabs, activeTab, onTabChange }) {
   const [showPreview, setShowPreview] = useState(false);
   const [canvasExpanded, setCanvasExpanded] = useState(false);
-  // Panel kiri (form) bisa di-resize — default 300px, min 220, max 600
-  const [formWidth, setFormWidth] = useState(300);
+  const [formWidth, setFormWidth] = useState(280);
   const [KurikulumCanvas, setKurikulumCanvas] = React.useState(null);
 
   // Lazy load canvas
@@ -213,7 +174,7 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
     import('./KurikulumCanvas').then(m => setKurikulumCanvas(() => m.default));
   }, []);
 
-  // Drag panel kiri ─────────────────────────────────────────────────────────
+  // Drag panel kiri
   const onFormDragStart = React.useCallback((e) => {
     e.preventDefault();
     const startX = e.clientX;
@@ -231,174 +192,129 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
   }, [formWidth]);
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 52px)', overflow: 'hidden', background: '#f8f9fb' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 44px)', overflow: 'hidden', background: '#f5f5f5' }}>
 
-      {/* ── Panel Kiri: Form Wizard (resizable) ── */}
+      {/* ── Panel Kiri: Form Wizard ── */}
       <div style={{
         width: formWidth, flexShrink: 0,
         display: 'flex', flexDirection: 'column',
         background: 'white',
-        zIndex: 10,
-        minWidth: 0,
+        zIndex: 10, minWidth: 0,
       }}>
         {/* Tab pills */}
         {tabs && tabs.length > 0 && (
           <TabBar tabs={tabs} activeTab={activeTab || 0} onTabChange={onTabChange} />
         )}
-
-        {/* Scroll area untuk form */}
+        {/* Scroll area */}
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
           {children}
         </div>
       </div>
 
-      {/* ── Drag handle antara panel kiri dan tengah ── */}
+      {/* ── Drag handle ── */}
       <DragHandle onMouseDown={onFormDragStart} />
 
-      {/* ── Panel Tengah: Preview + tombol ── */}
+      {/* ── Panel Tengah: Preview ── */}
       {!canvasExpanded && (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          background: '#f8f9fb', borderRight: '1px solid #e8eaed',
+          background: '#fafafa',
           minWidth: 0,
         }}>
-          {/* Header preview */}
+          {/* "Preview" label tengah */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '8px 16px', borderBottom: '1px solid #e8eaed',
-            background: 'white', flexShrink: 0,
-            gap: 10,
+            padding: '10px 16px', flexShrink: 0,
           }}>
-            <button
-              onClick={() => setShowPreview(true)}
-              style={{
-                background: 'white', color: '#374151',
-                border: '1px solid #d1d5db',
-                borderRadius: 6, padding: '4px 14px',
-                fontSize: 12, cursor: 'pointer', fontWeight: 600,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-              }}
-            >
-              👁 Preview
-            </button>
-            <span style={{
-              fontSize: 12, fontWeight: 700, color: '#374151',
-              letterSpacing: 0.5,
-            }}>Preview</span>
-            <button
-              onClick={() => setCanvasExpanded(true)}
-              title="Perbesar canvas"
-              style={{
-                background: 'white', color: '#6b7280',
-                border: '1px solid #d1d5db',
-                borderRadius: 6, padding: '4px 10px',
-                fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              ⊞ Perluas Canvas
-            </button>
+            <div style={{
+              background: '#e0e0e0', color: '#555', borderRadius: 20,
+              padding: '4px 20px', fontSize: 13,
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              Preview
+              <button
+                onClick={() => setShowPreview(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#777', padding: 0 }}
+                title="Buka pratinjau penuh"
+              >👁</button>
+            </div>
+            {!canvasExpanded && (
+              <button
+                onClick={() => setCanvasExpanded(true)}
+                style={{
+                  marginLeft: 8, background: 'white', border: '1px solid #d0d0d0',
+                  borderRadius: 20, padding: '4px 12px',
+                  fontSize: 12, color: '#555', cursor: 'pointer',
+                }}
+              >⊞ Perluas Node</button>
+            )}
           </div>
 
-          {/* Preview area — dua textarea */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Preview content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
             {canvasProps?.mkDipilih && (
-              <>
-                {/* Info MK */}
-                <div style={{
-                  background: 'white', borderRadius: 8,
-                  border: '1px solid #e8eaed',
-                  padding: '10px 14px', fontSize: 12,
-                }}>
-                  <div style={{ fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                    {canvasProps.mkDipilih.kode_mk} — {canvasProps.mkDipilih.nama_mk}
-                  </div>
-                  <div style={{ color: '#6b7280', fontSize: 11 }}>
-                    {canvasProps.mkDipilih.jenis_mk && `${canvasProps.mkDipilih.jenis_mk} • `}
-                    {canvasProps.mkDipilih.sks} SKS • Sem. {canvasProps.mkDipilih.semester} • {canvasProps.mkDipilih.jenjang}
-                  </div>
-                </div>
-
-                {/* Textarea Indonesia */}
-                <div style={{
-                  background: 'white', borderRadius: 8,
-                  border: '1px solid #e8eaed', overflow: 'hidden', flex: 1,
-                }}>
-                  <div style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: 11, color: '#9ca3af', background: '#fafafa' }}>
-                    Bahasa Indonesia
-                  </div>
-                  <div style={{ padding: '10px 12px', fontSize: 12, color: '#374151', lineHeight: 1.6, minHeight: 120 }}>
-                    {canvasProps.desMk?.deskripsi_tambahan || <span style={{ color: '#d1d5db' }}>Deskripsi MK dalam Bahasa Indonesia akan muncul di sini…</span>}
-                  </div>
-                </div>
-
-                {/* Textarea English */}
-                <div style={{
-                  background: 'white', borderRadius: 8,
-                  border: '1px solid #e8eaed', overflow: 'hidden', flex: 1,
-                }}>
-                  <div style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: 11, color: '#9ca3af', background: '#fafafa' }}>
-                    English
-                  </div>
-                  <div style={{ padding: '10px 12px', fontSize: 12, color: '#374151', lineHeight: 1.6, minHeight: 120 }}>
-                    {canvasProps.deskripsiEn || <span style={{ color: '#d1d5db' }}>English description will appear here…</span>}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {!canvasProps?.mkDipilih && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: 8, color: '#d1d5db' }}>
-                <div style={{ fontSize: 32 }}>📋</div>
-                <div style={{ fontSize: 12 }}>Pilih mata kuliah untuk melihat pratinjau</div>
+              <div style={{ marginBottom: 10, padding: '8px 0', fontSize: 12 }}>
+                <span style={{ fontWeight: 700, color: '#333' }}>{canvasProps.mkDipilih.kode_mk} — {canvasProps.mkDipilih.nama_mk}</span>
+                <span style={{ color: '#888', marginLeft: 8 }}>
+                  {canvasProps.mkDipilih.sks} SKS • Sem. {canvasProps.mkDipilih.semester} • {canvasProps.mkDipilih.jenjang}
+                </span>
               </div>
             )}
+
+            {/* Textarea Bahasa Indonesia */}
+            <div style={{
+              background: 'white', border: '1px solid #d0d0d0', borderRadius: 8,
+              marginBottom: 12, overflow: 'hidden',
+            }}>
+              <div style={{ padding: '10px 14px', fontSize: 13, color: canvasProps?.desMk?.deskripsi_tambahan ? '#333' : '#bbb', minHeight: 160, lineHeight: 1.6 }}>
+                {canvasProps?.desMk?.deskripsi_tambahan || 'Bahasa Indonesia'}
+              </div>
+            </div>
+
+            {/* Textarea English */}
+            <div style={{
+              background: 'white', border: '1px solid #d0d0d0', borderRadius: 8,
+              overflow: 'hidden',
+            }}>
+              <div style={{ padding: '10px 14px', fontSize: 13, color: canvasProps?.deskripsiEn ? '#333' : '#bbb', minHeight: 160, lineHeight: 1.6 }}>
+                {canvasProps?.deskripsiEn || 'English'}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Panel Kanan: Canvas ── */}
+      {/* ── Panel Kanan: Canvas (terang) ── */}
       <div style={{
-        flex: canvasExpanded ? 1 : '0 0 360px',
+        flex: canvasExpanded ? 1 : '0 0 400px',
         position: 'relative', overflow: 'hidden',
-        background: '#1a1f2e',
+        background: '#f0f0f0',
+        borderLeft: '1px solid #e0e0e0',
       }}>
         {/* Canvas header */}
         <div style={{
-          position: 'absolute', top: 10, left: 10, right: 10, zIndex: 5,
-          display: 'flex', alignItems: 'center', gap: 6,
+          position: 'absolute', top: 10, right: 10, zIndex: 5,
+          display: 'flex', gap: 6,
         }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 20, padding: '4px 12px',
-            fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600,
-          }}>
-            🗺 Peta Kurikulum
-          </div>
           <button
             onClick={() => setCanvasExpanded(v => !v)}
             style={{
-              marginLeft: 'auto',
-              background: 'rgba(255,255,255,0.12)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 6, padding: '4px 10px',
-              fontSize: 11, color: 'rgba(255,255,255,0.8)',
-              cursor: 'pointer', fontWeight: 600,
+              background: 'white', border: '1px solid #d0d0d0',
+              borderRadius: 20, padding: '4px 12px',
+              fontSize: 11, color: '#555', cursor: 'pointer', fontWeight: 500,
             }}
           >
             {canvasExpanded ? '⊟ Kecilkan' : '⊞ Perbesar'}
           </button>
         </div>
-        <div style={{ width: '100%', height: '100%' }}>
 
-          {KurikulumCanvas && canvasProps ? (
-            <KurikulumCanvas {...canvasProps} />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#4b5563', fontSize: 13 }}>
-              Memuat peta…
-            </div>
-          )}
-        </div>
+        {KurikulumCanvas && canvasProps ? (
+          <KurikulumCanvas {...canvasProps} />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#aaa', fontSize: 13 }}>
+            Memuat peta…
+          </div>
+        )}
       </div>
 
       {/* ── Preview overlay ── */}

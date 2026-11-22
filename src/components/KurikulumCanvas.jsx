@@ -1,9 +1,10 @@
 /**
- * KurikulumCanvas — node-graph sesuai visual slide referensi v2.
- * Bahan Kajian: dark header + list dengan diamond icon cyan
- * CPMK: dark charcoal header + green rows dengan badge angka bulat
- * Sub-CPMK: rounded rect hijau dengan badge oranye di kanan
- * Background gelap (#1a1f2e)
+ * KurikulumCanvas — node-graph TEMA TERANG sesuai slide referensi.
+ * Background: #f0f0f0 light gray
+ * Node Bahan Kajian: putih, header charcoal #424242, row highlight kuning #fff9c4
+ * Node CPMK: charcoal header, green rows #66bb6a, badge orange #ff7043
+ * Node Sub-CPMK: header pill #43a047, light green rows #c8e6c9
+ * Edges: abu-abu #9e9e9e
  */
 import React, { useMemo } from 'react';
 import {
@@ -16,23 +17,44 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-// ── Design tokens (dari slide v2) ─────────────────────────────────────────────
+// ── Design tokens (slide referensi — tema terang) ─────────────────────────────
 const C = {
-  mk:      { bg: '#2d3748', border: '#4a5568', text: '#f7fafc', sub: '#a0aec0' },
-  des:     { bg: '#6d28d9', border: '#7c3aed', text: 'white',   sub: '#c4b5fd' },
-  bk:      { bg: '#1a202c', border: '#4a5568', text: '#e2e8f0',
-             headerBg: '#2d3748', rowBg: '#252d3d', diamond: '#63b3ed',
-             groupBg: '#f6e05e', groupText: '#744210' },
-  cpmk:    { bg: '#1a202c', border: '#4a5568', text: '#e2e8f0',
-             headerBg: '#2d3748', rowBg: '#38a169', badge: '#38a169' },
-  sub:     { bg: '#38a169', border: '#2f855a', text: 'white',
-             badge: '#ed8936', badgeText: 'white' },
-  relasi:  { bg: '#2d3748', border: '#4a5568', text: '#e2e8f0' },
+  bk: {
+    bg:        'white',
+    border:    '#e0e0e0',
+    headerBg:  '#424242',
+    headerText:'white',
+    rowBg:     'white',
+    rowText:   '#333',
+    hlBg:      '#fff9c4',   // row highlight (RMK/penting)
+    hlText:    '#5d4037',
+    hlBadge:   '#e53935',
+    // diamond colors per cluster
+    diamonds:  ['#1565c0','#00acc1','#e53935','#43a047','#1e88e5'],
+  },
+  cpmk: {
+    bg:        'white',
+    border:    '#e0e0e0',
+    headerBg:  '#424242',
+    headerText:'white',
+    rowBg:     '#66bb6a',
+    rowText:   'white',
+    badge:     '#ff7043',
+  },
+  sub: {
+    bg:        '#c8e6c9',
+    border:    '#a5d6a7',
+    headerBg:  '#43a047',
+    headerText:'white',
+    rowText:   '#1b5e20',
+    badge:     '#ff7043',
+  },
+  edge:       '#9e9e9e',
 };
 
-const NODE_W = 190;
-const ROW_H  = 28;
-const HEADER_H = 34;
+const NODE_W   = 200;
+const HEADER_H = 32;
+const ROW_H    = 26;
 
 // ── Handle helper ─────────────────────────────────────────────────────────────
 function Handles({ left = true, right = true }) {
@@ -45,19 +67,21 @@ function Handles({ left = true, right = true }) {
 }
 
 // ── Badge bulat ───────────────────────────────────────────────────────────────
-function Badge({ n, bg = '#38a169', color = 'white', size = 22 }) {
+function Badge({ label, bg = '#ff7043', color = 'white', size = 22, fontSize = 10 }) {
   return (
     <span style={{
-      background: bg, color, borderRadius: '50%',
-      width: size, height: size, minWidth: size,
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: Math.max(9, size * 0.45), fontWeight: 700, flexShrink: 0,
-    }}>{n}</span>
+      minWidth: size, height: size, borderRadius: size / 2,
+      background: bg, color,
+      fontSize, fontWeight: 700, padding: '0 5px', flexShrink: 0,
+    }}>
+      {label}
+    </span>
   );
 }
 
-// ── Diamond icon ──────────────────────────────────────────────────────────────
-function Diamond({ color = '#63b3ed', size = 10 }) {
+// ── Diamond ikon ──────────────────────────────────────────────────────────────
+function Diamond({ color = '#1565c0', size = 10 }) {
   return (
     <span style={{
       display: 'inline-block',
@@ -69,337 +93,299 @@ function Diamond({ color = '#63b3ed', size = 10 }) {
   );
 }
 
-// ── MK Node ───────────────────────────────────────────────────────────────────
-function MkNode({ data }) {
-  return (
-    <div style={{
-      background: C.mk.bg, border: `1.5px solid ${C.mk.border}`,
-      borderRadius: 10, minWidth: NODE_W, maxWidth: 230, overflow: 'hidden',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-    }}>
-      <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 9, color: C.mk.sub, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
-          Mata Kuliah
-        </div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: C.mk.text, lineHeight: 1.2, marginBottom: 2 }}>
-          {data.kode}
-        </div>
-        <div style={{ fontSize: 11, fontWeight: 500, color: '#a0aec0', lineHeight: 1.4 }}>
-          {data.nama}
-        </div>
-        {data.info && (
-          <div style={{
-            fontSize: 10, color: '#718096', marginTop: 8,
-            padding: '4px 8px', background: 'rgba(255,255,255,0.05)',
-            borderRadius: 5, border: '1px solid #3d4a5c',
-          }}>
-            {data.info}
-          </div>
-        )}
-      </div>
-      {/* Deskripsi baris */}
-      {data.desDot && (
-        <div style={{
-          borderTop: `1px solid ${C.mk.border}`,
-          background: '#553c9a', padding: '6px 14px',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          <span style={{ fontSize: 11, color: 'white', fontWeight: 600 }}>Deskripsi</span>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d6bcfa', display: 'inline-block' }} />
-        </div>
-      )}
-      <Handles left={false} right />
-    </div>
-  );
-}
-
-// ── Bahan Kajian Node (dari slide: dark + diamond icons + group highlight) ────
+// ═══════════════════════════════════════════════════════════════════════════════
+// NODE: Bahan Kajian
+// ═══════════════════════════════════════════════════════════════════════════════
 function BahanKajianNode({ data }) {
+  const { label, rows = [] } = data;
+  const totalH = HEADER_H + rows.length * ROW_H;
   return (
     <div style={{
-      background: C.bk.bg, border: `1.5px solid ${C.bk.border}`,
-      borderRadius: 10, minWidth: NODE_W, overflow: 'hidden',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+      width: NODE_W, minHeight: totalH,
+      background: C.bk.bg, border: `1px solid ${C.bk.border}`,
+      borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
     }}>
-      {/* Header */}
+      <Handles />
+      {/* Header charcoal */}
       <div style={{
-        padding: '7px 12px', background: C.bk.headerBg,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: `1px solid #3d4a5c`,
-        minHeight: HEADER_H,
+        height: HEADER_H, background: C.bk.headerBg,
+        display: 'flex', alignItems: 'center',
+        padding: '0 10px', gap: 6,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{data.label}</span>
-        {data.rmk && (
-          <span style={{ fontSize: 10, color: '#718096', fontStyle: 'italic' }}>{data.rmk}</span>
-        )}
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.bk.headerText, lineHeight: 1.2 }}>{label}</span>
       </div>
 
-      {/* Group row (highlighted, sesuai slide) */}
-      {data.group && (
-        <div style={{
-          padding: '5px 12px',
-          background: C.bk.groupBg,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          borderBottom: `1px solid #3d4a5c`,
-          minHeight: ROW_H,
-        }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: C.bk.groupText }}>{data.group}</span>
-          <span style={{
-            background: '#c05621', color: 'white', borderRadius: 4,
-            padding: '1px 7px', fontSize: 10, fontWeight: 700,
-          }}>–</span>
-        </div>
-      )}
-
-      {/* Item rows dengan diamond */}
-      {data.items?.map((item, i) => (
-        <div key={i} style={{
-          padding: '5px 12px',
-          background: i % 2 === 0 ? C.bk.rowBg : 'rgba(255,255,255,0.03)',
-          borderBottom: i < data.items.length - 1 ? `1px solid #2a3344` : 'none',
-          display: 'flex', alignItems: 'center', gap: 8,
-          minHeight: ROW_H,
-        }}>
-          <Diamond color={C.bk.diamond} size={9} />
-          <span style={{ fontSize: 11, color: '#cbd5e0', flex: 1 }}>{item.label}</span>
-          {item.badge != null && (
-            <Diamond color={C.bk.diamond} size={9} />
-          )}
-        </div>
-      ))}
-      <Handles left right />
+      {/* Rows */}
+      {rows.map((row, i) => {
+        const isHL = row.highlight;
+        const dColor = C.bk.diamonds[row.cluster ?? (i % C.bk.diamonds.length)];
+        return (
+          <div key={i} style={{
+            height: ROW_H,
+            background: isHL ? C.bk.hlBg : C.bk.rowBg,
+            display: 'flex', alignItems: 'center',
+            padding: '0 8px', gap: 6,
+            borderTop: '1px solid #f0f0f0',
+          }}>
+            <Diamond color={isHL ? C.bk.hlBadge : dColor} />
+            <span style={{
+              fontSize: 10, flex: 1,
+              color: isHL ? C.bk.hlText : C.bk.rowText,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {row.label}
+            </span>
+            {isHL && <Badge label="HL" bg={C.bk.hlBadge} size={18} fontSize={8} />}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ── CPMK Node (dark header, green rows, badge angka) ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// NODE: CPMK
+// ═══════════════════════════════════════════════════════════════════════════════
 function CpmkNode({ data }) {
+  const { label, rows = [], idx } = data;
+  const totalH = HEADER_H + rows.length * ROW_H;
   return (
     <div style={{
-      background: C.cpmk.bg, border: `1.5px solid ${C.cpmk.border}`,
-      borderRadius: 10, minWidth: NODE_W, overflow: 'hidden',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+      width: NODE_W, minHeight: totalH,
+      background: C.cpmk.bg, border: `1px solid ${C.cpmk.border}`,
+      borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
     }}>
-      {/* Header */}
+      <Handles />
+      {/* Header charcoal */}
       <div style={{
-        padding: '7px 12px', background: C.cpmk.headerBg,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: `1px solid #3d4a5c`,
-        minHeight: HEADER_H,
+        height: HEADER_H, background: C.cpmk.headerBg,
+        display: 'flex', alignItems: 'center',
+        padding: '0 10px', gap: 8,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>CPMK</span>
-        {data.count != null && (
-          <span style={{ fontSize: 10, color: '#718096' }}>({data.count})</span>
-        )}
+        {idx !== undefined && <Badge label={idx} bg={C.cpmk.badge} />}
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.cpmk.headerText, flex: 1 }}>{label}</span>
       </div>
 
-      {/* Green CPMK rows */}
-      {data.items?.map((item, i) => (
+      {/* Rows green */}
+      {rows.map((row, i) => (
         <div key={i} style={{
-          padding: '5px 12px',
-          background: '#276749',
-          borderBottom: i < data.items.length - 1 ? `1px solid #2f855a` : 'none',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          minHeight: ROW_H,
+          height: ROW_H, background: C.cpmk.rowBg,
+          display: 'flex', alignItems: 'center',
+          padding: '0 8px', gap: 6,
+          borderTop: '1px solid rgba(255,255,255,0.3)',
         }}>
-          <span style={{ fontSize: 11, color: '#c6f6d5', fontWeight: 500, flex: 1 }}>{item.label}</span>
-          <Badge n={item.badge} bg="#276749" color="#c6f6d5" size={20}
-            style={{ border: '1px solid #c6f6d5' }}
-          />
+          <span style={{ fontSize: 10, color: C.cpmk.rowText, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {row}
+          </span>
         </div>
       ))}
-      <Handles left right />
     </div>
   );
 }
 
-// ── Sub-CPMK Node (rounded green, badge oranye di kanan) ─────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// NODE: Sub-CPMK
+// ═══════════════════════════════════════════════════════════════════════════════
 function SubCpmkNode({ data }) {
+  const { label, rows = [], idx } = data;
+  const totalH = HEADER_H + rows.length * ROW_H;
   return (
     <div style={{
-      background: '#276749', border: `1.5px solid #2f855a`,
-      borderRadius: 10, minWidth: NODE_W + 20, overflow: 'hidden',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+      width: NODE_W, minHeight: totalH,
+      background: C.sub.bg, border: `1px solid ${C.sub.border}`,
+      borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
     }}>
-      {/* Header: label CPMK + badge oranye */}
+      <Handles />
+      {/* Header pill hijau tua */}
       <div style={{
-        padding: '7px 12px',
-        background: '#38a169',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: `1px solid #2f855a`,
-        minHeight: HEADER_H,
+        height: HEADER_H, background: C.sub.headerBg,
+        display: 'flex', alignItems: 'center',
+        padding: '0 10px', gap: 8,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>{data.label}</span>
-        <Badge n={data.badge} bg="#ed8936" color="white" size={22} />
+        {idx !== undefined && <Badge label={idx} bg={C.sub.badge} />}
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.sub.headerText, flex: 1 }}>{label}</span>
       </div>
 
-      {/* Sub-CPMK rows */}
-      {data.items?.map((item, i) => (
+      {/* Rows light green */}
+      {rows.map((row, i) => (
         <div key={i} style={{
-          padding: '5px 12px',
-          background: i % 2 === 0 ? '#276749' : 'rgba(255,255,255,0.05)',
-          borderBottom: i < data.items.length - 1 ? `1px solid #2f855a` : 'none',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          minHeight: ROW_H,
+          height: ROW_H,
+          display: 'flex', alignItems: 'center',
+          padding: '0 8px', gap: 6,
+          borderTop: '1px solid rgba(0,0,0,0.08)',
         }}>
-          <span style={{ fontSize: 11, color: '#c6f6d5', flex: 1 }}>{item.label}</span>
-          <Badge n={item.badge} bg="#ed8936" color="white" size={20} />
+          <span style={{ fontSize: 10, color: C.sub.rowText, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {row}
+          </span>
         </div>
       ))}
-      <Handles left right={false} />
     </div>
   );
 }
 
-// ── Relasi MK Node ────────────────────────────────────────────────────────────
-function RelasiNode({ data }) {
+// ═══════════════════════════════════════════════════════════════════════════════
+// NODE: MK Info (pojok kiri atas)
+// ═══════════════════════════════════════════════════════════════════════════════
+function MkInfoNode({ data }) {
+  const { mk, sks, jenjang, semester } = data;
   return (
     <div style={{
-      background: C.relasi.bg, border: `1px solid ${C.relasi.border}`,
-      borderRadius: 10, minWidth: 170, overflow: 'hidden',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      background: 'white', border: '1px solid #e0e0e0', borderRadius: 8,
+      padding: '10px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+      minWidth: 200,
     }}>
-      <div style={{ padding: '7px 12px', borderBottom: `1px solid #3d4a5c` }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#e2e8f0' }}>Relasi MK antar Semester</span>
+      <Handles left={false} />
+      <div style={{ fontWeight: 800, fontSize: 13, color: '#222', marginBottom: 4 }}>{mk}</div>
+      <div style={{ fontSize: 11, color: '#666', display: 'flex', gap: 8 }}>
+        <span>{sks} SKS</span>
+        {semester && <span>Sem. {semester}</span>}
+        {jenjang && <span>{jenjang}</span>}
       </div>
-      {data.groups?.map((g, gi) => (
-        <div key={gi}>
-          <div style={{ padding: '4px 12px', fontSize: 9, color: '#718096', letterSpacing: 1, textTransform: 'uppercase' }}>{g.label}</div>
-          {g.items.map((mk, mi) => (
-            <div key={mi} style={{
-              margin: '2px 8px', padding: '4px 10px',
-              background: '#3d4a5c', borderRadius: 5,
-              fontSize: 10, color: '#cbd5e0',
-              marginBottom: mi === g.items.length - 1 ? 6 : 2,
-            }}>{mk}</div>
-          ))}
-        </div>
-      ))}
-      <Handles left right={false} />
     </div>
   );
 }
 
-const nodeTypes = { mk: MkNode, bk: BahanKajianNode, cpmkGrp: CpmkNode, subCpmk: SubCpmkNode, relasi: RelasiNode };
+const nodeTypes = {
+  bahanKajian: BahanKajianNode,
+  cpmk:        CpmkNode,
+  subCpmk:     SubCpmkNode,
+  mkInfo:      MkInfoNode,
+};
 
-// ── Layout builder ────────────────────────────────────────────────────────────
-function buildGraph({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk }) {
-  const nodes = [];
-  const edges = [];
+// ── Layout helpers ─────────────────────────────────────────────────────────────
+const GAP_X = 240;
+const GAP_Y = 20;
+const START_X = 20;
+const START_Y = 80;
 
-  const edgeBase = { type: 'smoothstep', style: { strokeWidth: 1.5 } };
-
-  const X_MK   = 20;
-  const X_MID  = 290;   // BK & Relasi
-  const X_CPMK = 540;
-  const X_SUB  = 800;
-
-  const bkFilled  = (bahanKajian || []).filter(Boolean);
-  const cpmkList  = cpmk || [];
-
-  // ─ MK node ─
-  nodes.push({
-    id: 'mk', type: 'mk',
-    position: { x: X_MK, y: 160 },
-    data: {
-      kode: mkDipilih?.kode_mk || 'Kode MK',
-      nama: mkDipilih?.nama_mk || 'Nama Mata Kuliah',
-      info: mkDipilih
-        ? `${mkDipilih.sks||'-'} SKS • Sem. ${mkDipilih.semester||'-'} • ${mkDipilih.jenjang||'-'}`
-        : 'Belum dipilih',
-      desDot: !!(desMk?.jenis_mk || desMk?.kemampuan),
-    },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-  });
-
-  // ─ Bahan Kajian (slide: nama kelompok sebagai group highlight) ─
-  const bkGroupLabel = desMk?.bahan_kajian_des ? `Bahan Kajian (${bkFilled.length})` : `Bahan Kajian (${bkFilled.length})`;
-  nodes.push({
-    id: 'bk', type: 'bk',
-    position: { x: X_MID, y: 20 },
-    data: {
-      label: 'Bahan Kajian',
-      rmk: mkDipilih ? `RMK – ${mkDipilih.nama_mk?.substring(0, 20)}` : undefined,
-      group: bkGroupLabel,
-      items: bkFilled.length
-        ? bkFilled.map((b, i) => ({ label: b.length > 26 ? b.substring(0, 26) + '…' : b, badge: i }))
-        : [{ label: '(belum diisi)' }],
-    },
-  });
-  edges.push({ ...edgeBase, id: 'mk-bk', source: 'mk', target: 'bk', style: { ...edgeBase.style, stroke: '#4a5568' } });
-
-  // ─ Relasi MK ─
-  const bkH = HEADER_H + ROW_H + Math.max(bkFilled.length, 1) * ROW_H + 20;
-  nodes.push({
-    id: 'relasi', type: 'relasi',
-    position: { x: X_MID, y: 20 + bkH + 16 },
-    data: {
-      groups: [
-        { label: 'Semester Atas',  items: ['(Sem. atas)'] },
-        { label: 'Semester Sama',  items: ['(Sem. sama)', mkDipilih ? `${mkDipilih.kode_mk} (Sem.${mkDipilih.semester||'-'})` : '(MK ini)'] },
-        { label: 'Semester Bawah', items: ['(Prasyarat)'] },
-      ],
-    },
-  });
-  edges.push({ ...edgeBase, id: 'mk-rel', source: 'mk', target: 'relasi', style: { ...edgeBase.style, stroke: '#4a5568', strokeDasharray: '5,5' } });
-
-  // ─ CPMK group node ─
-  const cpmkNodeY = 20 + bkH / 2;
-  nodes.push({
-    id: 'cpmk', type: 'cpmkGrp',
-    position: { x: X_CPMK, y: cpmkNodeY },
-    data: {
-      count: cpmkList.length,
-      items: cpmkList.length
-        ? cpmkList.map((c, i) => ({ label: c.no || `CPMK ${i + 1}`, badge: i + 1 }))
-        : [{ label: '(belum diisi)', badge: '-' }],
-    },
-  });
-  edges.push({ ...edgeBase, id: 'bk-cpmk',  source: 'bk',     target: 'cpmk', style: { ...edgeBase.style, stroke: '#38a169' } });
-  edges.push({ ...edgeBase, id: 'rel-cpmk', source: 'relasi', target: 'cpmk', style: { ...edgeBase.style, stroke: '#4a5568', strokeDasharray: '5,5' } });
-
-  // ─ Sub-CPMK nodes ─
-  let subCounter = 0;
-  let subY = 20;
-
-  cpmkList.forEach((c, ci) => {
-    const kogs = c.sub_cpmk_kog   || [];
-    const psis = c.sub_cpmk_psiko || [];
-    const afks = c.sub_cpmk_afeksi || [];
-    const totalSub = kogs.length + psis.length + afks.length;
-    if (totalSub === 0) return;
-
-    const items = [
-      ...kogs.map(() => { subCounter++; return { label: `Sub-CPMK ${subCounter}`, badge: subCounter }; }),
-      ...psis.map(() => { subCounter++; return { label: `Sub-CPMK ${subCounter}`, badge: subCounter }; }),
-      ...afks.map(() => { subCounter++; return { label: `Sub-CPMK ${subCounter}`, badge: subCounter }; }),
-    ];
-
-    const nodeId = `sub-${ci}`;
-    nodes.push({
-      id: nodeId, type: 'subCpmk',
-      position: { x: X_SUB, y: subY },
-      data: { label: c.no || `CPMK ${ci + 1}`, badge: ci + 1, items },
-    });
-    edges.push({
-      ...edgeBase, id: `cpmk-${nodeId}`,
-      source: 'cpmk', target: nodeId,
-      style: { ...edgeBase.style, stroke: '#68d391' },
-    });
-
-    subY += HEADER_H + totalSub * ROW_H + 16;
-  });
-
-  return { nodes, edges };
-}
-
-// ── Main export ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function KurikulumCanvas({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk }) {
-  const { nodes, edges } = useMemo(
-    () => buildGraph({ mkDipilih, cplDipilih: cplDipilih || [], daftarCPL: daftarCPL || [], cpmk: cpmk || [], bahanKajian: bahanKajian || [], desMk }),
-    [mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk]
-  );
+  const { nodes, edges } = useMemo(() => {
+    const nodes = [];
+    const edges = [];
+    let yOff = START_Y;
+
+    // ── MK Info node ──
+    if (mkDipilih) {
+      nodes.push({
+        id: 'mk-info',
+        type: 'mkInfo',
+        position: { x: START_X, y: 10 },
+        data: {
+          mk: `${mkDipilih.kode_mk} · ${mkDipilih.nama_mk}`,
+          sks: mkDipilih.sks,
+          semester: mkDipilih.semester,
+          jenjang: mkDipilih.jenjang,
+        },
+      });
+    }
+
+    // ── Bahan Kajian nodes (kolom 1) ──
+    const bkList = Array.isArray(bahanKajian) ? bahanKajian : [];
+    bkList.forEach((bk, i) => {
+      const bkRows = [
+        { label: bk.nama || `BK ${i + 1}`, cluster: 0 },
+        ...(bk.sub_topik || []).map((s, j) => ({ label: s, cluster: j % C.bk.diamonds.length })),
+      ];
+      nodes.push({
+        id: `bk-${i}`,
+        type: 'bahanKajian',
+        position: { x: START_X, y: yOff },
+        data: { label: `Bahan Kajian ${i + 1}`, rows: bkRows },
+      });
+      yOff += HEADER_H + bkRows.length * ROW_H + GAP_Y;
+    });
+
+    // ── CPMK nodes (kolom 2) ──
+    const cpmkList = Array.isArray(cpmk) ? cpmk : [];
+    let yC = START_Y;
+    cpmkList.forEach((c, i) => {
+      const cRows = [c.deskripsi || c.kode || `CPMK ${i + 1}`];
+      nodes.push({
+        id: `cpmk-${i}`,
+        type: 'cpmk',
+        position: { x: START_X + GAP_X, y: yC },
+        data: { label: c.kode || `CPMK ${i + 1}`, rows: cRows, idx: i + 1 },
+      });
+      yC += HEADER_H + cRows.length * ROW_H + GAP_Y;
+
+      // Edge BK → CPMK (simple 1:1 mapping)
+      if (bkList[i]) {
+        edges.push({
+          id: `e-bk${i}-cpmk${i}`,
+          source: `bk-${i}`, target: `cpmk-${i}`,
+          type: 'straight',
+          style: { stroke: C.edge, strokeWidth: 1.5 },
+          markerEnd: { type: 'arrowclosed', color: C.edge, width: 10, height: 10 },
+        });
+      }
+    });
+
+    // ── Sub-CPMK nodes (kolom 3) ──
+    let yS = START_Y;
+    cpmkList.forEach((c, i) => {
+      const subs = Array.isArray(c.sub_cpmk) ? c.sub_cpmk : [];
+      subs.forEach((s, j) => {
+        const subRows = [s.deskripsi || s.kode || `Sub ${j + 1}`];
+        const subId = `sub-${i}-${j}`;
+        nodes.push({
+          id: subId,
+          type: 'subCpmk',
+          position: { x: START_X + GAP_X * 2, y: yS },
+          data: { label: s.kode || `Sub-CPMK ${j + 1}`, rows: subRows, idx: `${i + 1}.${j + 1}` },
+        });
+        yS += HEADER_H + subRows.length * ROW_H + GAP_Y;
+
+        edges.push({
+          id: `e-cpmk${i}-sub${i}-${j}`,
+          source: `cpmk-${i}`, target: subId,
+          type: 'straight',
+          style: { stroke: C.edge, strokeWidth: 1.5 },
+          markerEnd: { type: 'arrowclosed', color: C.edge, width: 10, height: 10 },
+        });
+      });
+    });
+
+    // ── Fallback: placeholder ketika data kosong ──
+    if (nodes.length <= 1) {
+      nodes.push({
+        id: 'placeholder',
+        type: 'bahanKajian',
+        position: { x: START_X, y: START_Y },
+        data: {
+          label: 'Bahan Kajian',
+          rows: [
+            { label: 'Pilih mata kuliah dan isi form', cluster: 0 },
+            { label: 'untuk melihat peta kurikulum', cluster: 1 },
+          ],
+        },
+      });
+      nodes.push({
+        id: 'placeholder-cpmk',
+        type: 'cpmk',
+        position: { x: START_X + GAP_X, y: START_Y },
+        data: { label: 'CPMK', rows: ['Capaian Pembelajaran MK'], idx: '—' },
+      });
+      nodes.push({
+        id: 'placeholder-sub',
+        type: 'subCpmk',
+        position: { x: START_X + GAP_X * 2, y: START_Y },
+        data: { label: 'Sub-CPMK', rows: ['Sub Capaian Pembelajaran'], idx: '—' },
+      });
+      edges.push({
+        id: 'e-ph1', source: 'placeholder', target: 'placeholder-cpmk',
+        type: 'straight', style: { stroke: C.edge, strokeWidth: 1.5 },
+      });
+      edges.push({
+        id: 'e-ph2', source: 'placeholder-cpmk', target: 'placeholder-sub',
+        type: 'straight', style: { stroke: C.edge, strokeWidth: 1.5 },
+      });
+    }
+
+    return { nodes, edges };
+  }, [mkDipilih, cpmk, bahanKajian]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -408,31 +394,14 @@ export default function KurikulumCanvas({ mkDipilih, cplDipilih, daftarCPL, cpmk
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.12 }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        panOnScroll
-        zoomOnScroll
-        style={{ background: '#1a1f2e' }}
-        defaultEdgeOptions={{ type: 'smoothstep' }}
+        fitViewOptions={{ padding: 0.15 }}
+        proOptions={{ hideAttribution: true }}
       >
-        <Background color="#2d3748" gap={24} size={1} variant="dots" />
-        <Controls showInteractive={false} position="bottom-right"
-          style={{ background: '#2d3748', border: '1px solid #4a5568', borderRadius: 8 }}
-        />
+        <Background color="#d0d0d0" gap={20} size={1} variant="dots" />
+        <Controls style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: 8 }} />
         <MiniMap
-          position="bottom-left"
-          nodeColor={n => {
-            if (n.id === 'mk')    return '#4a5568';
-            if (n.id === 'bk')    return '#2b6cb0';
-            if (n.id === 'cpmk')  return '#276749';
-            if (n.id === 'relasi') return '#4a5568';
-            if (n.id.startsWith('sub')) return '#ed8936';
-            return '#4a5568';
-          }}
-          style={{ background: '#1a202c', border: '1px solid #3d4a5c', borderRadius: 8 }}
-          maskColor="rgba(26,32,46,0.7)"
+          style={{ background: 'white', border: '1px solid #e0e0e0' }}
+          nodeColor={n => n.type === 'cpmk' ? '#66bb6a' : n.type === 'subCpmk' ? '#43a047' : '#9e9e9e'}
         />
       </ReactFlow>
     </div>

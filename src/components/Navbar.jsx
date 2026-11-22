@@ -22,136 +22,100 @@ export default function Navbar({ user }) {
 
   return (
     <header style={{
-      background: '#1a1f2e',
-      color: 'white',
+      background: 'white',
+      color: '#333',
       padding: '0 20px',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
+      boxShadow: 'none',
+      borderBottom: '1px solid #e0e0e0',
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      height: 44,
+      display: 'flex',
+      alignItems: 'center',
     }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        height: 52,
-        gap: 16,
+      {/* ── Logo kiri ── */}
+      <Link to="/dashboard" style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        textDecoration: 'none', flexShrink: 0, marginRight: 16,
       }}>
-
-        {/* ── Logo kiri ── */}
-        <Link to="/dashboard" style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          textDecoration: 'none', flexShrink: 0,
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            width: 32, height: 32, borderRadius: 8,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 13, color: 'white',
-            flexShrink: 0,
-          }}>
-            SK
-          </div>
-          <div style={{ lineHeight: 1.1 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: 'white' }}>SiKurikulum</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>ITS v2.0</div>
-          </div>
-        </Link>
-
-        {/* ── Nav links ── */}
-        <nav style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-          <NavLink to="/dashboard" active={isActive('/dashboard')}>🏠 Dasbor</NavLink>
-          <NavLink to="/direktori" active={isActive('/direktori')}>📚 Direktori</NavLink>
-        </nav>
-
-        {/* ── Spacer tengah + info versi ── */}
         <div style={{
-          flex: 1,
+          background: 'linear-gradient(135deg, #e91e8c 0%, #9c27b0 100%)',
+          width: 28, height: 28, borderRadius: 6,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 10,
+          fontWeight: 800, fontSize: 11, color: 'white', flexShrink: 0,
         }}>
-          <span style={{
-            fontSize: 10, color: 'rgba(255,255,255,0.35)',
-            padding: '2px 10px',
-            border: '1px solid rgba(255,255,255,0.08)',
+          SK
+        </div>
+      </Link>
+
+      {/* ── Nav links ── */}
+      <nav style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+        <NavLink to="/dashboard" active={isActive('/dashboard')}>Dasbor</NavLink>
+        <NavLink to="/direktori" active={isActive('/direktori')}>Direktori</NavLink>
+      </nav>
+
+      {/* ── Spacer + info versi (tengah) ── */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 13, color: '#777', fontWeight: 400 }}>
+          Versi 01.00 · Edit {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+        </span>
+      </div>
+
+      {/* ── Search bar ── */}
+      <div style={{ position: 'relative', flexShrink: 0, marginRight: 8 }}>
+        <input
+          type="text"
+          placeholder="Search"
+          value={searchVal}
+          onChange={e => setSearchVal(e.target.value)}
+          style={{
+            background: 'white',
+            border: '1px solid #d0d0d0',
             borderRadius: 20,
-          }}>
-            Sistem Penyusunan Kurikulum ITS · 2025
-          </span>
-        </div>
+            padding: '5px 14px',
+            fontSize: 13, color: '#333', outline: 'none',
+            width: 160,
+          }}
+        />
+      </div>
 
-        {/* ── Search bar ── */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <input
-            type="text"
-            placeholder="Cari mata kuliah…"
-            value={searchVal}
-            onChange={e => setSearchVal(e.target.value)}
-            style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 20,
-              padding: '5px 14px 5px 32px',
-              fontSize: 12, color: 'white', outline: 'none',
-              width: 180,
-            }}
-          />
-          <span style={{
-            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 12, color: 'rgba(255,255,255,0.4)',
-            pointerEvents: 'none',
-          }}>🔍</span>
-        </div>
+      {/* ── View Node button ── */}
+      <Link to="/direktori" style={{
+        background: 'white',
+        border: '1px solid #c0c0c0',
+        color: '#333',
+        borderRadius: 20, padding: '5px 16px',
+        fontSize: 13, fontWeight: 500, textDecoration: 'none',
+        whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10,
+      }}>
+        View Node
+      </Link>
 
-        {/* ── View Node button ── */}
-        <Link to="/cpmk" style={{
-          background: 'rgba(99,179,237,0.15)',
-          border: '1px solid rgba(99,179,237,0.3)',
-          color: '#63b3ed',
-          borderRadius: 6, padding: '5px 12px',
-          fontSize: 11, fontWeight: 600, textDecoration: 'none',
-          whiteSpace: 'nowrap', flexShrink: 0,
+      {/* ── User avatar + nama + peran + dropdown ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        border: '1px solid #e0e0e0', borderRadius: 20,
+        padding: '4px 10px 4px 6px', flexShrink: 0,
+        cursor: 'pointer',
+      }}
+        onClick={handleLogout}
+        title={loggingOut ? 'Keluar...' : 'Klik untuk keluar'}
+      >
+        {/* Avatar bulat */}
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #f48fb1 0%, #ff7043 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontWeight: 700, fontSize: 12, color: 'white', flexShrink: 0,
         }}>
-          🗺 View Node
-        </Link>
-
-        {/* ── User avatar + name + role + logout ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* Avatar */}
-          <div style={{
-            width: 30, height: 30, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: 12, color: 'white', flexShrink: 0,
-          }}>
-            {userInitial}
-          </div>
-
-          {/* Name + role */}
-          <div style={{ lineHeight: 1.1 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'white' }}>{userName}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{userRole}</div>
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            title="Keluar"
-            style={{
-              background: 'transparent',
-              color: 'rgba(255,255,255,0.4)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              padding: '4px 10px',
-              borderRadius: 6, fontSize: 11,
-              cursor: loggingOut ? 'not-allowed' : 'pointer',
-              opacity: loggingOut ? 0.5 : 1,
-            }}
-          >
-            {loggingOut ? '…' : '↪'}
-          </button>
+          {userInitial}
         </div>
-
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#222' }}>{userName}</div>
+          <div style={{ fontSize: 11, color: '#777' }}>{userRole}</div>
+        </div>
+        <span style={{ fontSize: 11, color: '#555', marginLeft: 2 }}>▾</span>
       </div>
     </header>
   );
@@ -163,12 +127,11 @@ function NavLink({ to, active, children }) {
       to={to}
       style={{
         padding: '5px 11px',
-        borderRadius: 6, fontSize: 12,
-        color: active ? 'white' : 'rgba(255,255,255,0.5)',
+        borderRadius: 6, fontSize: 13,
+        color: active ? '#e91e8c' : '#555',
         fontWeight: active ? 600 : 400,
-        background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+        background: active ? '#fce4ec' : 'transparent',
         transition: 'all 0.15s',
-        display: 'flex', alignItems: 'center', gap: 5,
         textDecoration: 'none',
       }}
     >
