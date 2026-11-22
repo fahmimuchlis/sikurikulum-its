@@ -160,28 +160,67 @@ export function TabBar({ tabs, activeTab, onTabChange }) {
   );
 }
 
+// ── Drag handle component ─────────────────────────────────────────────────────
+function DragHandle({ onMouseDown, vertical = false }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: vertical ? '100%' : 6,
+        height: vertical ? 6 : '100%',
+        flexShrink: 0,
+        cursor: vertical ? 'row-resize' : 'col-resize',
+        background: hovered ? 'rgba(99,179,237,0.5)' : 'rgba(0,0,0,0.08)',
+        transition: 'background 0.15s',
+        position: 'relative',
+        zIndex: 20,
+      }}
+      title="Geser untuk mengubah lebar"
+    >
+      {/* Grip dots */}
+      <div style={{
+        position: 'absolute',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        display: 'flex',
+        flexDirection: vertical ? 'row' : 'column',
+        gap: 3,
+      }}>
+        {[0,1,2].map(i => (
+          <div key={i} style={{
+            width: 3, height: 3, borderRadius: '50%',
+            background: hovered ? '#3b82f6' : '#9ca3af',
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main FormLayout ───────────────────────────────────────────────────────────
 export default function FormLayout({ children, silabusId, canvasProps, tabs, activeTab, onTabChange }) {
   const [showPreview, setShowPreview] = useState(false);
   const [canvasExpanded, setCanvasExpanded] = useState(false);
-  const [canvasWidth, setCanvasWidth] = useState(420);
+  // Panel kiri (form) bisa di-resize — default 300px, min 220, max 600
+  const [formWidth, setFormWidth] = useState(300);
   const [KurikulumCanvas, setKurikulumCanvas] = React.useState(null);
-  const dragRef = React.useRef(null);
 
   // Lazy load canvas
   React.useEffect(() => {
     import('./KurikulumCanvas').then(m => setKurikulumCanvas(() => m.default));
   }, []);
 
-  // Drag-to-resize handler
-  const onDragStart = React.useCallback((e) => {
+  // Drag panel kiri ─────────────────────────────────────────────────────────
+  const onFormDragStart = React.useCallback((e) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startW = canvasWidth;
+    const startW = formWidth;
     const onMove = (ev) => {
-      const delta = startX - ev.clientX; // geser kiri = perbesar
-      const newW = Math.max(260, Math.min(900, startW + delta));
-      setCanvasWidth(newW);
+      const newW = Math.max(220, Math.min(600, startW + (ev.clientX - startX)));
+      setFormWidth(newW);
     };
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
@@ -189,19 +228,18 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, [canvasWidth]);
+  }, [formWidth]);
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden', background: '#f8f9fb' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 52px)', overflow: 'hidden', background: '#f8f9fb' }}>
 
-      {/* ── Panel Kiri: Form Wizard ── */}
+      {/* ── Panel Kiri: Form Wizard (resizable) ── */}
       <div style={{
-        width: 282, flexShrink: 0,
+        width: formWidth, flexShrink: 0,
         display: 'flex', flexDirection: 'column',
         background: 'white',
-        borderRight: '1px solid #e8eaed',
-        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
         zIndex: 10,
+        minWidth: 0,
       }}>
         {/* Tab pills */}
         {tabs && tabs.length > 0 && (
@@ -213,6 +251,9 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
           {children}
         </div>
       </div>
+
+      {/* ── Drag handle antara panel kiri dan tengah ── */}
+      <DragHandle onMouseDown={onFormDragStart} />
 
       {/* ── Panel Tengah: Preview + tombol ── */}
       {!canvasExpanded && (
@@ -317,35 +358,15 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
 
       {/* ── Panel Kanan: Canvas ── */}
       <div style={{
-        flex: canvasExpanded ? 1 : '0 0 auto',
-        width: canvasExpanded ? undefined : canvasWidth,
+        flex: canvasExpanded ? 1 : '0 0 360px',
         position: 'relative', overflow: 'hidden',
         background: '#1a1f2e',
-        display: 'flex',
       }}>
-        {/* Drag handle — geser untuk resize */}
-        {!canvasExpanded && (
-          <div
-            ref={dragRef}
-            onMouseDown={onDragStart}
-            style={{
-              width: 5, flexShrink: 0,
-              background: 'rgba(255,255,255,0.08)',
-              cursor: 'col-resize',
-              transition: 'background 0.15s',
-              zIndex: 10,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,179,237,0.4)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-            title="Geser untuk mengubah lebar"
-          />
-        )}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          {/* Canvas header */}
-          <div style={{
-            position: 'absolute', top: 10, left: 10, right: 10, zIndex: 5,
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
+        {/* Canvas header */}
+        <div style={{
+          position: 'absolute', top: 10, left: 10, right: 10, zIndex: 5,
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
           <div style={{
             background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255,255,255,0.15)',
@@ -368,6 +389,7 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
             {canvasExpanded ? '⊟ Kecilkan' : '⊞ Perbesar'}
           </button>
         </div>
+        <div style={{ width: '100%', height: '100%' }}>
 
           {KurikulumCanvas && canvasProps ? (
             <KurikulumCanvas {...canvasProps} />
