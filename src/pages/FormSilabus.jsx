@@ -1871,7 +1871,10 @@ function SubCpmkKognitifPanel({ subList, onChange, parentFields, tipe, totalSubC
     <div>
       {/* Panduan Sub-CPMK Kognitif */}
       <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 14px', fontSize: 12, marginBottom: 14 }}>
-        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: 6 }}>🧠 Panduan Sub-CPMK Kognitif — {parentFields.no || 'CPMK ini'}</div>
+        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: `'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20` }}>psychology</span>
+          Panduan Sub-CPMK Kognitif — {parentFields.no || 'CPMK ini'}
+        </div>
         <div style={{ color: '#1e3a8a', lineHeight: 1.7 }}>
           Sub-CPMK adalah <strong>rincian operasional</strong> dari CPMK induk yang memandu aktivitas pembelajaran per sesi/pertemuan.
         </div>
@@ -2563,10 +2566,10 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
   const isAfeksi = tipe === 'afeksi';
 
   const TIPE_OPTS = [
-    { value: 'kognitif',       label: '🧠 Kognitif',        color: '#2563eb', bg: '#eff6ff',  desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
-    { value: 'psikomotorik',   label: '🤝 Psikomotorik',    color: '#7c3aed', bg: '#f5f3ff',  desc: 'Maks 2 kata kerja psikomotorik + objek kegiatan + rincian + ukuran' },
-    { value: 'kognitif_psiko', label: '🧠🤝 Gabungan',      color: '#0369a1', bg: '#e0f2fe',  desc: 'Kognitif (1) + Psikomotorik (1) dalam 1 kalimat CPMK' },
-    { value: 'afeksi',         label: '❤️ Afeksi',          color: '#dc2626', bg: '#fef2f2',  desc: 'Template baku ITS: sikap & etika akademik — 1 nomor per MK' },
+    { value: 'kognitif',       icon: 'psychology',           label: 'Kognitif',        color: '#2563eb', bg: '#eff6ff',  desc: 'Maks 2 kata kerja kognitif + elemen pengetahuan + rincian + ukuran' },
+    { value: 'psikomotorik',   icon: 'diversity_1',          label: 'Psikomotorik',    color: '#7c3aed', bg: '#f5f3ff',  desc: 'Maks 2 kata kerja psikomotorik + objek kegiatan + rincian + ukuran' },
+    { value: 'kognitif_psiko', icon: 'hub',                  label: 'Gabungan',        color: '#0369a1', bg: '#e0f2fe',  desc: 'Kognitif (1) + Psikomotorik (1) dalam 1 kalimat CPMK' },
+    { value: 'afeksi',         icon: 'sentiment_satisfied',  label: 'Afeksi',          color: '#dc2626', bg: '#fef2f2',  desc: 'Template baku ITS: sikap & etika akademik — 1 nomor per MK' },
   ];
 
   // CPL yang bisa dipetakan (hanya CPL yang sudah dipilih di Step3)
@@ -2595,8 +2598,9 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
         <div style={{ padding: '16px 28px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <h3 style={{ fontWeight: 700, fontSize: 17, color: '#1e293b', margin: 0 }}>
-                🏗️ Generator CPMK-{idx + 1}
+              <h3 style={{ fontWeight: 700, fontSize: 17, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: `'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24`, color: '#64748b' }}>build</span>
+                Generator CPMK-{idx + 1}
                 {jenjang && (
                   <span style={{
                     marginLeft: 10, fontSize: 12, fontWeight: 600,
@@ -2613,16 +2617,18 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                 {jenjang && <span style={{ marginLeft: 6, color: '#94a3b8', fontSize: 12 }}>• Kata kerja difilter untuk jenjang {jenjang}</span>}
               </p>
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8', lineHeight: 1, padding: 4 }}>✕</button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', lineHeight: 1, padding: 4, display: 'flex', alignItems: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 22, fontVariationSettings: `'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24` }}>close</span>
+            </button>
           </div>
 
           {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 4, marginTop: 12, flexWrap: 'wrap' }}>
             {[
-              { id: 'cpmk',           label: '🏗️ CPMK', disabled: false },
-              { id: 'subcpmk_kog',    label: `🧠 Sub-CPMK Kognitif${subCpmkKogList.length > 0 ? ` (${subCpmkKogList.length})` : ''}`,       disabled: !isKog },
-              { id: 'subcpmk_psiko',  label: `🤝 Sub-CPMK Psikomotorik${subCpmkPsikoList.length > 0 ? ` (${subCpmkPsikoList.length})` : ''}`, disabled: !isPsiko },
-              { id: 'subcpmk_afeksi', label: `❤️ Sub-CPMK Afeksi${subCpmkAfeksiList.length > 0 ? ` (${subCpmkAfeksiList.length})` : ''}`,    disabled: !isAfeksi },
+              { id: 'cpmk',           icon: 'construction',        label: `CPMK`,                                                                                            disabled: false },
+              { id: 'subcpmk_kog',    icon: 'psychology',           label: `Sub-CPMK Kognitif${subCpmkKogList.length > 0 ? ` (${subCpmkKogList.length})` : ''}`,             disabled: !isKog },
+              { id: 'subcpmk_psiko',  icon: 'diversity_1',          label: `Sub-CPMK Psikomotorik${subCpmkPsikoList.length > 0 ? ` (${subCpmkPsikoList.length})` : ''}`,     disabled: !isPsiko },
+              { id: 'subcpmk_afeksi', icon: 'sentiment_satisfied',  label: `Sub-CPMK Afeksi${subCpmkAfeksiList.length > 0 ? ` (${subCpmkAfeksiList.length})` : ''}`,         disabled: !isAfeksi },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -2636,8 +2642,15 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                   background: activeTab === tab.id ? '#f0f4ff' : 'transparent',
                   color: tab.disabled ? '#cbd5e1' : activeTab === tab.id ? '#4338ca' : '#64748b',
                   transition: 'all 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 5,
                 }}
-              >{tab.label}</button>
+              >
+                <span className="material-symbols-outlined" style={{
+                  fontSize: 15,
+                  fontVariationSettings: `'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20`,
+                }}>{tab.icon}</span>
+                {tab.label}
+              </button>
             ))}
           </div>
         </div>
@@ -2702,13 +2715,19 @@ function CpmkGeneratorModal({ item, idx, cplDipilih, daftarCPL, onSave, onClose,
                   <button key={t.value} type="button" title={t.desc}
                     onClick={() => setDraft(p => ({ ...EMPTY_CPMK_FIELDS, no: p.no, cpl_ids: p.cpl_ids||[], tipe: t.value }))}
                     style={{
-                      padding: '8px 6px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
+                      padding: '10px 6px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
                       border: `2px solid ${tipe === t.value ? t.color : '#e2e8f0'}`,
                       background: tipe === t.value ? t.bg : 'white',
-                      color: tipe === t.value ? t.color : '#64748b',
-                      fontWeight: tipe === t.value ? 700 : 400, fontSize: 12,
+                      color: tipe === t.value ? t.color : '#94a3b8',
+                      fontWeight: tipe === t.value ? 700 : 400, fontSize: 11,
                       transition: 'all 0.15s',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     }}>
+                    <span className="material-symbols-outlined" style={{
+                      fontSize: 26,
+                      fontVariationSettings: `'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24`,
+                      color: tipe === t.value ? t.color : '#bbb',
+                    }}>{t.icon}</span>
                     {t.label}
                   </button>
                 ))}
