@@ -1,7 +1,9 @@
 /**
- * KurikulumCanvas — live node-graph sesuai visual slide referensi.
- * Layout: MK di kiri-tengah → branch ke kanan (CPL, Bahan Kajian, CPMK → Sub-CPMK)
- * Warna: gelap (slate/teal/green) sesuai slide.
+ * KurikulumCanvas — node-graph sesuai visual slide referensi v2.
+ * Bahan Kajian: dark header + list dengan diamond icon cyan
+ * CPMK: dark charcoal header + green rows dengan badge angka bulat
+ * Sub-CPMK: rounded rect hijau dengan badge oranye di kanan
+ * Background gelap (#1a1f2e)
  */
 import React, { useMemo } from 'react';
 import {
@@ -14,20 +16,23 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-// ── Design tokens (dari slide) ────────────────────────────────────────────────
+// ── Design tokens (dari slide v2) ─────────────────────────────────────────────
 const C = {
-  mk:      { bg: '#1e293b', border: '#475569', text: '#f1f5f9', sub: '#94a3b8' },
+  mk:      { bg: '#2d3748', border: '#4a5568', text: '#f7fafc', sub: '#a0aec0' },
   des:     { bg: '#6d28d9', border: '#7c3aed', text: 'white',   sub: '#c4b5fd' },
-  cpl:     { bg: '#374151', border: '#6b7280', text: '#f9fafb', sub: '#d1d5db', row: '#4b5563', badge: '#1f2937' },
-  bk:      { bg: '#0f766e', border: '#14b8a6', text: 'white',   sub: '#99f6e4', row: '#0d9488', badge: '#064e3b' },
-  cpmk:    { bg: '#166534', border: '#22c55e', text: 'white',   sub: '#86efac', row: '#15803d', badge: '#14532d' },
-  sub:     { bg: '#bbf7d0', border: '#86efac', text: '#14532d', header: '#86efac', badge: '#16a34a' },
-  relasi:  { bg: '#64748b', border: '#94a3b8', text: 'white' },
+  bk:      { bg: '#1a202c', border: '#4a5568', text: '#e2e8f0',
+             headerBg: '#2d3748', rowBg: '#252d3d', diamond: '#63b3ed',
+             groupBg: '#f6e05e', groupText: '#744210' },
+  cpmk:    { bg: '#1a202c', border: '#4a5568', text: '#e2e8f0',
+             headerBg: '#2d3748', rowBg: '#38a169', badge: '#38a169' },
+  sub:     { bg: '#38a169', border: '#2f855a', text: 'white',
+             badge: '#ed8936', badgeText: 'white' },
+  relasi:  { bg: '#2d3748', border: '#4a5568', text: '#e2e8f0' },
 };
 
-const NODE_W = 180;
-const ROW_H = 26;
-const HEADER_H = 32;
+const NODE_W = 190;
+const ROW_H  = 28;
+const HEADER_H = 34;
 
 // ── Handle helper ─────────────────────────────────────────────────────────────
 function Handles({ left = true, right = true }) {
@@ -40,14 +45,27 @@ function Handles({ left = true, right = true }) {
 }
 
 // ── Badge bulat ───────────────────────────────────────────────────────────────
-function Badge({ n, bg = '#1f2937', color = 'white', size = 20 }) {
+function Badge({ n, bg = '#38a169', color = 'white', size = 22 }) {
   return (
     <span style={{
       background: bg, color, borderRadius: '50%',
-      width: size, height: size, display: 'inline-flex',
-      alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.5, fontWeight: 700, flexShrink: 0,
+      width: size, height: size, minWidth: size,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.max(9, size * 0.45), fontWeight: 700, flexShrink: 0,
     }}>{n}</span>
+  );
+}
+
+// ── Diamond icon ──────────────────────────────────────────────────────────────
+function Diamond({ color = '#63b3ed', size = 10 }) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      width: size, height: size,
+      background: color,
+      transform: 'rotate(45deg)',
+      flexShrink: 0,
+    }} />
   );
 }
 
@@ -55,34 +73,39 @@ function Badge({ n, bg = '#1f2937', color = 'white', size = 20 }) {
 function MkNode({ data }) {
   return (
     <div style={{
-      background: C.mk.bg, border: `2px solid ${C.mk.border}`,
-      borderRadius: 10, minWidth: NODE_W, maxWidth: 220, overflow: 'hidden',
+      background: C.mk.bg, border: `1.5px solid ${C.mk.border}`,
+      borderRadius: 10, minWidth: NODE_W, maxWidth: 230, overflow: 'hidden',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
     }}>
-      <div style={{ padding: '10px 14px' }}>
-        <div style={{ fontSize: 9, color: C.mk.sub, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 3 }}>
+      <div style={{ padding: '12px 14px' }}>
+        <div style={{ fontSize: 9, color: C.mk.sub, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
           Mata Kuliah
         </div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.mk.text, lineHeight: 1.3 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: C.mk.text, lineHeight: 1.2, marginBottom: 2 }}>
           {data.kode}
         </div>
-        <div style={{ fontSize: 11, fontWeight: 500, color: C.mk.text, lineHeight: 1.4, marginTop: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, color: '#a0aec0', lineHeight: 1.4 }}>
           {data.nama}
         </div>
         {data.info && (
-          <div style={{ fontSize: 10, color: C.mk.sub, marginTop: 6, padding: '4px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: 5 }}>
+          <div style={{
+            fontSize: 10, color: '#718096', marginTop: 8,
+            padding: '4px 8px', background: 'rgba(255,255,255,0.05)',
+            borderRadius: 5, border: '1px solid #3d4a5c',
+          }}>
             {data.info}
           </div>
         )}
       </div>
-      {/* Deskripsi baris bawah */}
+      {/* Deskripsi baris */}
       {data.desDot && (
         <div style={{
           borderTop: `1px solid ${C.mk.border}`,
-          background: C.des.bg, padding: '6px 14px',
+          background: '#553c9a', padding: '6px 14px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <span style={{ fontSize: 11, color: 'white', fontWeight: 600 }}>Deskripsi</span>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#c4b5fd', display: 'inline-block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d6bcfa', display: 'inline-block' }} />
         </div>
       )}
       <Handles left={false} right />
@@ -90,40 +113,58 @@ function MkNode({ data }) {
   );
 }
 
-// ── Group Node (CPL / Bahan Kajian / CPMK) ────────────────────────────────────
-function GroupNode({ data }) {
-  const c = C[data.ck] || C.cpl;
+// ── Bahan Kajian Node (dari slide: dark + diamond icons + group highlight) ────
+function BahanKajianNode({ data }) {
   return (
     <div style={{
-      background: c.bg, border: `2px solid ${c.border}`,
+      background: C.bk.bg, border: `1.5px solid ${C.bk.border}`,
       borderRadius: 10, minWidth: NODE_W, overflow: 'hidden',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
     }}>
       {/* Header */}
       <div style={{
-        padding: '7px 12px', background: c.bg,
+        padding: '7px 12px', background: C.bk.headerBg,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: `1px solid ${c.border}60`,
+        borderBottom: `1px solid #3d4a5c`,
         minHeight: HEADER_H,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: c.text }}>{data.label}</span>
-        {data.count != null && (
-          <span style={{
-            background: 'rgba(0,0,0,0.25)', color: c.text,
-            borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 600,
-          }}>({data.count})</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{data.label}</span>
+        {data.rmk && (
+          <span style={{ fontSize: 10, color: '#718096', fontStyle: 'italic' }}>{data.rmk}</span>
         )}
       </div>
-      {/* Rows */}
+
+      {/* Group row (highlighted, sesuai slide) */}
+      {data.group && (
+        <div style={{
+          padding: '5px 12px',
+          background: C.bk.groupBg,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          borderBottom: `1px solid #3d4a5c`,
+          minHeight: ROW_H,
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: C.bk.groupText }}>{data.group}</span>
+          <span style={{
+            background: '#c05621', color: 'white', borderRadius: 4,
+            padding: '1px 7px', fontSize: 10, fontWeight: 700,
+          }}>–</span>
+        </div>
+      )}
+
+      {/* Item rows dengan diamond */}
       {data.items?.map((item, i) => (
         <div key={i} style={{
           padding: '5px 12px',
-          background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.05)',
-          borderBottom: i < data.items.length - 1 ? `1px solid ${c.border}30` : 'none',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: i % 2 === 0 ? C.bk.rowBg : 'rgba(255,255,255,0.03)',
+          borderBottom: i < data.items.length - 1 ? `1px solid #2a3344` : 'none',
+          display: 'flex', alignItems: 'center', gap: 8,
           minHeight: ROW_H,
         }}>
-          <span style={{ fontSize: 11, color: c.text, flex: 1 }}>{item.label}</span>
-          {item.badge != null && <Badge n={item.badge} bg={c.badge || 'rgba(0,0,0,0.3)'} color={c.text} />}
+          <Diamond color={C.bk.diamond} size={9} />
+          <span style={{ fontSize: 11, color: '#cbd5e0', flex: 1 }}>{item.label}</span>
+          {item.badge != null && (
+            <Diamond color={C.bk.diamond} size={9} />
+          )}
         </div>
       ))}
       <Handles left right />
@@ -131,34 +172,78 @@ function GroupNode({ data }) {
   );
 }
 
-// ── Sub-CPMK Node ─────────────────────────────────────────────────────────────
-function SubCpmkNode({ data }) {
+// ── CPMK Node (dark header, green rows, badge angka) ─────────────────────────
+function CpmkNode({ data }) {
   return (
     <div style={{
-      background: C.sub.bg, border: `2px solid ${C.sub.border}`,
+      background: C.cpmk.bg, border: `1.5px solid ${C.cpmk.border}`,
       borderRadius: 10, minWidth: NODE_W, overflow: 'hidden',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
     }}>
       {/* Header */}
       <div style={{
-        padding: '6px 12px', background: C.sub.header,
+        padding: '7px 12px', background: C.cpmk.headerBg,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: `1px solid ${C.sub.border}`,
+        borderBottom: `1px solid #3d4a5c`,
         minHeight: HEADER_H,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.sub.text }}>{data.label}</span>
-        <Badge n={data.badge} bg={C.sub.badge} color="white" />
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>CPMK</span>
+        {data.count != null && (
+          <span style={{ fontSize: 10, color: '#718096' }}>({data.count})</span>
+        )}
       </div>
-      {/* Sub rows */}
+
+      {/* Green CPMK rows */}
       {data.items?.map((item, i) => (
         <div key={i} style={{
           padding: '5px 12px',
-          background: i % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.04)',
-          borderBottom: i < data.items.length - 1 ? `1px solid ${C.sub.border}60` : 'none',
+          background: '#276749',
+          borderBottom: i < data.items.length - 1 ? `1px solid #2f855a` : 'none',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           minHeight: ROW_H,
         }}>
-          <span style={{ fontSize: 11, color: C.sub.text, flex: 1 }}>{item.label}</span>
-          <Badge n={item.badge} bg={C.sub.badge} color="white" size={18} />
+          <span style={{ fontSize: 11, color: '#c6f6d5', fontWeight: 500, flex: 1 }}>{item.label}</span>
+          <Badge n={item.badge} bg="#276749" color="#c6f6d5" size={20}
+            style={{ border: '1px solid #c6f6d5' }}
+          />
+        </div>
+      ))}
+      <Handles left right />
+    </div>
+  );
+}
+
+// ── Sub-CPMK Node (rounded green, badge oranye di kanan) ─────────────────────
+function SubCpmkNode({ data }) {
+  return (
+    <div style={{
+      background: '#276749', border: `1.5px solid #2f855a`,
+      borderRadius: 10, minWidth: NODE_W + 20, overflow: 'hidden',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+    }}>
+      {/* Header: label CPMK + badge oranye */}
+      <div style={{
+        padding: '7px 12px',
+        background: '#38a169',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        borderBottom: `1px solid #2f855a`,
+        minHeight: HEADER_H,
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>{data.label}</span>
+        <Badge n={data.badge} bg="#ed8936" color="white" size={22} />
+      </div>
+
+      {/* Sub-CPMK rows */}
+      {data.items?.map((item, i) => (
+        <div key={i} style={{
+          padding: '5px 12px',
+          background: i % 2 === 0 ? '#276749' : 'rgba(255,255,255,0.05)',
+          borderBottom: i < data.items.length - 1 ? `1px solid #2f855a` : 'none',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          minHeight: ROW_H,
+        }}>
+          <span style={{ fontSize: 11, color: '#c6f6d5', flex: 1 }}>{item.label}</span>
+          <Badge n={item.badge} bg="#ed8936" color="white" size={20} />
         </div>
       ))}
       <Handles left right={false} />
@@ -166,23 +251,25 @@ function SubCpmkNode({ data }) {
   );
 }
 
-// ── Relasi MK antar Semester Node ─────────────────────────────────────────────
+// ── Relasi MK Node ────────────────────────────────────────────────────────────
 function RelasiNode({ data }) {
   return (
     <div style={{
       background: C.relasi.bg, border: `1px solid ${C.relasi.border}`,
-      borderRadius: 10, minWidth: 160, overflow: 'hidden',
+      borderRadius: 10, minWidth: 170, overflow: 'hidden',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
     }}>
-      <div style={{ padding: '7px 12px', borderBottom: `1px solid ${C.relasi.border}60` }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: C.relasi.text }}>Relasi MK antar Semester</span>
+      <div style={{ padding: '7px 12px', borderBottom: `1px solid #3d4a5c` }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#e2e8f0' }}>Relasi MK antar Semester</span>
       </div>
       {data.groups?.map((g, gi) => (
         <div key={gi}>
-          <div style={{ padding: '4px 12px', fontSize: 9, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase' }}>{g.label}</div>
+          <div style={{ padding: '4px 12px', fontSize: 9, color: '#718096', letterSpacing: 1, textTransform: 'uppercase' }}>{g.label}</div>
           {g.items.map((mk, mi) => (
             <div key={mi} style={{
               margin: '2px 8px', padding: '4px 10px',
-              background: '#475569', borderRadius: 6, fontSize: 10, color: '#e2e8f0',
+              background: '#3d4a5c', borderRadius: 5,
+              fontSize: 10, color: '#cbd5e0',
               marginBottom: mi === g.items.length - 1 ? 6 : 2,
             }}>{mk}</div>
           ))}
@@ -193,7 +280,7 @@ function RelasiNode({ data }) {
   );
 }
 
-const nodeTypes = { mk: MkNode, group: GroupNode, subCpmk: SubCpmkNode, relasi: RelasiNode };
+const nodeTypes = { mk: MkNode, bk: BahanKajianNode, cpmkGrp: CpmkNode, subCpmk: SubCpmkNode, relasi: RelasiNode };
 
 // ── Layout builder ────────────────────────────────────────────────────────────
 function buildGraph({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk }) {
@@ -202,20 +289,18 @@ function buildGraph({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk
 
   const edgeBase = { type: 'smoothstep', style: { strokeWidth: 1.5 } };
 
-  // ── Kolom X ──
-  const X_MK    = 40;
-  const X_CPL   = 300;
-  const X_BK    = 540;
-  const X_CPMK  = 540;
-  const X_SUB   = 780;
-  const X_REL   = 300;  // relasi di bawah CPL
+  const X_MK   = 20;
+  const X_MID  = 290;   // BK & Relasi
+  const X_CPMK = 540;
+  const X_SUB  = 800;
 
-  // ── MK node (y tengah) ──
-  const cplItems = daftarCPL.filter(c => cplDipilih.includes(c.id));
-  const bkFilled = (bahanKajian || []).filter(Boolean);
+  const bkFilled  = (bahanKajian || []).filter(Boolean);
+  const cpmkList  = cpmk || [];
 
+  // ─ MK node ─
   nodes.push({
-    id: 'mk', type: 'mk', position: { x: X_MK, y: 160 },
+    id: 'mk', type: 'mk',
+    position: { x: X_MK, y: 160 },
     data: {
       kode: mkDipilih?.kode_mk || 'Kode MK',
       nama: mkDipilih?.nama_mk || 'Nama Mata Kuliah',
@@ -228,69 +313,58 @@ function buildGraph({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk
     targetPosition: Position.Left,
   });
 
-  // ── CPL node ──
+  // ─ Bahan Kajian (slide: nama kelompok sebagai group highlight) ─
+  const bkGroupLabel = desMk?.bahan_kajian_des ? `Bahan Kajian (${bkFilled.length})` : `Bahan Kajian (${bkFilled.length})`;
   nodes.push({
-    id: 'cpl', type: 'group', position: { x: X_CPL, y: 60 },
+    id: 'bk', type: 'bk',
+    position: { x: X_MID, y: 20 },
     data: {
-      ck: 'cpl', label: 'CPL',
-      count: cplItems.length,
-      items: cplItems.length
-        ? cplItems.map(c => ({ label: c.nomor_cpl }))
-        : [{ label: '(belum dipilih)' }],
+      label: 'Bahan Kajian',
+      rmk: mkDipilih ? `RMK – ${mkDipilih.nama_mk?.substring(0, 20)}` : undefined,
+      group: bkGroupLabel,
+      items: bkFilled.length
+        ? bkFilled.map((b, i) => ({ label: b.length > 26 ? b.substring(0, 26) + '…' : b, badge: i }))
+        : [{ label: '(belum diisi)' }],
     },
   });
-  edges.push({ ...edgeBase, id: 'mk-cpl', source: 'mk', target: 'cpl', style: { ...edgeBase.style, stroke: '#6b7280' } });
+  edges.push({ ...edgeBase, id: 'mk-bk', source: 'mk', target: 'bk', style: { ...edgeBase.style, stroke: '#4a5568' } });
 
-  // ── Relasi MK (hanya jika ada info prasyarat — pakai dummy) ──
+  // ─ Relasi MK ─
+  const bkH = HEADER_H + ROW_H + Math.max(bkFilled.length, 1) * ROW_H + 20;
   nodes.push({
-    id: 'relasi', type: 'relasi', position: { x: X_REL, y: 60 + HEADER_H + cplItems.length * ROW_H + 40 },
+    id: 'relasi', type: 'relasi',
+    position: { x: X_MID, y: 20 + bkH + 16 },
     data: {
       groups: [
         { label: 'Semester Atas',  items: ['(Sem. atas)'] },
-        { label: 'Semester Sama',  items: ['(Sem. sama)', mkDipilih?.kode_mk ? `${mkDipilih.kode_mk} (Sem.${mkDipilih.semester||'-'})` : '(MK ini)'] },
+        { label: 'Semester Sama',  items: ['(Sem. sama)', mkDipilih ? `${mkDipilih.kode_mk} (Sem.${mkDipilih.semester||'-'})` : '(MK ini)'] },
         { label: 'Semester Bawah', items: ['(Prasyarat)'] },
       ],
     },
   });
-  edges.push({ ...edgeBase, id: 'mk-rel', source: 'mk', target: 'relasi', style: { ...edgeBase.style, stroke: '#6b7280', strokeDasharray: '5,5' } });
+  edges.push({ ...edgeBase, id: 'mk-rel', source: 'mk', target: 'relasi', style: { ...edgeBase.style, stroke: '#4a5568', strokeDasharray: '5,5' } });
 
-  // ── Bahan Kajian node ──
-  const bkY = 60;
+  // ─ CPMK group node ─
+  const cpmkNodeY = 20 + bkH / 2;
   nodes.push({
-    id: 'bk', type: 'group', position: { x: X_BK, y: bkY },
+    id: 'cpmk', type: 'cpmkGrp',
+    position: { x: X_CPMK, y: cpmkNodeY },
     data: {
-      ck: 'bk', label: 'Bahan Kajian',
-      count: bkFilled.length,
-      items: bkFilled.length
-        ? bkFilled.map((b, i) => ({ label: b.length > 28 ? b.substring(0, 28) + '…' : b, badge: String.fromCharCode(65 + i) }))
-        : [{ label: '(belum diisi)' }],
-    },
-  });
-  edges.push({ ...edgeBase, id: 'mk-bk', source: 'mk', target: 'bk', style: { ...edgeBase.style, stroke: '#14b8a6' } });
-
-  // ── CPMK node ──
-  const cpmkY = bkY + HEADER_H + Math.max(bkFilled.length, 1) * ROW_H + 24;
-  const cpmkList = cpmk || [];
-
-  nodes.push({
-    id: 'cpmk', type: 'group', position: { x: X_CPMK, y: cpmkY },
-    data: {
-      ck: 'cpmk', label: 'CPMK',
       count: cpmkList.length,
       items: cpmkList.length
-        ? cpmkList.map((c, i) => ({ label: c.no || `CPMK ${i+1}`, badge: i + 1 }))
-        : [{ label: '(belum diisi)' }],
+        ? cpmkList.map((c, i) => ({ label: c.no || `CPMK ${i + 1}`, badge: i + 1 }))
+        : [{ label: '(belum diisi)', badge: '-' }],
     },
   });
-  edges.push({ ...edgeBase, id: 'cpl-cpmk',  source: 'cpl', target: 'cpmk', style: { ...edgeBase.style, stroke: '#22c55e' } });
-  edges.push({ ...edgeBase, id: 'bk-cpmk',   source: 'bk',  target: 'cpmk', style: { ...edgeBase.style, stroke: '#22c55e' } });
+  edges.push({ ...edgeBase, id: 'bk-cpmk',  source: 'bk',     target: 'cpmk', style: { ...edgeBase.style, stroke: '#38a169' } });
+  edges.push({ ...edgeBase, id: 'rel-cpmk', source: 'relasi', target: 'cpmk', style: { ...edgeBase.style, stroke: '#4a5568', strokeDasharray: '5,5' } });
 
-  // ── Sub-CPMK nodes (satu per CPMK) ──
+  // ─ Sub-CPMK nodes ─
   let subCounter = 0;
-  let subY = bkY;
+  let subY = 20;
 
   cpmkList.forEach((c, ci) => {
-    const kogs = c.sub_cpmk_kog  || [];
+    const kogs = c.sub_cpmk_kog   || [];
     const psis = c.sub_cpmk_psiko || [];
     const afks = c.sub_cpmk_afeksi || [];
     const totalSub = kogs.length + psis.length + afks.length;
@@ -306,15 +380,15 @@ function buildGraph({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk
     nodes.push({
       id: nodeId, type: 'subCpmk',
       position: { x: X_SUB, y: subY },
-      data: { label: c.no || `CPMK ${ci+1}`, badge: ci + 1, items },
+      data: { label: c.no || `CPMK ${ci + 1}`, badge: ci + 1, items },
     });
     edges.push({
       ...edgeBase, id: `cpmk-${nodeId}`,
       source: 'cpmk', target: nodeId,
-      style: { ...edgeBase.style, stroke: '#86efac' },
+      style: { ...edgeBase.style, stroke: '#68d391' },
     });
 
-    subY += HEADER_H + totalSub * ROW_H + 20;
+    subY += HEADER_H + totalSub * ROW_H + 16;
   });
 
   return { nodes, edges };
@@ -323,14 +397,7 @@ function buildGraph({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function KurikulumCanvas({ mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk }) {
   const { nodes, edges } = useMemo(
-    () => buildGraph({
-      mkDipilih,
-      cplDipilih: cplDipilih || [],
-      daftarCPL:  daftarCPL  || [],
-      cpmk:       cpmk       || [],
-      bahanKajian: bahanKajian || [],
-      desMk,
-    }),
+    () => buildGraph({ mkDipilih, cplDipilih: cplDipilih || [], daftarCPL: daftarCPL || [], cpmk: cpmk || [], bahanKajian: bahanKajian || [], desMk }),
     [mkDipilih, cplDipilih, daftarCPL, cpmk, bahanKajian, desMk]
   );
 
@@ -341,29 +408,31 @@ export default function KurikulumCanvas({ mkDipilih, cplDipilih, daftarCPL, cpmk
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.15 }}
+        fitViewOptions={{ padding: 0.12 }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
         panOnScroll
         zoomOnScroll
-        style={{ background: '#f1f5f9' }}
+        style={{ background: '#1a1f2e' }}
         defaultEdgeOptions={{ type: 'smoothstep' }}
       >
-        <Background color="#cbd5e1" gap={20} size={1} variant="dots" />
-        <Controls showInteractive={false} position="bottom-right" />
+        <Background color="#2d3748" gap={24} size={1} variant="dots" />
+        <Controls showInteractive={false} position="bottom-right"
+          style={{ background: '#2d3748', border: '1px solid #4a5568', borderRadius: 8 }}
+        />
         <MiniMap
           position="bottom-left"
           nodeColor={n => {
-            if (n.id === 'mk')    return C.mk.bg;
-            if (n.id === 'cpl')   return C.cpl.bg;
-            if (n.id === 'bk')    return C.bk.bg;
-            if (n.id === 'cpmk')  return C.cpmk.bg;
-            if (n.id.startsWith('sub')) return C.sub.badge;
-            return C.relasi.bg;
+            if (n.id === 'mk')    return '#4a5568';
+            if (n.id === 'bk')    return '#2b6cb0';
+            if (n.id === 'cpmk')  return '#276749';
+            if (n.id === 'relasi') return '#4a5568';
+            if (n.id.startsWith('sub')) return '#ed8936';
+            return '#4a5568';
           }}
-          style={{ background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: 8 }}
-          maskColor="rgba(241,245,249,0.7)"
+          style={{ background: '#1a202c', border: '1px solid #3d4a5c', borderRadius: 8 }}
+          maskColor="rgba(26,32,46,0.7)"
         />
       </ReactFlow>
     </div>

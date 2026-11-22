@@ -335,6 +335,7 @@ export default function FormSilabus({ user }) {
     cpmk,
     bahanKajian,
     desMk,
+    deskripsiEn,
   };
 
   return (

@@ -1,30 +1,28 @@
 /**
- * FormLayout — wrapper split-panel untuk FormSilabus.
- * Kiri: wizard (340px fixed) dengan tab navigasi horizontal.
- * Kanan: canvas node preview live.
- * Tombol Preview: overlay DetailDokumen.
+ * FormLayout — 3-panel layout sesuai desain slide:
+ * Kiri: Form wizard (280px, putih)
+ * Tengah: Preview text area (flex)
+ * Kanan: Node canvas (expandable)
  */
 import React, { useState } from 'react';
 
-// ── Tab colors (sesuai slide referensi) ───────────────────────────────────────
+// ── Tab colors (pill tabs di atas form) ──────────────────────────────────────
 const TAB_COLORS = [
-  { bg: '#ec4899', light: '#fdf2f8', text: 'white', border: '#f9a8d4' }, // Deskripsi — pink
-  { bg: '#14b8a6', light: '#f0fdfa', text: 'white', border: '#99f6e4' }, // CPL — teal
-  { bg: '#f97316', light: '#fff7ed', text: 'white', border: '#fdba74' }, // CPMK — orange
-  { bg: '#8b5cf6', light: '#f5f3ff', text: 'white', border: '#c4b5fd' }, // Bahan Kajian — violet
-  { bg: '#3b82f6', light: '#eff6ff', text: 'white', border: '#93c5fd' }, // SAP — blue
-  { bg: '#10b981', light: '#ecfdf5', text: 'white', border: '#6ee7b7' }, // Konfirmasi — green
-  { bg: '#6366f1', light: '#eef2ff', text: 'white', border: '#a5b4fc' }, // Extra tab
+  { bg: '#f472b6', text: 'white' }, // MK — pink
+  { bg: '#a78bfa', text: 'white' }, // Des — violet
+  { bg: '#34d399', text: 'white' }, // CPL — green
+  { bg: '#fb923c', text: 'white' }, // CPMK — orange
+  { bg: '#f87171', text: 'white' }, // BK — red
+  { bg: '#60a5fa', text: 'white' }, // SAP — blue
+  { bg: '#a3e635', text: '#365314' }, // Done — lime
 ];
 
-// ── Tooltip komponen ───────────────────────────────────────────────────────────
+// ── Tooltip komponen ─────────────────────────────────────────────────────────
 export function SectionTooltip({ title, children, hint }) {
   const [show, setShow] = useState(false);
   const timer = React.useRef(null);
-
   const onEnter = () => { timer.current = setTimeout(() => setShow(true), 400); };
   const onLeave = () => { clearTimeout(timer.current); setShow(false); };
-
   return (
     <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
       <div onMouseEnter={onEnter} onMouseLeave={onLeave} style={{ cursor: 'default', width: '100%' }}>
@@ -48,21 +46,13 @@ export function SectionTooltip({ title, children, hint }) {
   );
 }
 
-// ── Preview overlay ────────────────────────────────────────────────────────────
+// ── Preview overlay ───────────────────────────────────────────────────────────
 function PreviewOverlay({ silabusId, onClose }) {
   if (!silabusId) {
     return (
       <div style={overlayStyle}>
         <div style={panelStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#1e293b', marginLeft: 8 }}>Pratinjau Dokumen</span>
-            </div>
-            <button onClick={onClose} style={closeBtnStyle}>✕</button>
-          </div>
+          <MacTitlebar title="Pratinjau Dokumen" onClose={onClose} />
           <div style={{ textAlign: 'center', color: '#94a3b8', padding: '48px 0', fontSize: 13 }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📄</div>
             Simpan draf terlebih dahulu untuk melihat pratinjau.
@@ -74,34 +64,41 @@ function PreviewOverlay({ silabusId, onClose }) {
   return (
     <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ ...panelStyle, width: '90vw', maxWidth: 1100, height: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-        {/* Titlebar */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '12px 20px', borderBottom: '1px solid #e2e8f0', flexShrink: 0,
-          background: '#f8fafc',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
-            <span style={{ fontWeight: 700, fontSize: 13, color: '#1e293b', marginLeft: 10 }}>📄 Pratinjau Dokumen</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <a
-              href={`/dokumen/${silabusId}`}
-              target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', padding: '5px 12px', border: '1px solid #bfdbfe', borderRadius: 6, background: '#eff6ff' }}
-            >
-              🔗 Tab Baru
-            </a>
-            <button onClick={onClose} style={closeBtnStyle}>✕ Tutup</button>
-          </div>
-        </div>
+        <MacTitlebar title="Pratinjau Dokumen" onClose={onClose}>
+          <a
+            href={`/dokumen/${silabusId}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', padding: '5px 12px', border: '1px solid #bfdbfe', borderRadius: 6, background: '#eff6ff' }}
+          >
+            🔗 Tab Baru
+          </a>
+        </MacTitlebar>
         <iframe
           src={`/dokumen/${silabusId}`}
           style={{ flex: 1, border: 'none', background: '#f8fafc' }}
           title="Pratinjau Dokumen"
         />
+      </div>
+    </div>
+  );
+}
+
+function MacTitlebar({ title, onClose, children }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '10px 16px', borderBottom: '1px solid #e2e8f0', flexShrink: 0,
+      background: '#f8fafc',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
+        <span style={{ fontWeight: 700, fontSize: 12, color: '#1e293b', marginLeft: 8 }}>📄 {title}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {children}
+        <button onClick={onClose} style={closeBtnStyle}>✕ Tutup</button>
       </div>
     </div>
   );
@@ -123,14 +120,14 @@ const closeBtnStyle = {
   fontWeight: 500,
 };
 
-// ── Tab Bar ────────────────────────────────────────────────────────────────────
+// ── Pill Tab Bar (sesuai slide — warna-warni horizontal) ─────────────────────
 export function TabBar({ tabs, activeTab, onTabChange }) {
   return (
     <div style={{
-      display: 'flex', overflowX: 'auto', flexShrink: 0,
-      borderBottom: '1px solid #e2e8f0',
+      display: 'flex', gap: 4, padding: '8px 12px',
+      borderBottom: '1px solid #f1f5f9',
+      overflowX: 'auto', flexShrink: 0,
       scrollbarWidth: 'none',
-      msOverflowStyle: 'none',
     }}>
       {tabs.map((tab, i) => {
         const color = TAB_COLORS[i % TAB_COLORS.length];
@@ -142,32 +139,20 @@ export function TabBar({ tabs, activeTab, onTabChange }) {
             title={tab.label}
             style={{
               flexShrink: 0,
-              padding: '8px 12px',
+              padding: '4px 10px',
               border: 'none',
-              borderBottom: isActive ? `3px solid ${color.bg}` : '3px solid transparent',
-              background: isActive ? color.light : 'transparent',
-              color: isActive ? color.bg : '#64748b',
+              borderRadius: 20,
+              background: isActive ? color.bg : '#f1f5f9',
+              color: isActive ? color.text : '#94a3b8',
               fontWeight: isActive ? 700 : 500,
               fontSize: 11,
               cursor: 'pointer',
               transition: 'all 0.15s',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-              minWidth: 52,
-              letterSpacing: 0.2,
+              letterSpacing: 0.1,
+              whiteSpace: 'nowrap',
             }}
           >
-            {/* Nomor bulat */}
-            <span style={{
-              width: 20, height: 20, borderRadius: '50%',
-              background: isActive ? color.bg : '#e2e8f0',
-              color: isActive ? 'white' : '#94a3b8',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 700,
-            }}>{i + 1}</span>
-            {/* Label singkat */}
-            <span style={{ maxWidth: 56, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 10 }}>
-              {tab.short || tab.label}
-            </span>
+            {tab.short || tab.label}
           </button>
         );
       })}
@@ -175,10 +160,10 @@ export function TabBar({ tabs, activeTab, onTabChange }) {
   );
 }
 
-// ── Main FormLayout ────────────────────────────────────────────────────────────
+// ── Main FormLayout ───────────────────────────────────────────────────────────
 export default function FormLayout({ children, silabusId, canvasProps, tabs, activeTab, onTabChange }) {
   const [showPreview, setShowPreview] = useState(false);
-  const [showCanvas, setShowCanvas] = useState(true);
+  const [canvasExpanded, setCanvasExpanded] = useState(false);
   const [KurikulumCanvas, setKurikulumCanvas] = React.useState(null);
 
   // Lazy load canvas
@@ -187,82 +172,173 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
   }, []);
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden', background: '#f1f5f9' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden', background: '#f8f9fb' }}>
 
-      {/* ── Wizard panel kiri ── */}
+      {/* ── Panel Kiri: Form Wizard ── */}
       <div style={{
-        width: 340, flexShrink: 0,
+        width: 282, flexShrink: 0,
         display: 'flex', flexDirection: 'column',
         background: 'white',
-        borderRight: '1px solid #e2e8f0',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.06)',
+        borderRight: '1px solid #e8eaed',
+        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
         zIndex: 10,
       }}>
-        {/* Header panel */}
-        <div style={{
-          padding: '10px 14px', borderBottom: '1px solid #e2e8f0',
-          background: '#f8fafc', flexShrink: 0,
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', flex: 1 }}>📝 Penyusunan Silabus</span>
-          <button
-            onClick={() => setShowPreview(true)}
-            style={{
-              background: '#1d4ed8', color: 'white', border: 'none',
-              borderRadius: 6, padding: '5px 10px', fontSize: 11,
-              cursor: 'pointer', fontWeight: 600,
-            }}
-          >
-            👁 Preview
-          </button>
-          <button
-            onClick={() => setShowCanvas(v => !v)}
-            title={showCanvas ? 'Sembunyikan canvas' : 'Tampilkan canvas'}
-            style={{
-              background: showCanvas ? '#eff6ff' : '#f1f5f9',
-              color: showCanvas ? '#1d4ed8' : '#94a3b8',
-              border: `1px solid ${showCanvas ? '#bfdbfe' : '#e2e8f0'}`,
-              borderRadius: 6, padding: '5px 9px', fontSize: 11,
-              cursor: 'pointer', fontWeight: 600,
-            }}
-          >
-            {showCanvas ? '⊡' : '⊞'}
-          </button>
-        </div>
-
-        {/* Tab bar */}
+        {/* Tab pills */}
         {tabs && tabs.length > 0 && (
           <TabBar tabs={tabs} activeTab={activeTab || 0} onTabChange={onTabChange} />
         )}
 
         {/* Scroll area untuk form */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 80px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
           {children}
         </div>
       </div>
 
-      {/* ── Canvas kanan ── */}
-      {showCanvas && (
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          {/* Label */}
+      {/* ── Panel Tengah: Preview + tombol ── */}
+      {!canvasExpanded && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          background: '#f8f9fb', borderRight: '1px solid #e8eaed',
+          minWidth: 0,
+        }}>
+          {/* Header preview */}
           <div style={{
-            position: 'absolute', top: 12, left: 12, zIndex: 5,
-            background: 'white', border: '1px solid #e2e8f0',
-            borderRadius: 8, padding: '5px 12px', fontSize: 11, color: '#64748b', fontWeight: 600,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '8px 16px', borderBottom: '1px solid #e8eaed',
+            background: 'white', flexShrink: 0,
+            gap: 10,
           }}>
-            🗺 Peta Kurikulum — Live Preview
+            <button
+              onClick={() => setShowPreview(true)}
+              style={{
+                background: 'white', color: '#374151',
+                border: '1px solid #d1d5db',
+                borderRadius: 6, padding: '4px 14px',
+                fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+              }}
+            >
+              👁 Preview
+            </button>
+            <span style={{
+              fontSize: 12, fontWeight: 700, color: '#374151',
+              letterSpacing: 0.5,
+            }}>Preview</span>
+            <button
+              onClick={() => setCanvasExpanded(true)}
+              title="Perbesar canvas"
+              style={{
+                background: 'white', color: '#6b7280',
+                border: '1px solid #d1d5db',
+                borderRadius: 6, padding: '4px 10px',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              ⊞ Perluas Canvas
+            </button>
           </div>
 
-          {KurikulumCanvas && canvasProps ? (
-            <KurikulumCanvas {...canvasProps} />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', fontSize: 13 }}>
-              Memuat peta…
-            </div>
-          )}
+          {/* Preview area — dua textarea */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {canvasProps?.mkDipilih && (
+              <>
+                {/* Info MK */}
+                <div style={{
+                  background: 'white', borderRadius: 8,
+                  border: '1px solid #e8eaed',
+                  padding: '10px 14px', fontSize: 12,
+                }}>
+                  <div style={{ fontWeight: 700, color: '#111827', marginBottom: 2 }}>
+                    {canvasProps.mkDipilih.kode_mk} — {canvasProps.mkDipilih.nama_mk}
+                  </div>
+                  <div style={{ color: '#6b7280', fontSize: 11 }}>
+                    {canvasProps.mkDipilih.jenis_mk && `${canvasProps.mkDipilih.jenis_mk} • `}
+                    {canvasProps.mkDipilih.sks} SKS • Sem. {canvasProps.mkDipilih.semester} • {canvasProps.mkDipilih.jenjang}
+                  </div>
+                </div>
+
+                {/* Textarea Indonesia */}
+                <div style={{
+                  background: 'white', borderRadius: 8,
+                  border: '1px solid #e8eaed', overflow: 'hidden', flex: 1,
+                }}>
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: 11, color: '#9ca3af', background: '#fafafa' }}>
+                    Bahasa Indonesia
+                  </div>
+                  <div style={{ padding: '10px 12px', fontSize: 12, color: '#374151', lineHeight: 1.6, minHeight: 120 }}>
+                    {canvasProps.desMk?.deskripsi_tambahan || <span style={{ color: '#d1d5db' }}>Deskripsi MK dalam Bahasa Indonesia akan muncul di sini…</span>}
+                  </div>
+                </div>
+
+                {/* Textarea English */}
+                <div style={{
+                  background: 'white', borderRadius: 8,
+                  border: '1px solid #e8eaed', overflow: 'hidden', flex: 1,
+                }}>
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: 11, color: '#9ca3af', background: '#fafafa' }}>
+                    English
+                  </div>
+                  <div style={{ padding: '10px 12px', fontSize: 12, color: '#374151', lineHeight: 1.6, minHeight: 120 }}>
+                    {canvasProps.deskripsiEn || <span style={{ color: '#d1d5db' }}>English description will appear here…</span>}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {!canvasProps?.mkDipilih && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: 8, color: '#d1d5db' }}>
+                <div style={{ fontSize: 32 }}>📋</div>
+                <div style={{ fontSize: 12 }}>Pilih mata kuliah untuk melihat pratinjau</div>
+              </div>
+            )}
+          </div>
         </div>
       )}
+
+      {/* ── Panel Kanan: Canvas ── */}
+      <div style={{
+        flex: canvasExpanded ? 1 : '0 0 auto',
+        width: canvasExpanded ? undefined : 420,
+        position: 'relative', overflow: 'hidden',
+        background: '#1a1f2e',
+        transition: 'width 0.3s ease',
+      }}>
+        {/* Canvas header */}
+        <div style={{
+          position: 'absolute', top: 10, left: 10, right: 10, zIndex: 5,
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <div style={{
+            background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 20, padding: '4px 12px',
+            fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600,
+          }}>
+            🗺 Peta Kurikulum
+          </div>
+          <button
+            onClick={() => setCanvasExpanded(v => !v)}
+            style={{
+              marginLeft: 'auto',
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 6, padding: '4px 10px',
+              fontSize: 11, color: 'rgba(255,255,255,0.8)',
+              cursor: 'pointer', fontWeight: 600,
+            }}
+          >
+            {canvasExpanded ? '⊟ Kecilkan' : '⊞ Perbesar'}
+          </button>
+        </div>
+
+        {KurikulumCanvas && canvasProps ? (
+          <KurikulumCanvas {...canvasProps} />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#4b5563', fontSize: 13 }}>
+            Memuat peta…
+          </div>
+        )}
+      </div>
 
       {/* ── Preview overlay ── */}
       {showPreview && (
