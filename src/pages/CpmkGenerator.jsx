@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
+import Icon from '../components/Icon';
 
 // ── Helper: build CPMK statement ──────────────────────────────────────────────
 function buildCpmkStatement(tipe, fields) {
@@ -486,13 +487,12 @@ export default function CpmkGenerator({ user }) {
   // ── Render ───────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <>
-        <Navbar user={user} />
-        <div className="page-loader" style={{ minHeight: 'calc(100vh - 60px)' }}>
+      <AppShell user={user}>
+        <div className="page-loader" style={{ minHeight: '100vh' }}>
           <div className="spinner spinner-primary"></div>
           <p>Memuat generator...</p>
         </div>
-      </>
+      </AppShell>
     );
   }
 
@@ -500,9 +500,8 @@ export default function CpmkGenerator({ user }) {
   const tipeLabelSub = { kognitif: '🧠 Kognitif', psikomotorik: '💪 Psikomotorik', afeksi: '💛 Afeksi' };
 
   return (
-    <>
-      <Navbar user={user} />
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+    <AppShell user={user}>
+      <main style={{ maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
         {/* Header + tombol kembali */}
         <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           <button onClick={() => navigate(`/form/${silabusId}`)}
@@ -710,6 +709,6 @@ export default function CpmkGenerator({ user }) {
           </div>
         )}
       </main>
-    </>
+    </AppShell>
   );
 }

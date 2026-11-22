@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import Navbar from '../components/Navbar';
+// AppShell not needed — FormSilabus uses FormLayout directly
 import FormLayout, { SectionTooltip } from '../components/FormLayout';
 
 // Daftar nama langkah wizard
@@ -317,13 +317,10 @@ export default function FormSilabus({ user }) {
 
   if (loading) {
     return (
-      <>
-        <Navbar user={user} />
-        <div className="page-loader" style={{ minHeight: 'calc(100vh - 60px)' }}>
-          <div className="spinner spinner-primary"></div>
-          <p>Memuat formulir...</p>
-        </div>
-      </>
+      <div className="page-loader" style={{ minHeight: '100vh' }}>
+        <div className="spinner spinner-primary"></div>
+        <p>Memuat formulir...</p>
+      </div>
     );
   }
 
@@ -340,7 +337,6 @@ export default function FormSilabus({ user }) {
 
   return (
     <>
-      <Navbar user={user} />
       <FormLayout
         silabusId={currentSilabusId}
         canvasProps={canvasProps}

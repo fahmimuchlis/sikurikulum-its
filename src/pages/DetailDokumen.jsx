@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
+import Icon from '../components/Icon';
 
 // ── Helper: bangun kalimat CPMK dari fields (sama dengan FormSilabus) ──────────
 function buildCpmkStatement(tipe, fields) {
@@ -555,22 +556,20 @@ export default function DetailDokumen({ user }) {
   }, [id]);
 
   if (loading) return (
-    <>
-      <Navbar user={user} />
-      <div className="page-loader" style={{ minHeight: 'calc(100vh - 60px)' }}>
+    <AppShell user={user}>
+      <div className="page-loader" style={{ minHeight: '100vh' }}>
         <div className="spinner spinner-primary" />
       </div>
-    </>
+    </AppShell>
   );
 
   if (!dokumen) return (
-    <>
-      <Navbar user={user} />
-      <div style={{ maxWidth: 800, margin: '40px auto', textAlign: 'center' }}>
-        <p>Dokumen tidak ditemukan.</p>
-        <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>← Kembali ke Dasbor</button>
+    <AppShell user={user}>
+      <div style={{ maxWidth: 800, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
+        <p style={{ color: '#aaa', fontSize: 14 }}>Dokumen tidak ditemukan.</p>
+        <button onClick={() => navigate('/dashboard')} style={{ marginTop: 16, background: '#e91e8c', color: 'white', border: 'none', borderRadius: 20, padding: '8px 20px', fontSize: 13, cursor: 'pointer' }}>← Kembali ke Dasbor</button>
       </div>
-    </>
+    </AppShell>
   );
 
   const cplSelected = daftarCPL.filter(c => (dokumen.cpl_dipilih || []).includes(c.id));
@@ -579,7 +578,7 @@ export default function DetailDokumen({ user }) {
   const handlePrint = () => window.print();
 
   return (
-    <>
+    <AppShell user={user}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -588,9 +587,7 @@ export default function DetailDokumen({ user }) {
         }
       `}</style>
 
-      <Navbar user={user} />
-
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 24px' }}>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '56px 24px 48px' }}>
         {/* ── Toolbar ── */}
         <div className="no-print" style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate(-1)} className="btn btn-secondary btn-sm">← Kembali</button>
@@ -640,7 +637,7 @@ export default function DetailDokumen({ user }) {
           )}
         </div>
       </main>
-    </>
+    </AppShell>
   );
 }
 

@@ -192,7 +192,7 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
   }, [formWidth]);
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 44px)', overflow: 'hidden', background: '#f5f5f5' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f5f5f5' }}>
 
       {/* ── Panel Kiri: Form Wizard ── */}
       <div style={{

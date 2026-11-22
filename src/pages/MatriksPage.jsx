@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
 import { supabase } from '../supabaseClient';
 
 // CPL default S1 Arsitektur ITS (bisa di-override dari data silabus)
@@ -323,7 +323,7 @@ export default function MatriksPage({ user }) {
 
   const st = {
     page: { minHeight: '100vh', background: '#f8fafc' },
-    wrap: { maxWidth: 1300, margin: '0 auto', padding: '24px 16px' },
+    wrap: { maxWidth: 1300, margin: '0 auto', padding: '56px 16px 48px' },
     card: { background: 'white', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 24, marginBottom: 20 },
     h1: { fontSize: 22, fontWeight: 700, color: '#1e293b', marginBottom: 4 },
     h2: { fontSize: 16, fontWeight: 600, color: '#334155', marginBottom: 16 },
@@ -358,8 +358,9 @@ export default function MatriksPage({ user }) {
   };
 
   return (
+    <AppShell user={user}>
     <div style={st.page}>
-      <Navbar user={user} />
+
       <div style={st.wrap}>
 
         {/* Header */}
@@ -788,6 +789,7 @@ export default function MatriksPage({ user }) {
         )}
       </div>
     </div>
+    </AppShell>
   );
 }
 
