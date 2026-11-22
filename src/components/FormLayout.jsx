@@ -165,8 +165,7 @@ function DragHandle({ onMouseDown }) {
 // ── Main FormLayout ───────────────────────────────────────────────────────────
 export default function FormLayout({ children, silabusId, canvasProps, tabs, activeTab, onTabChange }) {
   const [showPreview, setShowPreview] = useState(false);
-  const [canvasExpanded, setCanvasExpanded] = useState(false);
-  const [formWidth, setFormWidth] = useState(280);
+  const [formWidth, setFormWidth] = useState(300);
   const [KurikulumCanvas, setKurikulumCanvas] = React.useState(null);
 
   // Lazy load canvas
@@ -214,97 +213,29 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
       {/* ── Drag handle ── */}
       <DragHandle onMouseDown={onFormDragStart} />
 
-      {/* ── Panel Tengah: Preview ── */}
-      {!canvasExpanded && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          background: '#fafafa',
-          minWidth: 0,
-        }}>
-          {/* "Preview" label tengah */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '10px 16px', flexShrink: 0,
-          }}>
-            <div style={{
-              background: '#e0e0e0', color: '#555', borderRadius: 20,
-              padding: '4px 20px', fontSize: 13,
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              Preview
-              <button
-                onClick={() => setShowPreview(true)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#777', padding: 0 }}
-                title="Buka pratinjau penuh"
-              >👁</button>
-            </div>
-            {!canvasExpanded && (
-              <button
-                onClick={() => setCanvasExpanded(true)}
-                style={{
-                  marginLeft: 8, background: 'white', border: '1px solid #d0d0d0',
-                  borderRadius: 20, padding: '4px 12px',
-                  fontSize: 12, color: '#555', cursor: 'pointer',
-                }}
-              >⊞ Perluas Node</button>
-            )}
-          </div>
-
-          {/* Preview content */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
-            {canvasProps?.mkDipilih && (
-              <div style={{ marginBottom: 10, padding: '8px 0', fontSize: 12 }}>
-                <span style={{ fontWeight: 700, color: '#333' }}>{canvasProps.mkDipilih.kode_mk} — {canvasProps.mkDipilih.nama_mk}</span>
-                <span style={{ color: '#888', marginLeft: 8 }}>
-                  {canvasProps.mkDipilih.sks} SKS • Sem. {canvasProps.mkDipilih.semester} • {canvasProps.mkDipilih.jenjang}
-                </span>
-              </div>
-            )}
-
-            {/* Textarea Bahasa Indonesia */}
-            <div style={{
-              background: 'white', border: '1px solid #d0d0d0', borderRadius: 8,
-              marginBottom: 12, overflow: 'hidden',
-            }}>
-              <div style={{ padding: '10px 14px', fontSize: 13, color: canvasProps?.desMk?.deskripsi_tambahan ? '#333' : '#bbb', minHeight: 160, lineHeight: 1.6 }}>
-                {canvasProps?.desMk?.deskripsi_tambahan || 'Bahasa Indonesia'}
-              </div>
-            </div>
-
-            {/* Textarea English */}
-            <div style={{
-              background: 'white', border: '1px solid #d0d0d0', borderRadius: 8,
-              overflow: 'hidden',
-            }}>
-              <div style={{ padding: '10px 14px', fontSize: 13, color: canvasProps?.deskripsiEn ? '#333' : '#bbb', minHeight: 160, lineHeight: 1.6 }}>
-                {canvasProps?.deskripsiEn || 'English'}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Panel Kanan: Canvas (terang) ── */}
+      {/* ── Panel Kanan: Canvas (terang) — mengisi sisa ruang ── */}
       <div style={{
-        flex: canvasExpanded ? 1 : '0 0 400px',
+        flex: 1,
         position: 'relative', overflow: 'hidden',
         background: '#f0f0f0',
         borderLeft: '1px solid #e0e0e0',
+        minWidth: 0,
       }}>
-        {/* Canvas header */}
+        {/* Tombol pratinjau dokumen */}
         <div style={{
           position: 'absolute', top: 10, right: 10, zIndex: 5,
           display: 'flex', gap: 6,
         }}>
           <button
-            onClick={() => setCanvasExpanded(v => !v)}
+            onClick={() => setShowPreview(true)}
             style={{
               background: 'white', border: '1px solid #d0d0d0',
               borderRadius: 20, padding: '4px 12px',
               fontSize: 11, color: '#555', cursor: 'pointer', fontWeight: 500,
             }}
+            title="Pratinjau dokumen lengkap"
           >
-            {canvasExpanded ? '⊟ Kecilkan' : '⊞ Perbesar'}
+            📄 Pratinjau
           </button>
         </div>
 
