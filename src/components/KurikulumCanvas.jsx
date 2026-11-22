@@ -16,6 +16,7 @@ import {
   Handle,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import Icon from './Icon';
 
 // ── Design tokens (slide referensi — tema terang) ─────────────────────────────
 const C = {
@@ -80,16 +81,16 @@ function Badge({ label, bg = '#ff7043', color = 'white', size = 22, fontSize = 1
   );
 }
 
-// ── Diamond ikon ──────────────────────────────────────────────────────────────
-function Diamond({ color = '#1565c0', size = 10 }) {
+// ── Cluster icon warna ────────────────────────────────────────────────────────
+// Material Symbols: circle_small sebagai penanda cluster warna
+function ClusterDot({ color = '#1565c0' }) {
   return (
-    <span style={{
-      display: 'inline-block',
-      width: size, height: size,
-      background: color,
-      transform: 'rotate(45deg)',
-      flexShrink: 0,
-    }} />
+    <Icon
+      name="circle"
+      size={8}
+      fill={1}
+      style={{ color, flexShrink: 0 }}
+    />
   );
 }
 
@@ -127,7 +128,7 @@ function BahanKajianNode({ data }) {
             padding: '0 8px', gap: 6,
             borderTop: '1px solid #f0f0f0',
           }}>
-            <Diamond color={isHL ? C.bk.hlBadge : dColor} />
+            <ClusterDot color={isHL ? C.bk.hlBadge : dColor} />
             <span style={{
               fontSize: 10, flex: 1,
               color: isHL ? C.bk.hlText : C.bk.rowText,

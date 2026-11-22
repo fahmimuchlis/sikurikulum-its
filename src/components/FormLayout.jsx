@@ -5,6 +5,7 @@
  * Kanan: Node canvas (terang #f0f0f0)
  */
 import React, { useState } from 'react';
+import Icon from './Icon';
 
 // ── Tab colors sesuai slide (pastel/salmon) ───────────────────────────────────
 const TAB_COLORS = [
@@ -35,8 +36,8 @@ export function SectionTooltip({ title, children, hint }) {
           borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           pointerEvents: 'none',
         }}>
-          <div style={{ fontWeight: 700, fontSize: 12, color: '#1e293b', marginBottom: 8, borderBottom: '1px solid #f1f5f9', paddingBottom: 6 }}>
-            💡 {title}
+          <div style={{ fontWeight: 700, fontSize: 12, color: '#1e293b', marginBottom: 8, borderBottom: '1px solid #f1f5f9', paddingBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Icon name="lightbulb" size={14} style={{ color: '#f59e0b' }} /> {title}
           </div>
           <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.7 }}>{hint}</div>
         </div>
@@ -53,8 +54,8 @@ function PreviewOverlay({ silabusId, onClose }) {
         <div style={panelStyle}>
           <MacTitlebar title="Pratinjau Dokumen" onClose={onClose} />
           <div style={{ textAlign: 'center', color: '#94a3b8', padding: '48px 0', fontSize: 13 }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📄</div>
-            Simpan draf terlebih dahulu untuk melihat pratinjau.
+            <Icon name="description" size={36} style={{ color: '#cbd5e1', marginBottom: 12 }} />
+            <div>Simpan draf terlebih dahulu untuk melihat pratinjau.</div>
           </div>
         </div>
       </div>
@@ -65,8 +66,8 @@ function PreviewOverlay({ silabusId, onClose }) {
       <div style={{ ...panelStyle, width: '90vw', maxWidth: 1100, height: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
         <MacTitlebar title="Pratinjau Dokumen" onClose={onClose}>
           <a href={`/dokumen/${silabusId}`} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', padding: '5px 12px', border: '1px solid #bfdbfe', borderRadius: 6, background: '#eff6ff' }}>
-            🔗 Tab Baru
+            style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', padding: '5px 12px', border: '1px solid #bfdbfe', borderRadius: 6, background: '#eff6ff', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Icon name="open_in_new" size={13} /> Tab Baru
           </a>
         </MacTitlebar>
         <iframe src={`/dokumen/${silabusId}`} style={{ flex: 1, border: 'none', background: '#f8fafc' }} title="Pratinjau Dokumen" />
@@ -82,11 +83,11 @@ function MacTitlebar({ title, onClose, children }) {
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
-        <span style={{ fontWeight: 700, fontSize: 12, color: '#1e293b', marginLeft: 8 }}>📄 {title}</span>
+        <span style={{ fontWeight: 700, fontSize: 12, color: '#1e293b', marginLeft: 8, display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="description" size={14} /> {title}</span>
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         {children}
-        <button onClick={onClose} style={closeBtnStyle}>✕ Tutup</button>
+        <button onClick={onClose} style={{ ...closeBtnStyle, display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="close" size={14} /> Tutup</button>
       </div>
     </div>
   );
@@ -235,7 +236,7 @@ export default function FormLayout({ children, silabusId, canvasProps, tabs, act
             }}
             title="Pratinjau dokumen lengkap"
           >
-            📄 Pratinjau
+            <Icon name="preview" size={15} style={{ color: '#666', marginRight: 3 }} /> Pratinjau
           </button>
         </div>
 
