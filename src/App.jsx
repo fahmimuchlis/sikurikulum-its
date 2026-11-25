@@ -13,6 +13,7 @@ import AdminMasterData from './pages/AdminMasterData';
 import CpmkGenerator from './pages/CpmkGenerator';
 import MatriksPage from './pages/MatriksPage';
 import PohonKurikulum from './pages/PohonKurikulum';
+import NodeMode from './pages/NodeMode';
 
 // Layout dengan RightRail untuk halaman yang sudah login
 function AppLayout({ user, children }) {
@@ -108,6 +109,11 @@ export default function App() {
         <Route path="/pohon" element={
           <ProtectedRoute user={user}>
             <PohonKurikulum user={user} />
+          </ProtectedRoute>
+        } />
+        <Route path="/node" element={
+          <ProtectedRoute user={user}>
+            <NodeMode user={user} />
           </ProtectedRoute>
         } />
 
