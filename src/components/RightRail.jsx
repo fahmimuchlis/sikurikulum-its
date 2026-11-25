@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'direktori',  label: 'Direktori MK', icon: 'list',            path: '/direktori' },
   { id: 'dokumen',    label: 'Dokumen Saya', icon: 'folder_open',     path: '/dokumen' },
   { id: 'matriks',   label: 'Matriks OBE',  icon: 'grid_view',       path: '/matriks' },
+  { id: 'pohon',     label: 'Pohon Kurikulum', icon: 'account_tree',   path: '/pohon' },
   { id: 'admin',     label: 'Master Data',  icon: 'database',         path: '/admin' },
 ];
 

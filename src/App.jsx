@@ -12,6 +12,7 @@ import DetailDokumen from './pages/DetailDokumen';
 import AdminMasterData from './pages/AdminMasterData';
 import CpmkGenerator from './pages/CpmkGenerator';
 import MatriksPage from './pages/MatriksPage';
+import PohonKurikulum from './pages/PohonKurikulum';
 
 // Layout dengan RightRail untuk halaman yang sudah login
 function AppLayout({ user, children }) {
@@ -104,6 +105,12 @@ export default function App() {
             <MatriksPage user={user} />
           </ProtectedRoute>
         } />
+        <Route path="/pohon" element={
+          <ProtectedRoute user={user}>
+            <PohonKurikulum user={user} />
+          </ProtectedRoute>
+        } />
+
         {/* Legacy redirect — jika ada yang akses langsung */}
         <Route path="/cpmk" element={<Navigate to="/dashboard" replace />} />
         <Route path="/matriks" element={<Navigate to="/dashboard" replace />} />
