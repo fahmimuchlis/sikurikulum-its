@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { id: 'matriks',   label: 'Matriks OBE',  icon: 'grid_view',       path: '/matriks' },
   { id: 'pohon',     label: 'Pohon Kurikulum', icon: 'account_tree',   path: '/pohon' },
   { id: 'node',      label: 'Node Mode',       icon: 'hub',             path: '/node' },
+  { id: 'generator', label: 'Generator RPS', icon: 'edit_document',   path: '/generator' },
   { id: 'admin',     label: 'Master Data',  icon: 'database',         path: '/admin' },
 ];
 

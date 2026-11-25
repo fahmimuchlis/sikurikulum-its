@@ -14,6 +14,7 @@ import CpmkGenerator from './pages/CpmkGenerator';
 import MatriksPage from './pages/MatriksPage';
 import PohonKurikulum from './pages/PohonKurikulum';
 import NodeMode from './pages/NodeMode';
+import GeneratorRPS from './pages/GeneratorRPS';
 
 // Layout dengan RightRail untuk halaman yang sudah login
 function AppLayout({ user, children }) {
@@ -116,6 +117,11 @@ export default function App() {
             <NodeMode user={user} />
           </ProtectedRoute>
         } />
+        <Route path="/generator" element={
+          <ProtectedRoute user={user}>
+            <GeneratorRPS user={user} />
+          </ProtectedRoute>
+        } />
 
         {/* Legacy redirect — jika ada yang akses langsung */}
         <Route path="/cpmk" element={<Navigate to="/dashboard" replace />} />
@@ -124,7 +130,7 @@ export default function App() {
           <ProtectedRoute user={user}>
             <Dashboard user={user} />
           </ProtectedRoute>
-        } /> />
+        } />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

@@ -1,275 +1,382 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Icon from '../components/Icon';
 
-const STATUS_LABEL = {
-  belum: { label: 'Belum Dibuat', badgeClass: 'badge-belum', icon: '○' },
-  draft: { label: 'Draf', badgeClass: 'badge-draft', icon: '◑' },
-  selesai: { label: 'Selesai', badgeClass: 'badge-selesai', icon: '●' },
+const RUMPUN_COLORS = {
+  'Perancangan Arsitektur':          '#ff7f7f',
+  'Teori Sejarah Kritik Arsitektur': '#f9d94c',
+  'Perumahan & Pemukiman':           '#fde0d4',
+  'Sains Teknologi Arsitektur':      '#7bb8e8',
+  'Perancangan Kota':                '#62c8f0',
+  'Non Departemen/ITS':              '#b0b0b0',
+  'Praktik Profesi':                 '#47d45a',
 };
+
+const VISI = 'Menjadi Departemen Arsitektur bertaraf internasional yang berkontribusi di tingkat Asia dan mengembangkan pendidikan arsitektur berbasis kolaborasi riset dan keunggulan lokal.';
+const MISI = 'Memberikan kontribusi dalam ilmu pengetahuan dan teknologi bidang arsitektur untuk kesejahteraan masyarakat melalui kegiatan pendidikan, penelitian, pengabdian kepada Masyarakat, dan manajemen yang berbasis teknologi informasi dan komunikasi.';
+const TUJUAN = [
+  'Mendidik, mengembangkan kemampuan mahasiswa, dan menghasilkan lulusan yang berbudi luhur, kristis, kreatif, unggul dalam penguasaan dan penerapan ilmu pengetahuan dan teknologi bidang arsitektur, berkepribadian dan mandiri, bersikap professional, memiliki integritas dan tanggung jawab yang tinggi, mampu beradaptasi dan mengembangkan diri serta bersaing ditingkat nasional dan internasional.',
+  'Menghasilkan karya konseptual yang relevan dan berkualitas tinggi, berakar pada keunggulan lokal dan dapat dikontribusikan pada masyarakat di tingkat regional, nasional dan internasional.',
+  'Menumbuhkan suasana akademik yang kondusif, serta menjunjung tinggi tata nilai moral akademik dalam usaha membentuk masyarakat kampus yang dinamis dan harmonis.',
+  'Menjadikan program sarjana arsitektur sebagai pusat pendidikan dan penerapan ilmu pengetahuan dan teknologi bidang arsitektur, perumahan & permukiman, perkotaan dan lingkungan.',
+];
+
+const TIMELINE_START = 2025;
+const TIMELINE_END   = 2040;
+const TOTAL_YEARS    = TIMELINE_END - TIMELINE_START + 1;
 
 export default function Dashboard({ user }) {
   const navigate = useNavigate();
   const [profil, setProfil] = useState(null);
-  const [dokumenList, setDokumenList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ belum: 0, draft: 0, selesai: 0 });
+  const [versiList, setVersiList] = useState([]);
+  const [selectedVersi, setSelectedVersi] = useState(null);
+  const [jenjang, setJenjang] = useState('S1');
+  const [filterRumpun, setFilterRumpun] = useState('');
+  const [showVisi, setShowVisi] = useState(true);
+  const [dokStats, setDokStats] = useState({ total: 0, selesai: 0, draft: 0 });
+  const timelineRef = useRef(null);
 
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Profil
+    supabase.from('profil_dosen').select('*').eq('id', user.id).single()
+      .then(({ data }) => setProfil(data));
+
+    // Versi
+    supabase.from('versi_kurikulum').select('*').order('tahun_mulai')
+      .then(({ data }) => {
+        setVersiList(data || []);
+        const aktif = (data || []).find(v => v.status === 'aktif' && v.jenjang === 'S1');
+        if (aktif) setSelectedVersi(aktif);
+      });
+
+    // Stats dokumen
+    supabase.from('dokumen_silabus').select('status').eq('dosen_id', user.id)
+      .then(({ data }) => {
+        const d = data || [];
+        setDokStats({
+          total: d.length,
+          selesai: d.filter(x => x.status === 'selesai').length,
+          draft: d.filter(x => x.status === 'draft').length,
+        });
+      });
   }, [user]);
 
-  const loadData = async () => {
-    setLoading(true);
+  // Scroll timeline ke periode aktif
+  useEffect(() => {
+    if (selectedVersi && timelineRef.current) {
+      const pct = (selectedVersi.tahun_mulai - TIMELINE_START) / TOTAL_YEARS;
+      const el = timelineRef.current;
+      el.scrollLeft = pct * el.scrollWidth - el.clientWidth / 2;
+    }
+  }, [selectedVersi]);
 
-    // Ambil profil dosen
-    const { data: profilData } = await supabase
-      .from('profil_dosen')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    setProfil(profilData);
-
-    // Ambil semua dokumen silabus milik dosen ini beserta info MK
-    const { data: dokData } = await supabase
-      .from('dokumen_silabus')
-      .select(`
-        id, status, updated_at,
-        master_mata_kuliah (kode_mk, nama_mk, sks, jenjang, semester)
-      `)
-      .eq('dosen_id', user.id)
-      .order('updated_at', { ascending: false });
-
-    setDokumenList(dokData || []);
-
-    // Hitung statistik
-    const s = { belum: 0, draft: 0, selesai: 0 };
-    (dokData || []).forEach(d => { s[d.status] = (s[d.status] || 0) + 1; });
-    setStats(s);
-
-    setLoading(false);
+  const periodeWidth = (v) => {
+    const start = Math.max(v.tahun_mulai, TIMELINE_START);
+    const end   = Math.min(v.tahun_selesai || v.tahun_mulai + 5, TIMELINE_END);
+    return { left: `${((start - TIMELINE_START) / TOTAL_YEARS) * 100}%`, width: `${((end - start) / TOTAL_YEARS) * 100}%` };
   };
 
-  const formatTanggal = (iso) => {
-    if (!iso) return '-';
-    return new Date(iso).toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    });
-  };
-
-  if (loading) {
-    return (
-      <div>
-        <div className="page-loader" style={{ minHeight: '100vh' }}>
-          <div className="spinner spinner-primary"></div>
-          <p>Memuat dasbor...</p>
-        </div>
-      </div>
-    );
-  }
+  const nama = profil?.nama_lengkap?.split(',')[0] || user?.email?.split('@')[0] || 'Pengguna';
 
   return (
-    <div>
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '56px 24px 48px' }}>
+    <div style={{ display: 'flex', height: '100vh', paddingRight: 44, overflow: 'hidden', background: '#EDF3F9' }}>
 
-        {/* Sambutan */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#e91e8c', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
+      {/* ── MAIN CANVAS ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+
+        {/* Top greeting */}
+        <div style={{ padding: '32px 48px 0' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
             Departemen Arsitektur ITS
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>
-            Selamat datang, {profil?.nama_lengkap?.split(',')[0] || user.email.split('@')[0]} 👋
-          </h1>
-          <p style={{ color: '#888', fontSize: 14 }}>
-            Kelola dokumen kurikulum mata kuliah Anda di bawah ini.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>
+                Selamat datang, {nama}
+              </h1>
+              <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
+                {selectedVersi ? `Periode aktif: ${selectedVersi.nama}` : 'Sistem Informasi Kurikulum'}
+              </p>
+            </div>
+            {/* Quick stats */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              {[
+                { label: 'Dokumen', value: dokStats.total, color: 'var(--color-primary)', bg: 'rgba(42,100,150,0.08)' },
+                { label: 'Selesai', value: dokStats.selesai, color: '#16a34a', bg: '#dcfce7' },
+                { label: 'Draf', value: dokStats.draft, color: '#c2410c', bg: '#fff3e0' },
+              ].map(s => (
+                <div key={s.label} style={{ background: s.bg, borderRadius: 12, padding: '10px 18px', textAlign: 'center', minWidth: 72 }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: s.color, opacity: 0.8, fontWeight: 600 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Kartu statistik */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 32 }}>
-          <StatCard iconName="folder_open" label="Total Dokumen" value={dokumenList.length} color="#e91e8c" bg="#fce4ec" />
-          <StatCard iconName="check_circle" label="Selesai" value={stats.selesai} color="#2e7d32" bg="#e8f5e9" />
-          <StatCard iconName="edit_note" label="Draf" value={stats.draft} color="#e65100" bg="#fff3e0" />
-          <StatCard iconName="radio_button_unchecked" label="Belum Dibuat" value={stats.belum} color="#555" bg="#f5f5f5" />
+        {/* ── TIMELINE ── */}
+        <div style={{ padding: '0 48px', marginBottom: 0 }}>
+          {/* Periode pills above line */}
+          <div style={{ position: 'relative', height: 48, marginBottom: 0 }}>
+            {versiList.filter(v => v.jenjang === jenjang).map(v => {
+              const pos = periodeWidth(v);
+              const isActive = v.status === 'aktif';
+              const isDraft  = v.status === 'draft';
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVersi(v)}
+                  style={{
+                    position: 'absolute',
+                    left: pos.left,
+                    top: 10,
+                    width: pos.width,
+                    height: 28,
+                    background: selectedVersi?.id === v.id ? 'white' : isActive ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)',
+                    border: `1.5px solid ${isActive ? 'var(--color-primary)' : isDraft ? '#94a3b8' : '#ccc'}`,
+                    borderRadius: 20,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isActive ? 'var(--color-primary)' : '#64748b',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    boxShadow: selectedVersi?.id === v.id ? '0 2px 10px rgba(42,100,150,0.2)' : 'none',
+                    transition: 'all 0.15s',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {v.tahun_mulai}–{v.tahun_selesai || v.tahun_mulai + 4}
+                  {isDraft && <span style={{ fontSize: 9, background: '#e2e8f0', color: '#64748b', padding: '1px 5px', borderRadius: 3 }}>draft</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Timeline ruler */}
+          <div ref={timelineRef} style={{ position: 'relative', overflowX: 'auto', userSelect: 'none' }}>
+            {/* Arrow line */}
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 0 }}>
+              <div style={{ flex: 1, height: 2, background: '#1a1a1a', position: 'relative' }}>
+                {/* Tick marks */}
+                {Array.from({ length: TOTAL_YEARS }, (_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      left: `${(i / (TOTAL_YEARS - 1)) * 100}%`,
+                      top: 0,
+                      width: 1,
+                      height: i % 5 === 0 ? 10 : 6,
+                      background: '#1a1a1a',
+                      transform: 'translateX(-50%)',
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Arrowhead */}
+              <div style={{ width: 0, height: 0, borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '10px solid #1a1a1a' }} />
+            </div>
+
+            {/* Year labels */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+              {Array.from({ length: TOTAL_YEARS }, (_, i) => TIMELINE_START + i).map(yr => (
+                <div key={yr} style={{
+                  fontSize: 11,
+                  color: selectedVersi && yr >= selectedVersi.tahun_mulai && yr <= (selectedVersi.tahun_selesai || selectedVersi.tahun_mulai + 4)
+                    ? 'var(--color-primary)' : '#94a3b8',
+                  fontWeight: yr === new Date().getFullYear() ? 700 : 400,
+                  minWidth: 0,
+                  textAlign: 'center',
+                  flex: 1,
+                }}>
+                  {yr}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Banner Admin */}
-        {profil?.role === 'admin' && (
-          <div style={{
-            background: '#fff8f0',
-            border: '1px solid #fed7aa',
-            borderRadius: 14,
-            padding: '14px 20px',
-            marginBottom: 24,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Icon name="admin_panel_settings" size={20} style={{ color: '#c2410c' }} />
+        {/* ── Visi Misi Tujuan card ── */}
+        <div style={{ padding: '24px 48px', flex: 1, overflowY: 'auto' }}>
+          {showVisi && (
+            <div style={{
+              background: 'rgba(255,255,255,0.85)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid #e0e8f0',
+              borderRadius: 16,
+              padding: '20px 24px',
+              maxWidth: 620,
+              boxShadow: '0 2px 16px rgba(42,100,150,0.08)',
+            }}>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>Visi</div>
+                <div style={{ fontSize: 12, color: '#333', lineHeight: 1.7 }}>{VISI}</div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>Misi</div>
+                <div style={{ fontSize: 12, color: '#333', lineHeight: 1.7 }}>{MISI}</div>
+              </div>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 13, color: '#7c2d12' }}>Mode Administrator</div>
-                <div style={{ fontSize: 12, color: '#b45309' }}>Akses penuh ke data master dan pengaturan sistem.</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>Tujuan</div>
+                {TUJUAN.map((t, i) => (
+                  <div key={i} style={{ fontSize: 12, color: '#333', lineHeight: 1.7, marginBottom: 4 }}>
+                    {i + 1}. {t}
+                  </div>
+                ))}
               </div>
             </div>
-            <button
-              style={{ background: '#fff', border: '1px solid #fed7aa', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#c2410c', cursor: 'pointer' }}
-              onClick={() => navigate('/admin')}
-            >
-              Panel Admin
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Header daftar + tombol buat */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>Dokumen Kurikulum Saya</h2>
-          <button
-            onClick={() => navigate('/form')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: '#e91e8c', color: 'white',
-              border: 'none', borderRadius: 20, padding: '8px 18px',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(233,30,140,0.25)',
-            }}
-          >
-            <Icon name="add" size={16} /> Buat Dokumen Baru
-          </button>
-        </div>
-
-        {/* Daftar dokumen */}
-        {dokumenList.length === 0 ? (
-          <EmptyState onBuat={() => navigate('/form')} />
-        ) : (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {dokumenList.map(dok => (
-              <DokumenRow key={dok.id} dok={dok} formatTanggal={formatTanggal} />
+          {/* Quick actions */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Pohon Kurikulum', icon: 'account_tree', path: '/pohon', color: 'var(--color-primary)' },
+              { label: 'Node Mode', icon: 'hub', path: '/node', color: '#7c3aed' },
+              { label: 'Direktori MK', icon: 'list', path: '/direktori', color: '#0369a1' },
+              { label: 'Matriks OBE', icon: 'grid_view', path: '/matriks', color: '#0f766e' },
+              { label: 'Generator RPS', icon: 'edit_note', path: '/form', color: '#c2410c' },
+            ].map(a => (
+              <button
+                key={a.path}
+                onClick={() => navigate(a.path)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)',
+                  border: '1px solid #e0e8f0', borderRadius: 12,
+                  padding: '10px 16px', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 600, color: a.color,
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)'; }}
+              >
+                <Icon name={a.icon} size={16} style={{ color: a.color }} />
+                {a.label}
+              </button>
             ))}
           </div>
-        )}
-      </main>
-    </div>
-  );
-}
-
-function StatCard({ iconName, label, value, color, bg }) {
-  return (
-    <div style={{
-      background: 'white', borderRadius: 16, padding: '18px 20px',
-      border: '1px solid #f0f0f0',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      display: 'flex', alignItems: 'center', gap: 14,
-    }}>
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon name={iconName} size={20} style={{ color }} />
-      </div>
-      <div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', lineHeight: 1 }}>{value}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>{label}</div>
-      </div>
-    </div>
-  );
-}
-
-const STATUS_STYLE = {
-  belum: { color: '#777', bg: '#f5f5f5', dot: '#ccc' },
-  draft: { color: '#c2410c', bg: '#fff3e0', dot: '#f97316' },
-  selesai: { color: '#166534', bg: '#dcfce7', dot: '#22c55e' },
-};
-
-function DokumenRow({ dok, formatTanggal }) {
-  const mk = dok.master_mata_kuliah;
-  const st = STATUS_LABEL[dok.status] || STATUS_LABEL.belum;
-  const ss = STATUS_STYLE[dok.status] || STATUS_STYLE.belum;
-
-  return (
-    <div style={{
-      background: 'white', borderRadius: 16,
-      border: '1px solid #f0f0f0',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-      padding: '14px 18px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-        {/* Info MK */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-            <span style={{ background: '#f0f0f0', color: '#555', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace', letterSpacing: 0.3 }}>
-              {mk?.kode_mk}
-            </span>
-            <span style={{ background: '#ede9fe', color: '#5b21b6', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6 }}>
-              {mk?.jenjang} · Sem {mk?.semester}
-            </span>
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', marginBottom: 2 }}>
-            {mk?.nama_mk}
-          </div>
-          <div style={{ fontSize: 12, color: '#aaa' }}>
-            {mk?.sks} SKS · Diperbarui {formatTanggal(dok.updated_at)}
-          </div>
-        </div>
-
-        {/* Status pill */}
-        <span style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          background: ss.bg, color: ss.color,
-          fontSize: 12, fontWeight: 600,
-          padding: '4px 12px', borderRadius: 20,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: ss.dot, flexShrink: 0 }} />
-          {st.label}
-        </span>
-
-        {/* Tombol aksi */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link to={`/form/${dok.id}`} style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: '#f5f5f5', color: '#444', border: 'none',
-            borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 500,
-            textDecoration: 'none', cursor: 'pointer',
-          }}>
-            <Icon name="edit" size={14} /> Edit
-          </Link>
-          <Link to={`/dokumen/${dok.id}`} style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: '#fce4ec', color: '#e91e8c', border: 'none',
-            borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 500,
-            textDecoration: 'none', cursor: 'pointer',
-          }}>
-            <Icon name="visibility" size={14} /> Lihat
-          </Link>
         </div>
       </div>
+
+      {/* ── RIGHT PANEL ── */}
+      <div style={{
+        width: 220,
+        flexShrink: 0,
+        height: '100vh',
+        background: 'rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(12px)',
+        borderLeft: '1px solid #e0e8f0',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        padding: '16px 14px',
+      }}>
+        {/* User */}
+        <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f4f8' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{profil?.nama_lengkap?.split(',')[0] || 'Pengguna'}</div>
+          <div style={{ fontSize: 11, color: '#94a3b8' }}>{profil?.role || 'Dosen'}</div>
+        </div>
+
+        {/* Periode */}
+        <RSection title="Periode">
+          <select
+            value={selectedVersi?.id || ''}
+            onChange={e => { const v = versiList.find(x => x.id === e.target.value); setSelectedVersi(v); }}
+            style={{ width: '100%', padding: '6px 8px', fontSize: 11, border: '1px solid #e0e8f0', borderRadius: 7, background: '#f8fafc' }}
+          >
+            {versiList.map(v => <option key={v.id} value={v.id}>{v.nama}</option>)}
+          </select>
+        </RSection>
+
+        {/* Visi Misi toggle */}
+        <RSection title="Visi Misi Tujuan">
+          <button
+            onClick={() => setShowVisi(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: showVisi ? 'rgba(42,100,150,0.08)' : '#f0f4f8',
+              border: 'none', borderRadius: 7,
+              padding: '6px 10px', cursor: 'pointer', fontSize: 11, color: '#444',
+              width: '100%',
+            }}
+          >
+            <Icon name={showVisi ? 'visibility' : 'visibility_off'} size={14} />
+            {showVisi ? 'Sembunyikan' : 'Tampilkan'}
+          </button>
+        </RSection>
+
+        {/* Pohon Kurikulum links */}
+        <RSection title="Pohon Kurikulum">
+          {['Sarjana', 'PPAr', 'Magister', 'Doktor'].map(j => (
+            <label key={j} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer', fontSize: 12 }}>
+              <input
+                type="radio"
+                name="jenjang_dash"
+                checked={jenjang === (j === 'Sarjana' ? 'S1' : j === 'Magister' ? 'S2' : j === 'Doktor' ? 'S3' : j)}
+                onChange={() => setJenjang(j === 'Sarjana' ? 'S1' : j === 'Magister' ? 'S2' : j === 'Doktor' ? 'S3' : j)}
+                style={{ accentColor: 'var(--color-primary)' }}
+              />
+              {j}
+            </label>
+          ))}
+        </RSection>
+
+        {/* Rumpun MK */}
+        <RSection title="Rumpun Mata Kuliah">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {Object.entries(RUMPUN_COLORS).map(([r, color]) => (
+              <button
+                key={r}
+                onClick={() => setFilterRumpun(r === filterRumpun ? '' : r)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  background: filterRumpun === r ? color + '22' : 'transparent',
+                  border: 'none', borderRadius: 5, padding: '3px 4px',
+                  cursor: 'pointer', fontSize: 10, color: '#333', textAlign: 'left',
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                {r}
+              </button>
+            ))}
+          </div>
+        </RSection>
+
+        {/* Zoom / Nav controls */}
+        <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #f0f4f8', display: 'flex', justifyContent: 'center', gap: 8 }}>
+          {[
+            { icon: 'add', action: () => {} },
+            { icon: 'remove', action: () => {} },
+            { icon: 'my_location', action: () => {} },
+          ].map(({ icon, action }) => (
+            <button key={icon} onClick={action} style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: '#f0f4f8', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#64748b',
+            }}>
+              <Icon name={icon} size={16} />
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-function EmptyState({ onBuat }) {
+function RSection({ title, children }) {
   return (
-    <div style={{
-      textAlign: 'center',
-      padding: '60px 24px',
-      background: 'white',
-      borderRadius: 20,
-      border: '2px dashed #e8e8e8',
-    }}>
-      <Icon name="folder_open" size={48} style={{ color: '#e0e0e0', marginBottom: 16 }} />
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#555' }}>
-        Belum ada dokumen kurikulum
-      </h3>
-      <p style={{ color: '#aaa', marginBottom: 24, maxWidth: 320, margin: '0 auto 24px', fontSize: 13 }}>
-        Mulai buat dokumen kurikulum pertama Anda. Sistem akan memandu langkah demi langkah.
-      </p>
-      <button
-        onClick={onBuat}
-        style={{
-          background: '#e91e8c', color: 'white', border: 'none',
-          borderRadius: 20, padding: '10px 24px', fontSize: 13,
-          fontWeight: 600, cursor: 'pointer',
-        }}
-      >
-        Buat Dokumen Pertama
-      </button>
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+        {title}
+      </div>
+      {children}
     </div>
   );
 }
