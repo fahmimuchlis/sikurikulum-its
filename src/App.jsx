@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
+import RightRail from './components/RightRail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -12,10 +13,23 @@ import AdminMasterData from './pages/AdminMasterData';
 import CpmkGenerator from './pages/CpmkGenerator';
 import MatriksPage from './pages/MatriksPage';
 
+// Layout dengan RightRail untuk halaman yang sudah login
+function AppLayout({ user, children }) {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+  return (
+    <div className="page-root">
+      {children}
+      <RightRail user={user} onLogout={handleLogout} />
+    </div>
+  );
+}
+
 // Komponen penjaga: hanya bisa diakses jika sudah login
 function ProtectedRoute({ user, children }) {
   if (!user) return <Navigate to="/login" replace />;
-  return children;
+  return <AppLayout user={user}>{children}</AppLayout>;
 }
 
 export default function App() {
@@ -93,7 +107,11 @@ export default function App() {
         {/* Legacy redirect — jika ada yang akses langsung */}
         <Route path="/cpmk" element={<Navigate to="/dashboard" replace />} />
         <Route path="/matriks" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+        <Route path="/" element={
+          <ProtectedRoute user={user}>
+            <Dashboard user={user} />
+          </ProtectedRoute>
+        } /> />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

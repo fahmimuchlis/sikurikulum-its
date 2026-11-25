@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import AppShell from '../components/AppShell';
 import Icon from '../components/Icon';
 
 // Halaman admin untuk kelola Master Data MK dan CPL
@@ -85,29 +84,29 @@ export default function AdminMasterData({ user }) {
 
   if (loading) {
     return (
-      <AppShell user={user}>
+      <div>
         <div className="page-loader" style={{ minHeight: '100vh' }}>
           <div className="spinner spinner-primary"></div>
           <p>Memuat data admin...</p>
         </div>
-      </AppShell>
+      </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <AppShell user={user}>
+      <div>
         <main style={{ maxWidth: 600, margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
           <Icon name="lock" size={48} style={{ color: '#e0e0e0', marginBottom: 16 }} />
           <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Akses Dibatasi</h2>
           <p style={{ color: '#aaa', fontSize: 13 }}>Halaman ini hanya dapat diakses oleh Administrator.</p>
         </main>
-      </AppShell>
+      </div>
     );
   }
 
   return (
-    <AppShell user={user}>
+    <div>
       <main style={{ maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>
           ⚙️ Kelola Master Data
@@ -296,6 +295,6 @@ export default function AdminMasterData({ user }) {
           </div>
         )}
       </main>
-    </AppShell>
+    </div>
   );
 }

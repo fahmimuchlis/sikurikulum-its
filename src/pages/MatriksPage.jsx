@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import AppShell from '../components/AppShell';
 import { supabase } from '../supabaseClient';
 
 // CPL default S1 Arsitektur ITS (bisa di-override dari data silabus)
@@ -358,7 +357,7 @@ export default function MatriksPage({ user }) {
   };
 
   return (
-    <AppShell user={user}>
+    <div>
     <div style={st.page}>
 
       <div style={st.wrap}>
@@ -789,7 +788,7 @@ export default function MatriksPage({ user }) {
         )}
       </div>
     </div>
-    </AppShell>
+    </div>
   );
 }
 

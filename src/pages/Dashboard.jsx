@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import AppShell from '../components/AppShell';
 import Icon from '../components/Icon';
 
 const STATUS_LABEL = {
@@ -62,17 +61,17 @@ export default function Dashboard({ user }) {
 
   if (loading) {
     return (
-      <AppShell user={user}>
+      <div>
         <div className="page-loader" style={{ minHeight: '100vh' }}>
           <div className="spinner spinner-primary"></div>
           <p>Memuat dasbor...</p>
         </div>
-      </AppShell>
+      </div>
     );
   }
 
   return (
-    <AppShell user={user}>
+    <div>
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '56px 24px 48px' }}>
 
         {/* Sambutan */}
@@ -150,7 +149,7 @@ export default function Dashboard({ user }) {
           </div>
         )}
       </main>
-    </AppShell>
+    </div>
   );
 }
 

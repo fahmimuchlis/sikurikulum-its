@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import AppShell from '../components/AppShell';
 import Icon from '../components/Icon';
 
 export default function Direktori({ user }) {
@@ -42,7 +41,7 @@ export default function Direktori({ user }) {
   });
 
   return (
-    <AppShell user={user}>
+    <div>
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '56px 24px 48px' }}>
 
         {/* Header */}
@@ -114,7 +113,7 @@ export default function Direktori({ user }) {
           </div>
         )}
       </main>
-    </AppShell>
+    </div>
   );
 }
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import AppShell from '../components/AppShell';
 import Icon from '../components/Icon';
 
 // ── Helper: build CPMK statement ──────────────────────────────────────────────
@@ -487,12 +486,12 @@ export default function CpmkGenerator({ user }) {
   // ── Render ───────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <AppShell user={user}>
+      <div>
         <div className="page-loader" style={{ minHeight: '100vh' }}>
           <div className="spinner spinner-primary"></div>
           <p>Memuat generator...</p>
         </div>
-      </AppShell>
+      </div>
     );
   }
 
@@ -500,7 +499,7 @@ export default function CpmkGenerator({ user }) {
   const tipeLabelSub = { kognitif: '🧠 Kognitif', psikomotorik: '💪 Psikomotorik', afeksi: '💛 Afeksi' };
 
   return (
-    <AppShell user={user}>
+    <div>
       <main style={{ maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
         {/* Header + tombol kembali */}
         <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
@@ -709,6 +708,6 @@ export default function CpmkGenerator({ user }) {
           </div>
         )}
       </main>
-    </AppShell>
+    </div>
   );
 }

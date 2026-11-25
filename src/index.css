@@ -5,25 +5,64 @@
 }
 
 :root {
-  --color-primary: #003B7A;
-  --color-primary-light: #0056B3;
-  --color-primary-dark: #002855;
-  --color-accent: #E8A020;
+  /* ── ITS Architecture Design System ───────────────────────────────── */
+  /* Primary — ITS institutional blue */
+  --color-primary:       #2a6496;
+  --color-primary-light: #3a7ec9;
+  --color-primary-dark:  #1a4a72;
+  --color-primary-pale:  #d6e8f7;
+  --color-primary-glass: rgba(198, 228, 245, 0.9);
+
+  /* Rail & panel tones */
+  --color-rail-bg:       rgba(198, 228, 245, 0.92);
+  --color-rail-border:   #9cc3dd;
+  --color-rail-active:   #2a6496;
+  --color-panel-bg:      rgba(255, 255, 255, 0.96);
+
+  /* Accent colors (Figma accent strips) */
+  --color-accent-blue:   #5b9bd5;
+  --color-accent-teal:   #4ba3a3;
+  --color-accent-orange: #E8A020;
+  --color-accent-pink:   #c76b8a;
+
+  /* Rumpun MK colors (Pohon Kurikulum) */
+  --color-rumpun-perancangan: #f28b8b;  /* merah muda — Studio/Perancangan */
+  --color-rumpun-teori:       #f7e08a;  /* kuning     — Teori/Sejarah */
+  --color-rumpun-studio:      #7ec8e3;  /* biru muda  — Studio wajib */
+  --color-rumpun-praktik:     #7ecb7e;  /* hijau      — Praktik Profesi */
+  --color-rumpun-pilihan:     #c8c8c8;  /* abu        — MK Pilihan */
+
+  /* Semantic */
   --color-success: #16A34A;
   --color-warning: #D97706;
-  --color-danger: #DC2626;
-  --color-gray-50: #F8FAFC;
-  --color-gray-100: #F1F5F9;
-  --color-gray-200: #E2E8F0;
-  --color-gray-300: #CBD5E1;
-  --color-gray-500: #64748B;
-  --color-gray-700: #334155;
-  --color-gray-900: #0F172A;
-  --radius: 8px;
+  --color-danger:  #DC2626;
+
+  /* Neutrals — lighter, paper-white feel */
+  --color-gray-50:  #F4F8FC;
+  --color-gray-100: #EBF2F9;
+  --color-gray-200: #D6E4EF;
+  --color-gray-300: #B8CFE0;
+  --color-gray-400: #8BAFC8;
+  --color-gray-500: #5A849F;
+  --color-gray-700: #2D4E63;
+  --color-gray-900: #0D1F2D;
+
+  /* Typography */
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radius */
+  --radius:    6px;
   --radius-lg: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --radius-xl: 16px;
+
+  /* Shadows — softened for glass effect */
+  --shadow:    0 1px 3px rgba(42,100,150,0.08), 0 1px 2px rgba(42,100,150,0.05);
+  --shadow-md: 0 4px 12px rgba(42,100,150,0.1),  0 2px 4px rgba(42,100,150,0.06);
+  --shadow-lg: 0 10px 32px rgba(42,100,150,0.12), 0 4px 8px rgba(42,100,150,0.06);
+
+  /* Layout — Rail is always 44px on the right */
+  --rail-width: 44px;
+  --panel-padding: 24px;
 }
 
 body {
@@ -31,8 +70,17 @@ body {
   font-size: 15px;
   line-height: 1.6;
   color: var(--color-gray-900);
-  background-color: var(--color-gray-50);
+  /* Blueprint dot-grid background */
+  background-color: #EDF3F9;
+  background-image: radial-gradient(circle, #aac8df 1px, transparent 1px);
+  background-size: 24px 24px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Pages sit on top of the grid with right offset for Rail */
+.page-root {
+  min-height: 100vh;
+  padding-right: var(--rail-width);
 }
 
 button {
