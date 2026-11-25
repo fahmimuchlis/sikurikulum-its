@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import Icon from '../components/Icon';
+import Icon from '../components/Icon'; // eslint-disable-line no-unused-vars
 
 // ── Helper: bangun kalimat CPMK dari fields (sama dengan FormSilabus) ──────────
 function buildCpmkStatement(tipe, fields) {

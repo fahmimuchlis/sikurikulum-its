@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Icon from '../components/Icon';
@@ -23,23 +23,7 @@ const RANTAI = [
   { step: 6, label: 'RT',       color: '#6366f1' },
 ];
 
-// ── Highlight BK keywords in text ────────────────────────────────────────────
-const BK_COLORS = {
-  'Pengetahuan': '#bbf7d0',
-  'Kelompok BK': '#fef08a',
-  'Kelompok Bahan Kajian': '#fef08a',
-  'Sikap & metode': '#e9d5ff',
-  'Penghubung (AI)': '#fce7f3',
-};
-
-function HighlightedText({ text, highlights }) {
-  if (!highlights || highlights.length === 0) {
-    return <span>{text}</span>;
-  }
-  // Simple word highlight
-  let result = text;
-  return <span style={{ lineHeight: 1.8 }}>{text}</span>;
-}
+// ── Highlight BK keywords in text (reserved for future inline highlight feature) ──
 
 // ── AI Chat Bubble ─────────────────────────────────────────────────────────────
 function ChatBubble({ role, text, sources, actions, analysis }) {
