@@ -540,8 +540,8 @@ export default function GeneratorRPS({ user }) {
   const chatEndRef = useRef(null);
 
   // Panel visibility state
-  const [diskusiMinimized, setDiskusiMinimized] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);      // muncul saat Simpan
+  const [diskusiOpen, setDiskusiOpen] = useState(false);         // Panel AI overlay
+  const [previewOpen, setPreviewOpen] = useState(false);         // muncul saat Simpan
   const [previewMinimized, setPreviewMinimized] = useState(false); // minimize ke strip bawah
 
   const [formData, setFormData] = useState({
@@ -638,18 +638,21 @@ export default function GeneratorRPS({ user }) {
     }}>
 
       {/* ══════════════════════════════════════════════
-          PANEL 1 — FORM   w=374, bg=#f6f6f6, border=#d2d2d2
+          PANEL 1 — FORM   flex:1, bg=#f6f6f6
+          Melebar ke kanan, dengan icon-strip di tepi kanan
       ══════════════════════════════════════════════ */}
       <div style={{
-        width: 374,
-        flexShrink: 0,
+        flex: 1,
+        minWidth: 320,
+        maxWidth: 680,
         height: '100vh',
         background: '#f6f6f6',
-        borderRight: '1px solid #d2d2d2',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',   /* icon strip di sebelah kanan konten form */
         position: 'relative',
       }}>
+        {/* ── Form content column ── */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid #d2d2d2' }}>
         {/* Accent strip — Figma: h=10px, color #e09bdb (lavender-pink) for Deskripsi tab */}
         <div style={{
           height: 10,
@@ -898,94 +901,79 @@ export default function GeneratorRPS({ user }) {
             <span>✦</span>  Generate & Simpan
           </button>
         </div>
-      </div>
 
-      {/* ══════════════════════════════════════════════
-          PANEL 2 — WORKSPACE (menggantikan Preview tetap)
-          flex, bg=#edf3f9 — kosong/placeholder saat preview belum muncul
-      ══════════════════════════════════════════════ */}
-      <div style={{
-        flex: 1,
-        minWidth: 0,
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        background: '#edf3f9',
-        position: 'relative',
-      }}>
-        {/* Placeholder text saat preview belum dibuka */}
-        {!previewOpen && (
-          <div style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: 10,
-            color: '#94a3b8',
-          }}>
-            <span style={{ fontSize: 32 }}>✦</span>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>Generate & Simpan untuk melihat preview</span>
-            <span style={{ fontSize: 11 }}>Hasil akan muncul sebagai panel bawah</span>
-          </div>
-        )}
-      </div>
+        </div>{/* end form content column */}
 
-      {/* ══════════════════════════════════════════════
-          PANEL 3 — DISKUSI AI
-          Minimizable: collapsed = strip 44px lebar di sisi kanan
-      ══════════════════════════════════════════════ */}
-      {diskusiMinimized ? (
-        /* Strip minimized — klik untuk expand */
-        <div
-          onClick={() => setDiskusiMinimized(false)}
-          title="Buka panel Asisten AI"
-          style={{
-            width: 44, flexShrink: 0,
-            height: '100vh',
-            background: '#7c3aed',
-            borderLeft: '1px solid #6d28d9',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-        >
-          {/* Top accent line */}
-          <div style={{ width: '100%', height: 10, background: '#5b21b6', flexShrink: 0 }} />
-          {/* Icon + rotated label */}
-          <div style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: 10,
-          }}>
-            <span style={{ fontSize: 16, color: 'white' }}>✦</span>
-            <span style={{
-              fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.8)',
-              writingMode: 'vertical-rl', textOrientation: 'mixed',
-              letterSpacing: 1, transform: 'rotate(180deg)',
-            }}>Asisten AI</span>
-            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>›</span>
-          </div>
-        </div>
-      ) : (
+        {/* ── Icon strip — tombol Preview & AI menempel di tepi kanan panel ── */}
         <div style={{
-          width: 426,
-          flexShrink: 0,
+          width: 44, flexShrink: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 60, gap: 6,
+          background: '#f0f0f0',
+          borderRight: '1px solid #d2d2d2',
+        }}>
+          {/* Preview button */}
+          <button
+            onClick={() => { setPreviewOpen(o => !o); setPreviewMinimized(false); }}
+            title="Preview hasil"
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: previewOpen ? '#f59e0b' : 'white',
+              border: `1px solid ${previewOpen ? '#d97706' : '#d2d2d2'}`,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18,
+              boxShadow: previewOpen ? '0 2px 8px rgba(245,158,11,0.3)' : '0 1px 3px rgba(0,0,0,0.08)',
+              transition: 'all 0.15s',
+            }}
+          >👁</button>
+          {/* AI Diskusi button */}
+          <button
+            onClick={() => setDiskusiOpen(o => !o)}
+            title="Asisten AI Kurikulum"
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: diskusiOpen ? '#7c3aed' : 'white',
+              border: `1px solid ${diskusiOpen ? '#6d28d9' : '#d2d2d2'}`,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, color: diskusiOpen ? 'white' : '#7c3aed',
+              boxShadow: diskusiOpen ? '0 2px 8px rgba(124,58,237,0.3)' : '0 1px 3px rgba(0,0,0,0.08)',
+              transition: 'all 0.15s',
+            }}
+          >✦</button>
+        </div>
+
+      </div>{/* end Panel 1 outer */}
+
+      {/* ══════════════════════════════════════════════
+          PANEL AI — Overlay slide-in dari kanan panel generator
+          Muncul saat tombol ✦ diklik, melayang di atas Panel MK
+      ══════════════════════════════════════════════ */}
+      {diskusiOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          right: `calc(var(--rail-width, 44px) + 372px)`,
+          width: 420,
           height: '100vh',
           background: '#f8fafc',
           borderLeft: '1px solid #d2d2d2',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'width 0.2s ease',
+          boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
+          display: 'flex', flexDirection: 'column',
+          zIndex: 400,
+          animation: 'slideInRight 0.2s ease',
         }}>
-          {/* Header strip — Figma: purple #7c3aed */}
+          <style>{`@keyframes slideInRight { from { transform: translateX(40px); opacity:0; } to { transform: translateX(0); opacity:1; } }`}</style>
+          {/* Header strip */}
           <div style={{ height: 10, background: '#7c3aed', flexShrink: 0 }} />
-
           {/* Chat header */}
           <div style={{
-            padding: '10px 16px',
-            borderBottom: '1px solid #e0e8f0',
-            background: 'white',
-            flexShrink: 0,
+            padding: '10px 16px', borderBottom: '1px solid #e0e8f0',
+            background: 'white', flexShrink: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* Avatar — Figma: dark circle bg #1a1a1a */}
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', background: '#1a1a1a',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -996,93 +984,55 @@ export default function GeneratorRPS({ user }) {
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>Asisten Kurikulum</div>
                 <div style={{ fontSize: 10, color: '#94a3b8' }}>Agen AI · RAG buku Bloom–Anderson</div>
               </div>
-              {/* Siap badge — Figma: bg #dcfce7, color #16a34a */}
               <span style={{
-                fontSize: 10.5, fontWeight: 500,
-                background: '#dcfce7', color: '#16a34a',
-                padding: '2px 8px', borderRadius: 20,
-                display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 10.5, fontWeight: 500, background: '#dcfce7', color: '#16a34a',
+                padding: '2px 8px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4,
               }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
                 Siap
               </span>
-              {/* Minimize button */}
-              <button
-                onClick={() => setDiskusiMinimized(true)}
-                title="Minimize panel AI"
-                style={{
-                  width: 24, height: 24, borderRadius: '50%',
-                  background: '#f1f5f9', border: '1px solid #e0e8f0',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, color: '#64748b', flexShrink: 0,
-                  marginLeft: 4,
-                }}
-              >‹</button>
+              <button onClick={() => setDiskusiOpen(false)} style={{
+                width: 24, height: 24, borderRadius: '50%', background: '#f1f5f9',
+                border: '1px solid #e0e8f0', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, color: '#64748b', marginLeft: 4,
+              }}>×</button>
             </div>
           </div>
-
           {/* Messages */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
-            {chatMessages.map((msg, i) => (
-              <ChatBubble key={i} {...msg} />
-            ))}
+            {chatMessages.map((msg, i) => (<ChatBubble key={i} {...msg} />))}
             <div ref={chatEndRef} />
           </div>
-
-          {/* Quick prompts — Figma: h=26 chips */}
-          <div style={{
-            padding: '0 16px 8px',
-            display: 'flex', gap: 6, flexWrap: 'wrap',
-            flexShrink: 0,
-          }}>
+          {/* Quick prompts */}
+          <div style={{ padding: '0 16px 8px', display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
             {['Cek keselarasan CPL', 'Periksa level kognitif', 'Cari kesenjangan', 'Tambah referensi', 'Ringkas temuan'].map(p => (
               <button key={p} onClick={() => setChatInput(p)} style={{
-                height: 26,
-                padding: '0 12px',
-                borderRadius: 13,
-                background: 'white',
-                border: '1px solid #e0e8f0',
-                cursor: 'pointer',
-                fontSize: 11, color: '#475569',
-                whiteSpace: 'nowrap',
+                height: 26, padding: '0 12px', borderRadius: 13, background: 'white',
+                border: '1px solid #e0e8f0', cursor: 'pointer', fontSize: 11, color: '#475569', whiteSpace: 'nowrap',
               }}>{p}</button>
             ))}
           </div>
-
-          {/* Input area — Figma: h=60, w=390 textarea, 36×36 send circle */}
+          {/* Input */}
           <div style={{
-            padding: '10px 16px',
-            borderTop: '1px solid #e0e8f0',
-            background: 'white',
-            display: 'flex', gap: 8, alignItems: 'flex-end',
-            flexShrink: 0,
+            padding: '10px 16px', borderTop: '1px solid #e0e8f0', background: 'white',
+            display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0,
           }}>
             <textarea
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Tanyakan keterkaitan, relevansi, atau akurasi…"
-              rows={2}
+              value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
+              placeholder="Tanyakan keterkaitan, relevansi, atau akurasi…" rows={2}
               style={{
-                flex: 1,
-                minHeight: 60,
-                border: '1px solid #e0e8f0', borderRadius: 10,
-                padding: '8px 10px', fontSize: 12, resize: 'none',
-                outline: 'none', background: '#f8fafc', lineHeight: 1.5,
-                fontFamily: 'inherit', boxSizing: 'border-box',
+                flex: 1, minHeight: 60, border: '1px solid #e0e8f0', borderRadius: 10,
+                padding: '8px 10px', fontSize: 12, resize: 'none', outline: 'none',
+                background: '#f8fafc', lineHeight: 1.5, fontFamily: 'inherit', boxSizing: 'border-box',
               }}
             />
-            {/* Send button — Figma: 36×36 circle */}
-            <button
-              onClick={sendChat}
-              style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: chatInput.trim() ? '#1a1a1a' : '#e0e8f0',
-                border: 'none', cursor: chatInput.trim() ? 'pointer' : 'default',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
+            <button onClick={sendChat} style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: chatInput.trim() ? '#1a1a1a' : '#e0e8f0',
+              border: 'none', cursor: chatInput.trim() ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
               <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 16, lineHeight: 1 }}>↑</span>
             </button>
           </div>
@@ -1099,7 +1049,7 @@ export default function GeneratorRPS({ user }) {
           position: 'fixed',
           bottom: 0,
           left: 374,  /* mulai dari kanan Panel 1 */
-          right: `calc(var(--rail-width, 44px) + ${diskusiMinimized ? 44 : 426}px + 372px)`,
+          right: `calc(var(--rail-width, 44px) + 372px)`,
           zIndex: 500,
           transition: 'height 0.25s ease, right 0.2s ease',
           height: previewMinimized ? 48 : 380,
