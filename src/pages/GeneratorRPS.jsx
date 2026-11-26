@@ -628,6 +628,8 @@ export default function GeneratorRPS({ user }) {
       overflow: 'hidden',
       background: '#EDF3F9',
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      marginRight: 'var(--rail-width, 44px)',
+      transition: 'margin-right 0.2s ease',
     }}>
 
       {/* ══════════════════════════════════════════════
@@ -1049,8 +1051,6 @@ export default function GeneratorRPS({ user }) {
         background: 'white',
         display: 'flex',
         flexDirection: 'column',
-        marginRight: 'var(--rail-width, 44px)',
-        transition: 'margin-right 0.2s ease',
         borderLeft: '1px solid #d2d2d2',
         overflowY: 'auto',
       }}>
