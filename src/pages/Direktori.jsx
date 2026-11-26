@@ -313,7 +313,7 @@ export default function Direktori({ user }) {
   const semCount = jenjang === 'S1' ? 8 : jenjang === 'S2' ? 4 : jenjang === 'S3' ? 6 : 2;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#EDF3F9' }}>
 
       {/* ── LEFT: MK Table ── */}
       <div style={{
@@ -511,6 +511,8 @@ export default function Direktori({ user }) {
           flexDirection: 'column',
           overflowY: 'auto',
           height: '100vh',
+          marginRight: 'var(--rail-width, 44px)',
+          transition: 'margin-right 0.2s ease',
         }}>
           {/* Top icons row */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 12px 0', gap: 4 }}>

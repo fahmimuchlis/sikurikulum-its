@@ -324,7 +324,7 @@ export default function GeneratorRPS({ user }) {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#EDF3F9' }}>
 
       {/* ══════════════════════════════════════════
           PANEL 1 — FORM (kiri)
@@ -658,6 +658,8 @@ export default function GeneratorRPS({ user }) {
         flexDirection: 'column',
         overflowY: 'auto',
         padding: '14px 14px',
+        marginRight: 'var(--rail-width, 44px)',
+        transition: 'margin-right 0.2s ease',
       }}>
         {/* Periode */}
         <div style={{ marginBottom: 14 }}>

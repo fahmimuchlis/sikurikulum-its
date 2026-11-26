@@ -404,7 +404,7 @@ export default function NodeMode({ user }) {
   }), [cplList, cpmkList]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#EDF3F9' }}>
 
       {/* ── Left Sidebar: MK list ── */}
       {sidebarOpen && (
@@ -611,6 +611,8 @@ export default function NodeMode({ user }) {
           flexShrink: 0,
           overflowY: 'auto',
           zIndex: 10,
+          marginRight: 'var(--rail-width, 44px)',
+          transition: 'margin-right 0.2s ease',
         }}>
           {/* Header */}
           <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

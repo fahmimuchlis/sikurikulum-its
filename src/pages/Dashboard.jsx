@@ -80,7 +80,7 @@ export default function Dashboard({ user }) {
   const nama = profil?.nama_lengkap?.split(',')[0] || user?.email?.split('@')[0] || 'Pengguna';
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#EDF3F9' }}>
 
       {/* ── MAIN CANVAS ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
@@ -264,7 +264,7 @@ export default function Dashboard({ user }) {
         </div>
       </div>
 
-      {/* ── RIGHT PANEL ── */}
+      {/* ── RIGHT PANEL ── menempel langsung ke RightRail via marginRight */}
       <div style={{
         width: 220,
         flexShrink: 0,
@@ -276,6 +276,8 @@ export default function Dashboard({ user }) {
         flexDirection: 'column',
         overflowY: 'auto',
         padding: '16px 14px',
+        marginRight: 'var(--rail-width, 44px)',
+        transition: 'margin-right 0.2s ease',
       }}>
         {/* User */}
         <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f4f8' }}>
