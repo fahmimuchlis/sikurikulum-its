@@ -644,12 +644,10 @@ export default function GeneratorRPS({ user }) {
       <div style={{
         flex: 1,
         minWidth: 320,
-        maxWidth: 680,
         height: '100vh',
         background: '#f6f6f6',
         display: 'flex',
         flexDirection: 'row',   /* icon strip di sebelah kanan konten form */
-        position: 'relative',
       }}>
         {/* ── Form content column ── */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid #d2d2d2' }}>
@@ -948,177 +946,125 @@ export default function GeneratorRPS({ user }) {
       </div>{/* end Panel 1 outer */}
 
       {/* ══════════════════════════════════════════════
-          PANEL AI — Overlay slide-in dari kanan panel generator
-          Muncul saat tombol ✦ diklik, melayang di atas Panel MK
+          PANEL PREVIEW — inline, muncul saat tombol 👁 diklik
+          Berderet di antara Form dan Panel MK
+      ══════════════════════════════════════════════ */}
+      {previewOpen && (
+        <div style={{
+          width: 400, flexShrink: 0,
+          height: '100vh',
+          background: 'white',
+          borderLeft: '1px solid #d2d2d2',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {/* Header strip */}
+          <div style={{ height: 10, background: activeTabObj.accent, flexShrink: 0 }} />
+          {/* Header bar */}
+          <div style={{
+            padding: '0 14px', height: 44,
+            borderBottom: '1px solid #e0e8f0',
+            display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+            background: 'white',
+          }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: activeTabObj.accent }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', flex: 1 }}>
+              Preview · {activeTabObj.label}
+            </span>
+            <button onClick={() => setPreviewOpen(false)} style={{
+              width: 22, height: 22, borderRadius: '50%', background: '#fee2e2',
+              border: 'none', fontSize: 13, color: '#dc2626',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>×</button>
+          </div>
+          {/* Content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+            <PreviewPanel activeTab={activeTab} formData={formData} mk={selectedMk} />
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          PANEL AI — inline, muncul saat tombol ✦ diklik
+          Berderet di antara Preview (jika ada) dan Panel MK
       ══════════════════════════════════════════════ */}
       {diskusiOpen && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          right: `calc(var(--rail-width, 44px) + 372px)`,
-          width: 420,
+          width: 380, flexShrink: 0,
           height: '100vh',
           background: '#f8fafc',
           borderLeft: '1px solid #d2d2d2',
-          boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
           display: 'flex', flexDirection: 'column',
-          zIndex: 400,
-          animation: 'slideInRight 0.2s ease',
         }}>
-          <style>{`@keyframes slideInRight { from { transform: translateX(40px); opacity:0; } to { transform: translateX(0); opacity:1; } }`}</style>
           {/* Header strip */}
           <div style={{ height: 10, background: '#7c3aed', flexShrink: 0 }} />
           {/* Chat header */}
           <div style={{
-            padding: '10px 16px', borderBottom: '1px solid #e0e8f0',
+            padding: '10px 14px', borderBottom: '1px solid #e0e8f0',
             background: 'white', flexShrink: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
-                width: 32, height: 32, borderRadius: '50%', background: '#1a1a1a',
+                width: 30, height: 30, borderRadius: '50%', background: '#1a1a1a',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <span style={{ color: 'white', fontSize: 14 }}>✦</span>
+                <span style={{ color: 'white', fontSize: 13 }}>✦</span>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>Asisten Kurikulum</div>
-                <div style={{ fontSize: 10, color: '#94a3b8' }}>Agen AI · RAG buku Bloom–Anderson</div>
+                <div style={{ fontSize: 10, color: '#94a3b8' }}>RAG · Bloom–Anderson</div>
               </div>
               <span style={{
-                fontSize: 10.5, fontWeight: 500, background: '#dcfce7', color: '#16a34a',
-                padding: '2px 8px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 10, fontWeight: 500, background: '#dcfce7', color: '#16a34a',
+                padding: '2px 7px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 3,
               }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
                 Siap
               </span>
               <button onClick={() => setDiskusiOpen(false)} style={{
-                width: 24, height: 24, borderRadius: '50%', background: '#f1f5f9',
+                width: 22, height: 22, borderRadius: '50%', background: '#f1f5f9',
                 border: '1px solid #e0e8f0', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, color: '#64748b', marginLeft: 4,
+                fontSize: 13, color: '#64748b', marginLeft: 2,
               }}>×</button>
             </div>
           </div>
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
             {chatMessages.map((msg, i) => (<ChatBubble key={i} {...msg} />))}
             <div ref={chatEndRef} />
           </div>
           {/* Quick prompts */}
-          <div style={{ padding: '0 16px 8px', display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
-            {['Cek keselarasan CPL', 'Periksa level kognitif', 'Cari kesenjangan', 'Tambah referensi', 'Ringkas temuan'].map(p => (
+          <div style={{ padding: '0 14px 8px', display: 'flex', gap: 5, flexWrap: 'wrap', flexShrink: 0 }}>
+            {['Cek CPL', 'Level kognitif', 'Kesenjangan', 'Referensi'].map(p => (
               <button key={p} onClick={() => setChatInput(p)} style={{
-                height: 26, padding: '0 12px', borderRadius: 13, background: 'white',
+                height: 24, padding: '0 10px', borderRadius: 12, background: 'white',
                 border: '1px solid #e0e8f0', cursor: 'pointer', fontSize: 11, color: '#475569', whiteSpace: 'nowrap',
               }}>{p}</button>
             ))}
           </div>
           {/* Input */}
           <div style={{
-            padding: '10px 16px', borderTop: '1px solid #e0e8f0', background: 'white',
+            padding: '8px 14px', borderTop: '1px solid #e0e8f0', background: 'white',
             display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0,
           }}>
             <textarea
               value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
               placeholder="Tanyakan keterkaitan, relevansi, atau akurasi…" rows={2}
               style={{
-                flex: 1, minHeight: 60, border: '1px solid #e0e8f0', borderRadius: 10,
+                flex: 1, minHeight: 56, border: '1px solid #e0e8f0', borderRadius: 10,
                 padding: '8px 10px', fontSize: 12, resize: 'none', outline: 'none',
                 background: '#f8fafc', lineHeight: 1.5, fontFamily: 'inherit', boxSizing: 'border-box',
               }}
             />
             <button onClick={sendChat} style={{
-              width: 36, height: 36, borderRadius: '50%',
+              width: 34, height: 34, borderRadius: '50%',
               background: chatInput.trim() ? '#1a1a1a' : '#e0e8f0',
               border: 'none', cursor: chatInput.trim() ? 'pointer' : 'default',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 16, lineHeight: 1 }}>↑</span>
+              <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 15, lineHeight: 1 }}>↑</span>
             </button>
           </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════
-          FLOATING PREVIEW PANEL (Figma-style bottom sheet)
-          Muncul setelah Generate & Simpan diklik
-          Bisa di-minimize ke strip 48px di bawah
-      ══════════════════════════════════════════════ */}
-      {previewOpen && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 374,  /* mulai dari kanan Panel 1 */
-          right: `calc(var(--rail-width, 44px) + 372px)`,
-          zIndex: 500,
-          transition: 'height 0.25s ease, right 0.2s ease',
-          height: previewMinimized ? 48 : 380,
-          background: 'white',
-          boxShadow: '0 -4px 32px rgba(0,0,0,0.13)',
-          borderTop: '1px solid #d0d8e0',
-          borderRadius: '12px 12px 0 0',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}>
-          {/* Preview header bar */}
-          <div style={{
-            height: 48, flexShrink: 0,
-            background: previewMinimized ? '#1a1a1a' : 'white',
-            borderBottom: previewMinimized ? 'none' : '1px solid #e0e8f0',
-            display: 'flex', alignItems: 'center',
-            padding: '0 16px', gap: 10,
-            cursor: 'pointer',
-            transition: 'background 0.2s',
-          }}
-            onClick={() => setPreviewMinimized(m => !m)}
-          >
-            {/* Accent dot */}
-            <div style={{
-              width: 10, height: 10, borderRadius: '50%',
-              background: activeTabObj.accent, flexShrink: 0,
-            }} />
-            <span style={{
-              fontSize: 12, fontWeight: 600,
-              color: previewMinimized ? 'white' : '#1a1a1a',
-              flex: 1,
-            }}>
-              ✦ Preview — {selectedMk?.kode_mk || 'Draft'} · {activeTabObj.label}
-            </span>
-            {/* Controls */}
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
-              <button
-                onClick={() => setPreviewMinimized(m => !m)}
-                title={previewMinimized ? 'Perluas preview' : 'Minimize preview'}
-                style={{
-                  height: 24, padding: '0 10px',
-                  background: previewMinimized ? 'rgba(255,255,255,0.15)' : '#f1f5f9',
-                  border: 'none', borderRadius: 12,
-                  fontSize: 11, fontWeight: 500,
-                  color: previewMinimized ? 'white' : '#475569',
-                  cursor: 'pointer',
-                }}
-              >{previewMinimized ? '▲ Perluas' : '▼ Minimize'}</button>
-              <button
-                onClick={() => setPreviewOpen(false)}
-                title="Tutup preview"
-                style={{
-                  width: 24, height: 24, borderRadius: '50%',
-                  background: previewMinimized ? 'rgba(255,255,255,0.15)' : '#fee2e2',
-                  border: 'none',
-                  fontSize: 13, color: previewMinimized ? 'white' : '#dc2626',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >×</button>
-            </div>
-          </div>
-
-          {/* Preview content — only visible when not minimized */}
-          {!previewMinimized && (
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
-              <PreviewPanel activeTab={activeTab} formData={formData} mk={selectedMk} />
-            </div>
-          )}
         </div>
       )}
 
