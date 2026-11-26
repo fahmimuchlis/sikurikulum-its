@@ -24,6 +24,7 @@ export default function RightRail({ user, onLogout }) {
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
 
   const panels = useGeneratorPanels();
   const onGenerator = location.pathname.startsWith('/generator');
@@ -222,6 +223,23 @@ export default function RightRail({ user, onLogout }) {
                 </button>
               );
             })}
+            {/* Pengaturan tata letak jendela */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowLayoutMenu(v => !v)}
+                title="Tata letak jendela"
+                style={{
+                  width: '100%', padding: expanded ? '10px 14px' : '10px 0',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: expanded ? 'flex-start' : 'center', gap: expanded ? 10 : 0,
+                  background: showLayoutMenu ? 'rgba(42,100,150,0.1)' : 'transparent',
+                  border: 'none', cursor: 'pointer', color: 'var(--color-gray-500)',
+                }}
+              >
+                <Icon name="tune" size={20} />
+                {expanded && <span style={{ fontSize: 13 }}>Tata letak</span>}
+              </button>
+            </div>
           </div>
         )}
 
@@ -281,6 +299,44 @@ export default function RightRail({ user, onLogout }) {
           </button>
         </div>
       </div>
+
+      {/* Popover tata letak jendela (di luar rail karena rail overflow:hidden) */}
+      {onGenerator && showLayoutMenu && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 198 }} onClick={() => setShowLayoutMenu(false)} />
+          <div style={{
+            position: 'fixed', right: railW + 8, bottom: 120, width: 250, zIndex: 199,
+            background: 'white', border: '1px solid var(--color-gray-200)',
+            borderRadius: 10, boxShadow: 'var(--shadow-lg)', padding: 12,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-gray-700)', marginBottom: 8 }}>
+              Tata letak jendela Generator
+            </div>
+            {[
+              { id: 'floating', title: 'Floating', desc: 'Preview dan AI mengambang, bisa digeser dan diubah ukurannya.' },
+              { id: 'docked',   title: 'Menyatu',  desc: 'Form, Preview, AI, dan Panel MK berderet dalam satu baris.' },
+            ].map(o => {
+              const on = panels.layout === o.id;
+              return (
+                <button key={o.id}
+                  onClick={() => { generatorPanels.setLayout(o.id); setShowLayoutMenu(false); }}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '8px 10px', marginBottom: 6,
+                    borderRadius: 8, cursor: 'pointer',
+                    border: `1.5px solid ${on ? 'var(--color-primary)' : 'var(--color-gray-200)'}`,
+                    background: on ? 'rgba(42,100,150,0.08)' : 'white',
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 600, color: on ? 'var(--color-primary)' : 'var(--color-gray-800, #1f2937)' }}>
+                    {on ? '● ' : '○ '}{o.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginTop: 2 }}>{o.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Click-outside to close user menu */}
       {showUserMenu && (

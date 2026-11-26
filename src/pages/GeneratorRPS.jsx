@@ -501,6 +501,24 @@ function FormGroup({ label, children }) {
   );
 }
 
+// Window Preview/AI: mengambang (floating) atau menyatu dalam baris (docked)
+function PanelWindow({ layout, id, docked, defaultRect, children }) {
+  if (layout === 'docked') {
+    return (
+      <div style={{
+        width: docked.width, flexShrink: 0, height: '100vh', background: docked.background,
+        border: '1px solid #d2d2d2', boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column',
+      }}>{children}</div>
+    );
+  }
+  return (
+    <FloatingWindow id={id} style={{ background: docked.background }} defaultRect={defaultRect}>
+      {children}
+    </FloatingWindow>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function GeneratorRPS({ user }) {
   const navigate = useNavigate();
@@ -905,12 +923,12 @@ export default function GeneratorRPS({ user }) {
           Berderet di antara Form dan Panel MK
       ══════════════════════════════════════════════ */}
       {previewOpen && (
-        <FloatingWindow id="generator-preview" style={{ background: 'white' }}
+        <PanelWindow layout={panels.layout} id="generator-preview" docked={{ width: 544, background: 'white' }}
           defaultRect={() => ({ x: Math.round(window.innerWidth * 0.34) + 24, y: 16, w: 544, h: window.innerHeight - 32 })}>
           {/* Header strip */}
-          <div data-drag-handle style={{ height: 10, background: activeTabObj.accent, flexShrink: 0, cursor: 'move' }} />
+          <div data-drag-handle style={{ height: 10, background: activeTabObj.accent, flexShrink: 0, cursor: panels.layout === 'floating' ? 'move' : 'default' }} />
           {/* Header bar */}
-          <div data-drag-handle style={{ cursor: 'move',
+          <div data-drag-handle style={{ cursor: panels.layout === 'floating' ? 'move' : 'default',
             padding: '0 14px', height: 44,
             borderBottom: '1px solid #e0e8f0',
             display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
@@ -930,7 +948,7 @@ export default function GeneratorRPS({ user }) {
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
             <PreviewPanel activeTab={activeTab} formData={formData} mk={selectedMk} />
           </div>
-        </FloatingWindow>
+        </PanelWindow>
       )}
 
       {/* ══════════════════════════════════════════════
@@ -938,12 +956,12 @@ export default function GeneratorRPS({ user }) {
           Berderet di antara Preview (jika ada) dan Panel MK
       ══════════════════════════════════════════════ */}
       {diskusiOpen && (
-        <FloatingWindow id="generator-ai" style={{ background: '#f8fafc' }}
+        <PanelWindow layout={panels.layout} id="generator-ai" docked={{ width: 426, background: '#f8fafc' }}
           defaultRect={() => ({ x: Math.max(0, window.innerWidth - 44 - 372 - 24 - 426), y: 16, w: 426, h: window.innerHeight - 32 })}>
           {/* Header strip */}
-          <div data-drag-handle style={{ height: 10, background: '#7c3aed', flexShrink: 0, cursor: 'move' }} />
+          <div data-drag-handle style={{ height: 10, background: '#7c3aed', flexShrink: 0, cursor: panels.layout === 'floating' ? 'move' : 'default' }} />
           {/* Chat header */}
-          <div data-drag-handle style={{ cursor: 'move',
+          <div data-drag-handle style={{ cursor: panels.layout === 'floating' ? 'move' : 'default',
             padding: '10px 14px', borderBottom: '1px solid #e0e8f0',
             background: 'white', flexShrink: 0,
           }}>
@@ -1010,7 +1028,7 @@ export default function GeneratorRPS({ user }) {
               <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 15, lineHeight: 1 }}>↑</span>
             </button>
           </div>
-        </FloatingWindow>
+        </PanelWindow>
       )}
 
       {/* ══════════════════════════════════════════════
