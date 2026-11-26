@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from './Icon';
 
@@ -25,6 +25,11 @@ export default function RightRail({ user, onLogout }) {
   const [expanded, setExpanded] = useState(false);
 
   const railW = expanded ? 200 : 44;
+
+  // Sync rail width ke CSS variable global agar semua page bisa pakai paddingRight dinamis
+  useEffect(() => {
+    document.documentElement.style.setProperty('--rail-width', `${railW}px`);
+  }, [railW]);
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';

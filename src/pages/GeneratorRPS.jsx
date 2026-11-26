@@ -324,7 +324,7 @@ export default function GeneratorRPS({ user }) {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 44, overflow: 'hidden', background: '#EDF3F9' }}>
+    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
 
       {/* ══════════════════════════════════════════
           PANEL 1 — FORM (kiri)

@@ -80,7 +80,7 @@ export default function Dashboard({ user }) {
   const nama = profil?.nama_lengkap?.split(',')[0] || user?.email?.split('@')[0] || 'Pengguna';
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 44, overflow: 'hidden', background: '#EDF3F9' }}>
+    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
 
       {/* ── MAIN CANVAS ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>

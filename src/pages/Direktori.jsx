@@ -313,7 +313,7 @@ export default function Direktori({ user }) {
   const semCount = jenjang === 'S1' ? 8 : jenjang === 'S2' ? 4 : jenjang === 'S3' ? 6 : 2;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', paddingRight: 44, overflow: 'hidden', background: '#EDF3F9' }}>
+    <div style={{ display: 'flex', height: '100vh', paddingRight: 'var(--rail-width, 44px)', overflow: 'hidden', background: '#EDF3F9', transition: 'padding-right 0.2s ease' }}>
 
       {/* ── LEFT: MK Table ── */}
       <div style={{
@@ -623,7 +623,8 @@ export default function Direktori({ user }) {
         <button
           onClick={() => setRightOpen(true)}
           style={{
-            position: 'fixed', top: 16, right: 60,
+            position: 'fixed', top: 16, right: 'calc(var(--rail-width, 44px) + 16px)',
+            transition: 'right 0.2s ease',
             background: 'white', border: '1px solid #e0e8f0', borderRadius: 8,
             padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
             fontSize: 12, color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 50,
