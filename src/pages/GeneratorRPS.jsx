@@ -616,8 +616,8 @@ export default function GeneratorRPS({ user }) {
           Melebar ke kanan, dengan icon-strip di tepi kanan
       ══════════════════════════════════════════════ */}
       <div style={{
-        flex: 1,
-        minWidth: 320,
+        flex: '0 1 33.333vw',   /* default ±1/3 layar; menyusut bila ruang sempit */
+        minWidth: 360,
         height: '100vh',
         background: '#f6f6f6',
         display: 'flex',
@@ -1008,6 +1008,7 @@ export default function GeneratorRPS({ user }) {
       <div style={{
         width: 372,
         flexShrink: 0,
+        marginLeft: 'auto',     /* tetap menempel ke rail walau Preview/AI disembunyikan */
         height: '100vh',
         background: 'white',
         display: 'flex',
