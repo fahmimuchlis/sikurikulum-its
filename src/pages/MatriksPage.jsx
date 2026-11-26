@@ -15,16 +15,23 @@ const CPL_DEFAULT_S1 = [
 const JENIS_EVALUASI_OPTS = ['Tugas', 'Ujian', 'Quiz', 'Presentasi', 'Praktikum', 'Proyek'];
 const JENIS_PENILAIAN_OPTS = ['Kognitif-Tugas', 'Kognitif-UAS', 'Kognitif-UTS', 'Psikomotorik-Tugas', 'Afektif', 'Presentasi'];
 
-export default function MatriksPage({ user }) {
+/**
+ * Props opsional untuk mode tertanam (tab Eval di Generator RPS):
+ *  - silabusId  : dipakai bila tidak ada param URL
+ *  - embedded   : sembunyikan header/padding halaman penuh
+ *  - onlyTab    : kunci ke satu tab ('cpl-cpmk' | 'rae' | 'ringkasan') dan sembunyikan tab bar
+ */
+export default function MatriksPage({ user, silabusId: silabusIdProp, embedded = false, onlyTab = null }) {
   const navigate = useNavigate();
-  const { silabusId } = useParams();  // dari URL /form/:silabusId/matriks
+  const params = useParams();  // dari URL /form/:silabusId/matriks
+  const silabusId = silabusIdProp || params.silabusId;
 
   // Data master
   const [silabusInfo, setSilabusInfo] = useState(null);
   const [cpmkList, setCpmkList] = useState([]); // dari dokumen_cpmk
 
   // Halaman aktif
-  const [activeTab, setActiveTab] = useState('cpl-cpmk'); // 'cpl-cpmk' | 'rae'
+  const [activeTab, setActiveTab] = useState(onlyTab || 'cpl-cpmk'); // 'cpl-cpmk' | 'rae'
 
   // CPL yang dipilih untuk silabus ini
   const [selectedCpl, setSelectedCpl] = useState([]); // array of no_cpl string
@@ -65,7 +72,7 @@ export default function MatriksPage({ user }) {
       .from('dokumen_cpmk')
       .select('*')
       .eq('silabus_id', sid)
-      .order('no_urut', { ascending: true });
+      .order('nomor', { ascending: true });
     setCpmkList(cpmks || []);
 
     // Load CPL yang dipilih
@@ -202,10 +209,10 @@ export default function MatriksPage({ user }) {
 
   // Hitung total bobot CPL per kolom
   const totalBobotCpl = (noCpl) => {
-    const activeCpmks = cpmkList.filter(c => matriksData[c.no_urut]?.[noCpl] === 1);
+    const activeCpmks = cpmkList.filter(c => matriksData[c.nomor]?.[noCpl] === 1);
     if (activeCpmks.length === 0) return 0;
     const total = activeCpmks.reduce((sum, c) => {
-      const b = parseFloat(bobotCpmk[c.no_urut]?.bobot) || 0;
+      const b = parseFloat(bobotCpmk[c.nomor]?.bobot) || 0;
       return sum + b;
     }, 0);
     return total / (selectedCpl.length || 1);
@@ -251,9 +258,9 @@ export default function MatriksPage({ user }) {
           matriksInserts.push({
             silabus_id: silabusId,
             user_id: user.id,
-            no_cpmk: c.no_urut,
+            no_cpmk: c.nomor,
             no_cpl: noCpl,
-            nilai: matriksData[c.no_urut]?.[noCpl] || 0,
+            nilai: matriksData[c.nomor]?.[noCpl] || 0,
           });
         });
       });
@@ -266,9 +273,9 @@ export default function MatriksPage({ user }) {
       const bobotInserts = cpmkList.map(c => ({
         silabus_id: silabusId,
         user_id: user.id,
-        no_cpmk: c.no_urut,
-        bobot_persen: parseFloat(bobotCpmk[c.no_urut]?.bobot) || 0,
-        jumlah_minggu: parseInt(bobotCpmk[c.no_urut]?.minggu) || 0,
+        no_cpmk: c.nomor,
+        bobot_persen: parseFloat(bobotCpmk[c.nomor]?.bobot) || 0,
+        jumlah_minggu: parseInt(bobotCpmk[c.nomor]?.minggu) || 0,
       }));
       if (bobotInserts.length > 0) {
         await supabase.from('dokumen_cpmk_bobot').insert(bobotInserts);
@@ -294,12 +301,12 @@ export default function MatriksPage({ user }) {
       const raeCpmkInserts = [];
       raeList.forEach(r => {
         cpmkList.forEach(c => {
-          const val = raeCpmkData[r.no_rae]?.[c.no_urut];
+          const val = raeCpmkData[r.no_rae]?.[c.nomor];
           raeCpmkInserts.push({
             silabus_id: silabusId,
             user_id: user.id,
             no_rae: r.no_rae,
-            no_cpmk: c.no_urut,
+            no_cpmk: c.nomor,
             bobot_persen: (!val || val === '--') ? null : parseFloat(val),
           });
         });
@@ -316,13 +323,13 @@ export default function MatriksPage({ user }) {
   };
 
   // ——— Hitung ringkasan ———
-  const totalBobotCpmkAll = cpmkList.reduce((s, c) => s + (parseFloat(bobotCpmk[c.no_urut]?.bobot) || 0), 0);
-  const totalMingguAll = cpmkList.reduce((s, c) => s + (parseInt(bobotCpmk[c.no_urut]?.minggu) || 0), 0);
+  const totalBobotCpmkAll = cpmkList.reduce((s, c) => s + (parseFloat(bobotCpmk[c.nomor]?.bobot) || 0), 0);
+  const totalMingguAll = cpmkList.reduce((s, c) => s + (parseInt(bobotCpmk[c.nomor]?.minggu) || 0), 0);
   const totalBobotRae = raeList.reduce((s, r) => s + (parseFloat(r.bobot_total) || 0), 0);
 
   const st = {
-    page: { minHeight: '100vh', background: '#f8fafc' },
-    wrap: { maxWidth: 1300, margin: '0 auto', padding: '56px 16px 48px' },
+    page: embedded ? {} : { minHeight: '100vh', background: '#f8fafc' },
+    wrap: embedded ? { padding: 0 } : { maxWidth: 1300, margin: '0 auto', padding: '56px 16px 48px' },
     card: { background: 'white', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', padding: 24, marginBottom: 20 },
     h1: { fontSize: 22, fontWeight: 700, color: '#1e293b', marginBottom: 4 },
     h2: { fontSize: 16, fontWeight: 600, color: '#334155', marginBottom: 16 },
@@ -357,7 +364,7 @@ export default function MatriksPage({ user }) {
   };
 
   return (
-    <div style={{ paddingRight: 'var(--rail-width, 44px)' }}>
+    <div style={embedded ? undefined : { paddingRight: 'var(--rail-width, 44px)' }}>
     <div style={st.page}>
 
       <div style={st.wrap}>
@@ -365,12 +372,12 @@ export default function MatriksPage({ user }) {
         {/* Header */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-            <button onClick={() => navigate(`/form/${silabusId}`)} style={{ ...st.btn, ...st.btnGhost, padding: '6px 14px', fontSize: 13 }}>
+            {!embedded && <button onClick={() => navigate(`/form/${silabusId}`)} style={{ ...st.btn, ...st.btnGhost, padding: '6px 14px', fontSize: 13 }}>
               ← Kembali ke Form
-            </button>
+            </button>}
             <div>
-              <h1 style={st.h1}>📊 Matriks CPL-CPMK & RAE</h1>
-              {mkInfo && (
+              {!embedded && <h1 style={st.h1}>📊 Matriks CPL-CPMK & RAE</h1>}
+              {!embedded && mkInfo && (
                 <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
                   {mkInfo.kode_mk} — {mkInfo.nama_mk} · {mkInfo.jenjang} Sem. {mkInfo.semester} · {mkInfo.sks} SKS
                 </p>
@@ -407,7 +414,7 @@ export default function MatriksPage({ user }) {
         {silabusId && !loading && (
           <>
             {/* Tab Navigation */}
-            <div style={st.tabBar}>
+            {!onlyTab && <div style={st.tabBar}>
               <button style={st.tab(activeTab === 'cpl-cpmk')} onClick={() => setActiveTab('cpl-cpmk')}>
                 1️⃣ Matriks CPL ↔ CPMK
               </button>
@@ -417,7 +424,7 @@ export default function MatriksPage({ user }) {
               <button style={st.tab(activeTab === 'ringkasan')} onClick={() => setActiveTab('ringkasan')}>
                 3️⃣ Ringkasan & Validasi
               </button>
-            </div>
+            </div>}
 
             {/* ===== TAB 1: MATRIKS CPL-CPMK ===== */}
             {activeTab === 'cpl-cpmk' && (
@@ -471,15 +478,15 @@ export default function MatriksPage({ user }) {
                         <tbody>
                           {cpmkList.map(c => (
                             <tr key={c.id}>
-                              <td style={st.td}>{c.no_urut}</td>
+                              <td style={st.td}>{c.nomor}</td>
                               <td style={{ ...st.tdLeft, fontSize: 12, lineHeight: 1.5 }}>
                                 {c.pernyataan || c.deskripsi_cpmk || '—'}
                               </td>
                               {selectedCpl.map(noCpl => {
-                                const val = matriksData[c.no_urut]?.[noCpl] || 0;
+                                const val = matriksData[c.nomor]?.[noCpl] || 0;
                                 return (
                                   <td key={noCpl} style={{ ...st.td, cursor: 'pointer' }}
-                                    onClick={() => toggleMatriks(c.no_urut, noCpl)}>
+                                    onClick={() => toggleMatriks(c.nomor, noCpl)}>
                                     {val === 1
                                       ? <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 700 }}>✓</span>
                                       : <span style={{ color: '#e2e8f0', fontSize: 18 }}>○</span>
@@ -493,8 +500,8 @@ export default function MatriksPage({ user }) {
                                   min="0"
                                   max="100"
                                   style={{ ...st.input, width: 70, textAlign: 'center' }}
-                                  value={bobotCpmk[c.no_urut]?.bobot ?? ''}
-                                  onChange={e => updateBobotCpmk(c.no_urut, 'bobot', e.target.value)}
+                                  value={bobotCpmk[c.nomor]?.bobot ?? ''}
+                                  onChange={e => updateBobotCpmk(c.nomor, 'bobot', e.target.value)}
                                   placeholder="0"
                                 />
                               </td>
@@ -504,8 +511,8 @@ export default function MatriksPage({ user }) {
                                   min="0"
                                   max="16"
                                   style={{ ...st.input, width: 60, textAlign: 'center' }}
-                                  value={bobotCpmk[c.no_urut]?.minggu ?? ''}
-                                  onChange={e => updateBobotCpmk(c.no_urut, 'minggu', e.target.value)}
+                                  value={bobotCpmk[c.nomor]?.minggu ?? ''}
+                                  onChange={e => updateBobotCpmk(c.nomor, 'minggu', e.target.value)}
                                   placeholder="0"
                                 />
                               </td>
@@ -609,7 +616,7 @@ export default function MatriksPage({ user }) {
                             <th style={{ ...st.th, width: 150 }}>Jenis Penilaian</th>
                             <th style={{ ...st.th, width: 90 }}>Bobot Total</th>
                             {cpmkList.map(c => (
-                              <th key={c.no_urut} style={{ ...st.th, width: 70 }}>CPMK-{c.no_urut}</th>
+                              <th key={c.nomor} style={{ ...st.th, width: 70 }}>CPMK-{c.nomor}</th>
                             ))}
                             <th style={{ ...st.th, width: 50 }}>Hapus</th>
                           </tr>
@@ -619,8 +626,8 @@ export default function MatriksPage({ user }) {
                               Target Bobot CPMK:
                             </th>
                             {cpmkList.map(c => (
-                              <th key={c.no_urut} style={{ ...st.th, fontSize: 11, color: '#3b82f6' }}>
-                                {bobotCpmk[c.no_urut]?.bobot ? `${bobotCpmk[c.no_urut].bobot}%` : '—'}
+                              <th key={c.nomor} style={{ ...st.th, fontSize: 11, color: '#3b82f6' }}>
+                                {bobotCpmk[c.nomor]?.bobot ? `${bobotCpmk[c.nomor].bobot}%` : '—'}
                               </th>
                             ))}
                             <th style={st.th}></th>
@@ -668,11 +675,11 @@ export default function MatriksPage({ user }) {
                                 />
                               </td>
                               {cpmkList.map(c => (
-                                <td key={c.no_urut} style={st.td}>
+                                <td key={c.nomor} style={st.td}>
                                   <input
                                     style={{ ...st.input, width: 60, textAlign: 'center' }}
-                                    value={raeCpmkData[r.no_rae]?.[c.no_urut] ?? '--'}
-                                    onChange={e => updateRaeCpmk(r.no_rae, c.no_urut, e.target.value)}
+                                    value={raeCpmkData[r.no_rae]?.[c.nomor] ?? '--'}
+                                    onChange={e => updateRaeCpmk(r.no_rae, c.nomor, e.target.value)}
                                     placeholder="--"
                                   />
                                 </td>
@@ -698,10 +705,10 @@ export default function MatriksPage({ user }) {
                               </span>
                             </td>
                             {cpmkList.map(c => {
-                              const tot = totalBobotRaeByCpmk(c.no_urut);
-                              const target = parseFloat(bobotCpmk[c.no_urut]?.bobot) || 0;
+                              const tot = totalBobotRaeByCpmk(c.nomor);
+                              const target = parseFloat(bobotCpmk[c.nomor]?.bobot) || 0;
                               return (
-                                <td key={c.no_urut} style={st.td}>
+                                <td key={c.nomor} style={st.td}>
                                   <span style={st.badge(Math.abs(tot - target) < 0.5)}>
                                     {tot.toFixed(0)}%
                                   </span>
@@ -774,7 +781,7 @@ export default function MatriksPage({ user }) {
                     { ok: totalMingguAll === 16, label: `Total minggu = 16 (saat ini: ${totalMingguAll})` },
                     { ok: raeList.length > 0, label: `RAE telah diisi (${raeList.length} evaluasi)` },
                     { ok: Math.abs(totalBobotRae - 100) < 1, label: `Total bobot RAE = 100% (saat ini: ${totalBobotRae.toFixed(0)}%)` },
-                    { ok: cpmkList.every(c => selectedCpl.some(noCpl => matriksData[c.no_urut]?.[noCpl] === 1)), label: 'Setiap CPMK terhubung ke minimal 1 CPL' },
+                    { ok: cpmkList.every(c => selectedCpl.some(noCpl => matriksData[c.nomor]?.[noCpl] === 1)), label: 'Setiap CPMK terhubung ke minimal 1 CPL' },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
                       <span style={{ fontSize: 16 }}>{item.ok ? '✅' : '⚠️'}</span>

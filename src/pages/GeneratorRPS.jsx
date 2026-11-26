@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Icon from '../components/Icon';
 import FloatingWindow from '../components/FloatingWindow';
+import CpmkGenerator from './CpmkGenerator';
+import MatriksPage from './MatriksPage';
 import { generatorPanels, useGeneratorPanels } from '../lib/generatorPanels';
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -510,6 +512,8 @@ export default function GeneratorRPS({ user }) {
   const [jenjang, setJenjang] = useState('S1');
   const [chatInput, setChatInput] = useState('');
   const [dokList, setDokList] = useState([]);
+  const [silabusId, setSilabusId] = useState(null);   // dokumen_silabus aktif untuk MK terpilih
+  const [dokMsg, setDokMsg] = useState('');
   const chatEndRef = useRef(null);
 
   // Panel visibility state
@@ -570,10 +574,43 @@ export default function GeneratorRPS({ user }) {
     setDokList(dokData || []);
   };
 
-  const handleMkChange = (id) => {
+  const handleMkChange = async (id) => {
     setSelectedMkId(id);
-    const mk = mkList.find(m => m.id === id);
+    setSelectedMk(mkList.find(m => m.id === id));
+    setSilabusId(null);
+    setDokMsg('');
+    if (!id || !user?.id) return;
+    // pakai dokumen yang sudah ada untuk MK + dosen ini
+    const { data } = await supabase.from('dokumen_silabus').select('id')
+      .eq('mk_id', id).eq('dosen_id', user.id)
+      .order('updated_at', { ascending: false }).limit(1);
+    if (data?.[0]) setSilabusId(data[0].id);
+  };
+
+  const buatDokumen = async () => {
+    if (!selectedMkId || !user?.id) return;
+    if (silabusId) { setDokMsg('Dokumen sudah ada — langsung lanjut mengisi.'); return; }
+    const { data, error } = await supabase.from('dokumen_silabus')
+      .insert({ dosen_id: user.id, mk_id: selectedMkId, status: 'draft' })
+      .select('id').single();
+    if (error) { setDokMsg('Gagal membuat dokumen: ' + error.message); return; }
+    setSilabusId(data.id);
+    setDokMsg('✅ Dokumen dibuat.');
+    loadMKList(jenjang);
+  };
+
+  // Buka dokumen yang sudah ada langsung di Generator (tanpa pindah halaman)
+  const bukaDokumen = async (docId) => {
+    const { data } = await supabase.from('dokumen_silabus')
+      .select('id, mk_id, master_mata_kuliah(jenjang)').eq('id', docId).single();
+    if (!data) return;
+    const j = data.master_mata_kuliah?.jenjang || jenjang;
+    if (j !== jenjang) { setJenjang(j); await loadMKList(j); }
+    setSelectedMkId(data.mk_id);
+    const { data: mk } = await supabase.from('master_mata_kuliah')
+      .select('id, kode_mk, nama_mk, nama_mk_en, sks, semester, jenjang').eq('id', data.mk_id).single();
     setSelectedMk(mk);
+    setSilabusId(data.id);
   };
 
   const sendChat = () => {
@@ -808,38 +845,19 @@ export default function GeneratorRPS({ user }) {
           )}
 
           {activeTab === 'cpmk' && (
-            <div>
-              <FormGroup label="CPMK">
-                {(formData.cpmk_items || []).map((c, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                    <span style={{
-                      width: 22, height: 22, borderRadius: '50%',
-                      background: '#22c55e', color: 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 5,
-                    }}>{i + 1}</span>
-                    <textarea style={{ ...textareaStyle, flex: 1, minHeight: 56 }} value={c}
-                      onChange={e => {
-                        const items = [...formData.cpmk_items];
-                        items[i] = e.target.value;
-                        setFormData(f => ({ ...f, cpmk_items: items }));
-                      }}
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={() => setFormData(f => ({ ...f, cpmk_items: [...(f.cpmk_items || []), ''] }))}
-                  style={{
-                    width: '100%', padding: '7px',
-                    background: 'white', border: '1px dashed #d2d2d2',
-                    borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#7a7a7a',
-                  }}
-                >+ Tambah CPMK</button>
-              </FormGroup>
-            </div>
+            <CpmkGenerator user={user} silabusId={silabusId} embedded section="cpmk" />
           )}
-
-          {(activeTab === 'sub' || activeTab === 'eval' || activeTab === 'tugas') && (
+          {activeTab === 'sub' && (
+            <CpmkGenerator user={user} silabusId={silabusId} embedded section="sub" />
+          )}
+          {activeTab === 'eval' && (
+            silabusId
+              ? <div style={{ overflowX: 'auto' }}><MatriksPage user={user} silabusId={silabusId} embedded onlyTab="rae" /></div>
+              : <div style={{ textAlign: 'center', padding: '32px 16px', color: '#7a7a7a', fontSize: 13 }}>
+                  Pilih Mata Kuliah lalu klik "Buat Dokumen" di panel kanan untuk mulai.
+                </div>
+          )}
+          {activeTab === 'tugas' && (
             <div style={{ textAlign: 'center', paddingTop: 40 }}>
               <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.3 }}>🔧</div>
               <div style={{ fontSize: 12, color: '#7a7a7a' }}>Form {activeTab.toUpperCase()} dalam pengembangan</div>
@@ -1088,6 +1106,7 @@ export default function GeneratorRPS({ user }) {
           {/* Buat Dokumen — Figma: bg #4a90d9, h=36, radius=18 (pill), text white medium 14px, w=324 */}
           <button
             disabled={!selectedMkId}
+            onClick={buatDokumen}
             style={{
               width: '100%', height: 36,
               background: selectedMkId ? '#4a90d9' : '#b9c8d3',
@@ -1098,7 +1117,8 @@ export default function GeneratorRPS({ user }) {
               marginBottom: 14,
               letterSpacing: 0.1,
             }}
-          >Buat Dokumen</button>
+          >{silabusId ? 'Lanjutkan Dokumen' : 'Buat Dokumen'}</button>
+          {dokMsg && <div style={{ fontSize: 11.5, color: dokMsg.startsWith('✅') ? '#16a34a' : '#b45309', marginBottom: 10 }}>{dokMsg}</div>}
 
           {/* Divider — Figma: #8a949b, h=1 */}
           <div style={{ height: 1, background: '#8a949b', marginBottom: 14 }} />
@@ -1175,7 +1195,7 @@ export default function GeneratorRPS({ user }) {
                   </span>
                   {/* Chip Edit — Figma: bg #f5f23a (bright yellow), h=16, w=40, radius=8, text #1a1a1a 10px */}
                   <button
-                    onClick={() => navigate(`/form/${d.id}`)}
+                    onClick={() => bukaDokumen(d.id)}
                     style={{
                       height: 16, minWidth: 40,
                       fontSize: 10, padding: '0 6px',

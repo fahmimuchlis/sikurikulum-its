@@ -318,8 +318,15 @@ const EMPTY_SUB = {
   afeksi: '', kegiatan_1: '',
 };
 
-export default function CpmkGenerator({ user }) {
-  const { silabusId } = useParams();   // dari URL /form/:silabusId/cpmk
+/**
+ * Props opsional untuk mode tertanam (di dalam tab Generator RPS):
+ *  - silabusId : dipakai bila tidak ada param URL
+ *  - embedded  : sembunyikan header/padding halaman penuh
+ *  - section   : 'cpmk' | 'sub' | 'both' (default 'both')
+ */
+export default function CpmkGenerator({ user, silabusId: silabusIdProp, embedded = false, section = 'both' }) {
+  const params = useParams();   // dari URL /form/:silabusId/cpmk
+  const silabusId = silabusIdProp || params.silabusId;
   const navigate = useNavigate();
   const [vocab, setVocab] = useState(null);
   const [silabusInfo, setSilabusInfo] = useState(null); // info MK untuk header
@@ -487,7 +494,7 @@ export default function CpmkGenerator({ user }) {
   if (loading) {
     return (
       <div>
-        <div className="page-loader" style={{ minHeight: '100vh' }}>
+        <div className="page-loader" style={{ minHeight: embedded ? 160 : '100vh' }}>
           <div className="spinner spinner-primary"></div>
           <p>Memuat generator...</p>
         </div>
@@ -499,10 +506,10 @@ export default function CpmkGenerator({ user }) {
   const tipeLabelSub = { kognitif: '🧠 Kognitif', psikomotorik: '💪 Psikomotorik', afeksi: '💛 Afeksi' };
 
   return (
-    <div style={{ paddingRight: 'var(--rail-width, 44px)' }}>
-      <main style={{ maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
+    <div style={embedded ? undefined : { paddingRight: 'var(--rail-width, 44px)' }}>
+      <main style={embedded ? { padding: 0 } : { maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
         {/* Header + tombol kembali */}
-        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+        {!embedded && <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           <button onClick={() => navigate(`/form/${silabusId}`)}
             style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 14px', fontSize: 13, cursor: 'pointer', color: '#475569', flexShrink: 0 }}>
             ← Kembali ke Form
@@ -517,15 +524,15 @@ export default function CpmkGenerator({ user }) {
               </p>
             )}
           </div>
-        </div>
+        </div>}
 
         {msg && <div className="success-msg">{msg}</div>}
         {error && <div className="error-msg">{error}</div>}
 
         {silabusId && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: embedded ? '1fr' : '1fr 1fr', gap: 24 }}>
             {/* ── Kolom Kiri: CPMK ─────────────────────────────────────────── */}
-            <div>
+            {section !== 'sub' && <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700 }}>CPMK ({daftarCpmk.length})</h2>
                 <button className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px' }}
@@ -609,10 +616,10 @@ export default function CpmkGenerator({ user }) {
                   </div>
                 );
               })}
-            </div>
+            </div>}
 
             {/* ── Kolom Kanan: Sub-CPMK ─────────────────────────────────────── */}
-            <div>
+            {section !== 'cpmk' && <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700 }}>Sub-CPMK ({daftarSub.length})</h2>
                 <button className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px' }}
@@ -704,7 +711,12 @@ export default function CpmkGenerator({ user }) {
                   </div>
                 );
               })}
-            </div>
+            </div>}
+          </div>
+        )}
+        {!silabusId && embedded && (
+          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--color-gray-400)', fontSize: 13 }}>
+            Pilih Mata Kuliah lalu klik "Buat Dokumen" di panel kanan untuk mulai.
           </div>
         )}
       </main>
