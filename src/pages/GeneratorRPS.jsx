@@ -539,6 +539,11 @@ export default function GeneratorRPS({ user }) {
   const [dokList, setDokList] = useState([]);
   const chatEndRef = useRef(null);
 
+  // Panel visibility state
+  const [diskusiMinimized, setDiskusiMinimized] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);      // muncul saat Simpan
+  const [previewMinimized, setPreviewMinimized] = useState(false); // minimize ke strip bawah
+
   const [formData, setFormData] = useState({
     deskripsi_id: '',
     deskripsi_en: '',
@@ -880,21 +885,24 @@ export default function GeneratorRPS({ user }) {
           flexShrink: 0,
           background: '#f6f6f6',
         }}>
-          <button style={{
-            width: '100%', height: 34,
-            background: '#1f1f1f', color: 'white',
-            border: 'none', borderRadius: 15,
-            fontSize: 13, fontWeight: 500, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            letterSpacing: 0.1,
-          }}>
-            <span>✦</span>  Generate Deskripsi
+          <button
+            onClick={() => { setPreviewOpen(true); setPreviewMinimized(false); }}
+            style={{
+              width: '100%', height: 34,
+              background: '#1f1f1f', color: 'white',
+              border: 'none', borderRadius: 15,
+              fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              letterSpacing: 0.1,
+            }}>
+            <span>✦</span>  Generate & Simpan
           </button>
         </div>
       </div>
 
       {/* ══════════════════════════════════════════════
-          PANEL 2 — PREVIEW   flex, bg=#f8fafc
+          PANEL 2 — WORKSPACE (menggantikan Preview tetap)
+          flex, bg=#edf3f9 — kosong/placeholder saat preview belum muncul
       ══════════════════════════════════════════════ */}
       <div style={{
         flex: 1,
@@ -902,143 +910,267 @@ export default function GeneratorRPS({ user }) {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        borderRight: '1px solid #d2d2d2',
-        background: '#f8fafc',
+        background: '#edf3f9',
+        position: 'relative',
       }}>
-        {/* Header strip — same accent as active tab */}
-        <div style={{ height: 10, background: activeTabObj.accent, flexShrink: 0 }} />
-
-        {/* Preview header */}
-        <div style={{
-          padding: '10px 20px',
-          borderBottom: '1px solid #e0e8f0',
-          background: 'white',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>Preview</span>
-          <span style={{ fontSize: 11, color: '#7a7a7a' }}>{selectedMk?.kode_mk || 'Pilih MK'}</span>
-        </div>
-
-        {/* Preview content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
-          <PreviewPanel activeTab={activeTab} formData={formData} mk={selectedMk} />
-        </div>
+        {/* Placeholder text saat preview belum dibuka */}
+        {!previewOpen && (
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 10,
+            color: '#94a3b8',
+          }}>
+            <span style={{ fontSize: 32 }}>✦</span>
+            <span style={{ fontSize: 13, fontWeight: 500 }}>Generate & Simpan untuk melihat preview</span>
+            <span style={{ fontSize: 11 }}>Hasil akan muncul sebagai panel bawah</span>
+          </div>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════
-          PANEL 3 — DISKUSI AI   w=426, bg=#f8fafc
+          PANEL 3 — DISKUSI AI
+          Minimizable: collapsed = strip 44px lebar di sisi kanan
       ══════════════════════════════════════════════ */}
-      <div style={{
-        width: 426,
-        flexShrink: 0,
-        height: '100vh',
-        background: '#f8fafc',
-        borderRight: '1px solid #d2d2d2',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        {/* Header strip — Figma: purple #7c3aed */}
-        <div style={{ height: 10, background: '#7c3aed', flexShrink: 0 }} />
-
-        {/* Chat header */}
-        <div style={{
-          padding: '10px 16px',
-          borderBottom: '1px solid #e0e8f0',
-          background: 'white',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Avatar — Figma: dark circle bg #1a1a1a */}
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%', background: '#1a1a1a',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ color: 'white', fontSize: 14 }}>✦</span>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>Asisten Kurikulum</div>
-              <div style={{ fontSize: 10, color: '#94a3b8' }}>Agen AI · RAG buku Bloom–Anderson</div>
-            </div>
-            {/* Siap badge — Figma: bg #dcfce7, color #16a34a */}
+      {diskusiMinimized ? (
+        /* Strip minimized — klik untuk expand */
+        <div
+          onClick={() => setDiskusiMinimized(false)}
+          title="Buka panel Asisten AI"
+          style={{
+            width: 44, flexShrink: 0,
+            height: '100vh',
+            background: '#7c3aed',
+            borderLeft: '1px solid #6d28d9',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >
+          {/* Top accent line */}
+          <div style={{ width: '100%', height: 10, background: '#5b21b6', flexShrink: 0 }} />
+          {/* Icon + rotated label */}
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 16, color: 'white' }}>✦</span>
             <span style={{
-              fontSize: 10.5, fontWeight: 500,
-              background: '#dcfce7', color: '#16a34a',
-              padding: '2px 8px', borderRadius: 20,
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
-              Siap
-            </span>
+              fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.8)',
+              writingMode: 'vertical-rl', textOrientation: 'mixed',
+              letterSpacing: 1, transform: 'rotate(180deg)',
+            }}>Asisten AI</span>
+            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>›</span>
           </div>
         </div>
-
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
-          {chatMessages.map((msg, i) => (
-            <ChatBubble key={i} {...msg} />
-          ))}
-          <div ref={chatEndRef} />
-        </div>
-
-        {/* Quick prompts — Figma: h=26 chips */}
+      ) : (
         <div style={{
-          padding: '0 16px 8px',
-          display: 'flex', gap: 6, flexWrap: 'wrap',
+          width: 426,
           flexShrink: 0,
+          height: '100vh',
+          background: '#f8fafc',
+          borderLeft: '1px solid #d2d2d2',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.2s ease',
         }}>
-          {['Cek keselarasan CPL', 'Periksa level kognitif', 'Cari kesenjangan', 'Tambah referensi', 'Ringkas temuan'].map(p => (
-            <button key={p} onClick={() => setChatInput(p)} style={{
-              height: 26,
-              padding: '0 12px',
-              borderRadius: 13,
-              background: 'white',
-              border: '1px solid #e0e8f0',
-              cursor: 'pointer',
-              fontSize: 11, color: '#475569',
-              whiteSpace: 'nowrap',
-            }}>{p}</button>
-          ))}
-        </div>
+          {/* Header strip — Figma: purple #7c3aed */}
+          <div style={{ height: 10, background: '#7c3aed', flexShrink: 0 }} />
 
-        {/* Input area — Figma: h=60, w=390 textarea, 36×36 send circle */}
+          {/* Chat header */}
+          <div style={{
+            padding: '10px 16px',
+            borderBottom: '1px solid #e0e8f0',
+            background: 'white',
+            flexShrink: 0,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Avatar — Figma: dark circle bg #1a1a1a */}
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', background: '#1a1a1a',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <span style={{ color: 'white', fontSize: 14 }}>✦</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>Asisten Kurikulum</div>
+                <div style={{ fontSize: 10, color: '#94a3b8' }}>Agen AI · RAG buku Bloom–Anderson</div>
+              </div>
+              {/* Siap badge — Figma: bg #dcfce7, color #16a34a */}
+              <span style={{
+                fontSize: 10.5, fontWeight: 500,
+                background: '#dcfce7', color: '#16a34a',
+                padding: '2px 8px', borderRadius: 20,
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+                Siap
+              </span>
+              {/* Minimize button */}
+              <button
+                onClick={() => setDiskusiMinimized(true)}
+                title="Minimize panel AI"
+                style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  background: '#f1f5f9', border: '1px solid #e0e8f0',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, color: '#64748b', flexShrink: 0,
+                  marginLeft: 4,
+                }}
+              >‹</button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+            {chatMessages.map((msg, i) => (
+              <ChatBubble key={i} {...msg} />
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Quick prompts — Figma: h=26 chips */}
+          <div style={{
+            padding: '0 16px 8px',
+            display: 'flex', gap: 6, flexWrap: 'wrap',
+            flexShrink: 0,
+          }}>
+            {['Cek keselarasan CPL', 'Periksa level kognitif', 'Cari kesenjangan', 'Tambah referensi', 'Ringkas temuan'].map(p => (
+              <button key={p} onClick={() => setChatInput(p)} style={{
+                height: 26,
+                padding: '0 12px',
+                borderRadius: 13,
+                background: 'white',
+                border: '1px solid #e0e8f0',
+                cursor: 'pointer',
+                fontSize: 11, color: '#475569',
+                whiteSpace: 'nowrap',
+              }}>{p}</button>
+            ))}
+          </div>
+
+          {/* Input area — Figma: h=60, w=390 textarea, 36×36 send circle */}
+          <div style={{
+            padding: '10px 16px',
+            borderTop: '1px solid #e0e8f0',
+            background: 'white',
+            display: 'flex', gap: 8, alignItems: 'flex-end',
+            flexShrink: 0,
+          }}>
+            <textarea
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Tanyakan keterkaitan, relevansi, atau akurasi…"
+              rows={2}
+              style={{
+                flex: 1,
+                minHeight: 60,
+                border: '1px solid #e0e8f0', borderRadius: 10,
+                padding: '8px 10px', fontSize: 12, resize: 'none',
+                outline: 'none', background: '#f8fafc', lineHeight: 1.5,
+                fontFamily: 'inherit', boxSizing: 'border-box',
+              }}
+            />
+            {/* Send button — Figma: 36×36 circle */}
+            <button
+              onClick={sendChat}
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: chatInput.trim() ? '#1a1a1a' : '#e0e8f0',
+                border: 'none', cursor: chatInput.trim() ? 'pointer' : 'default',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 16, lineHeight: 1 }}>↑</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          FLOATING PREVIEW PANEL (Figma-style bottom sheet)
+          Muncul setelah Generate & Simpan diklik
+          Bisa di-minimize ke strip 48px di bawah
+      ══════════════════════════════════════════════ */}
+      {previewOpen && (
         <div style={{
-          padding: '10px 16px',
-          borderTop: '1px solid #e0e8f0',
+          position: 'fixed',
+          bottom: 0,
+          left: 374,  /* mulai dari kanan Panel 1 */
+          right: `calc(var(--rail-width, 44px) + ${diskusiMinimized ? 44 : 426}px + 372px)`,
+          zIndex: 500,
+          transition: 'height 0.25s ease, right 0.2s ease',
+          height: previewMinimized ? 48 : 380,
           background: 'white',
-          display: 'flex', gap: 8, alignItems: 'flex-end',
-          flexShrink: 0,
+          boxShadow: '0 -4px 32px rgba(0,0,0,0.13)',
+          borderTop: '1px solid #d0d8e0',
+          borderRadius: '12px 12px 0 0',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}>
-          <textarea
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Tanyakan keterkaitan, relevansi, atau akurasi…"
-            rows={2}
-            style={{
-              flex: 1,
-              minHeight: 60,
-              border: '1px solid #e0e8f0', borderRadius: 10,
-              padding: '8px 10px', fontSize: 12, resize: 'none',
-              outline: 'none', background: '#f8fafc', lineHeight: 1.5,
-              fontFamily: 'inherit', boxSizing: 'border-box',
-            }}
-          />
-          {/* Send button — Figma: 36×36 circle */}
-          <button
-            onClick={sendChat}
-            style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: chatInput.trim() ? '#1a1a1a' : '#e0e8f0',
-              border: 'none', cursor: chatInput.trim() ? 'pointer' : 'default',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}
+          {/* Preview header bar */}
+          <div style={{
+            height: 48, flexShrink: 0,
+            background: previewMinimized ? '#1a1a1a' : 'white',
+            borderBottom: previewMinimized ? 'none' : '1px solid #e0e8f0',
+            display: 'flex', alignItems: 'center',
+            padding: '0 16px', gap: 10,
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+            onClick={() => setPreviewMinimized(m => !m)}
           >
-            <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 16, lineHeight: 1 }}>↑</span>
-          </button>
+            {/* Accent dot */}
+            <div style={{
+              width: 10, height: 10, borderRadius: '50%',
+              background: activeTabObj.accent, flexShrink: 0,
+            }} />
+            <span style={{
+              fontSize: 12, fontWeight: 600,
+              color: previewMinimized ? 'white' : '#1a1a1a',
+              flex: 1,
+            }}>
+              ✦ Preview — {selectedMk?.kode_mk || 'Draft'} · {activeTabObj.label}
+            </span>
+            {/* Controls */}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setPreviewMinimized(m => !m)}
+                title={previewMinimized ? 'Perluas preview' : 'Minimize preview'}
+                style={{
+                  height: 24, padding: '0 10px',
+                  background: previewMinimized ? 'rgba(255,255,255,0.15)' : '#f1f5f9',
+                  border: 'none', borderRadius: 12,
+                  fontSize: 11, fontWeight: 500,
+                  color: previewMinimized ? 'white' : '#475569',
+                  cursor: 'pointer',
+                }}
+              >{previewMinimized ? '▲ Perluas' : '▼ Minimize'}</button>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                title="Tutup preview"
+                style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  background: previewMinimized ? 'rgba(255,255,255,0.15)' : '#fee2e2',
+                  border: 'none',
+                  fontSize: 13, color: previewMinimized ? 'white' : '#dc2626',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >×</button>
+            </div>
+          </div>
+
+          {/* Preview content — only visible when not minimized */}
+          {!previewMinimized && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+              <PreviewPanel activeTab={activeTab} formData={formData} mk={selectedMk} />
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* ══════════════════════════════════════════════
           PANEL 4 — PANEL MK / SIDEBAR   w=372
