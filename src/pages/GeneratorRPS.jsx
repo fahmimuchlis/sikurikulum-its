@@ -354,23 +354,56 @@ function PreviewPanel({ activeTab, formData, mk }) {
 
     cpmk: (
       <div>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#1a1a1a' }}>Capaian Pembelajaran MK</div>
-        {formData.cpmk_items?.length ? formData.cpmk_items.map((c, i) => (
-          <div key={i} style={{
-            display: 'flex', gap: 10, marginBottom: 8,
-            padding: '8px 10px', background: '#f0fdf4', borderRadius: 8, fontSize: 12,
-          }}>
-            <span style={{
-              width: 20, height: 20, borderRadius: '50%',
-              background: '#22c55e', color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 700, flexShrink: 0,
-            }}>{i + 1}</span>
-            <span style={{ color: '#333' }}>{c}</span>
+        {/* Bahasa Indonesia */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 3, height: 16, background: '#10b981', borderRadius: 2 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: 0.6 }}>Bahasa Indonesia</span>
           </div>
-        )) : (
-          <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>CPMK belum diisi…</div>
-        )}
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#064e3b', marginBottom: 8 }}>Capaian Pembelajaran Mata Kuliah (CPMK)</div>
+            {formData.cpmk_items?.length ? formData.cpmk_items.map((c, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: '#10b981', color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1,
+                }}>{i + 1}</span>
+                <span style={{ fontSize: 13, color: '#065f46', lineHeight: 1.5 }}>
+                  {typeof c === 'object' ? (c.kalimat || '—') : c}
+                </span>
+              </div>
+            )) : (
+              <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>CPMK belum diisi…</div>
+            )}
+          </div>
+        </div>
+        {/* English */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 3, height: 16, background: '#3b82f6', borderRadius: 2 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: 0.6 }}>English</span>
+          </div>
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a5f', marginBottom: 8 }}>Course Learning Outcomes (CLO)</div>
+            {formData.cpmk_items?.length ? formData.cpmk_items.map((c, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: '#3b82f6', color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1,
+                }}>{i + 1}</span>
+                <span style={{ fontSize: 13, color: '#1e40af', lineHeight: 1.5, fontStyle: 'italic' }}>
+                  {typeof c === 'object' ? (c.kalimat_en || '(English translation pending)') : '(English translation pending)'}
+                </span>
+              </div>
+            )) : (
+              <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>CLO not yet filled…</div>
+            )}
+          </div>
+        </div>
       </div>
     ),
 
@@ -904,13 +937,15 @@ export default function GeneratorRPS({ user }) {
             onClick={() => { setPreviewOpen(true); }}
             style={{
               width: '100%', height: 34,
-              background: '#1f1f1f', color: 'white',
+              background: activeTab === 'cpmk' ? '#16a34a' : '#1f1f1f', color: 'white',
               border: 'none', borderRadius: 15,
               fontSize: 13, fontWeight: 500, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               letterSpacing: 0.1,
+              transition: 'background 0.2s',
             }}>
-            <span>✦</span>  Generate & Simpan
+            <span>✦</span>
+            {activeTab === 'cpmk' ? 'Ke Matriks CPL' : 'Simpan'}
           </button>
         </div>
 
