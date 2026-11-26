@@ -80,7 +80,6 @@ body {
 /* Pages sit on top of the grid with right offset for Rail */
 .page-root {
   min-height: 100vh;
-  padding-right: var(--rail-width);
 }
 
 button {

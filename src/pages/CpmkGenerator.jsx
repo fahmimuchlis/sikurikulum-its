@@ -499,7 +499,7 @@ export default function CpmkGenerator({ user }) {
   const tipeLabelSub = { kognitif: '🧠 Kognitif', psikomotorik: '💪 Psikomotorik', afeksi: '💛 Afeksi' };
 
   return (
-    <div>
+    <div style={{ paddingRight: 'var(--rail-width, 44px)' }}>
       <main style={{ maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
         {/* Header + tombol kembali */}
         <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>

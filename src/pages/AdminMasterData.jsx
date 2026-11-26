@@ -106,7 +106,7 @@ export default function AdminMasterData({ user }) {
   }
 
   return (
-    <div>
+    <div style={{ paddingRight: 'var(--rail-width, 44px)' }}>
       <main style={{ maxWidth: 1000, margin: '0 auto', padding: '56px 24px 48px' }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4 }}>
           ⚙️ Kelola Master Data

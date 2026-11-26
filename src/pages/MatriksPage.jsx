@@ -357,7 +357,7 @@ export default function MatriksPage({ user }) {
   };
 
   return (
-    <div>
+    <div style={{ paddingRight: 'var(--rail-width, 44px)' }}>
     <div style={st.page}>
 
       <div style={st.wrap}>

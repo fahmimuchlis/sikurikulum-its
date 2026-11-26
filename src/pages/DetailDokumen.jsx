@@ -577,7 +577,7 @@ export default function DetailDokumen({ user }) {
   const handlePrint = () => window.print();
 
   return (
-    <div>
+    <div style={{ paddingRight: 'var(--rail-width, 44px)' }}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
