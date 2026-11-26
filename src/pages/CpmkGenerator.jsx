@@ -367,7 +367,7 @@ export default function CpmkGenerator({ user, silabusId: silabusIdProp, embedded
 
   // Load info silabus dari URL param
   useEffect(() => {
-    if (!silabusId) return;
+    if (!silabusId) { setLoading(false); return; }
     const loadSilabusInfo = async () => {
       setLoading(true);
       try {
