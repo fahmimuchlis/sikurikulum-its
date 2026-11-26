@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Icon from '../components/Icon';
+import FloatingWindow from '../components/FloatingWindow';
 import { generatorPanels, useGeneratorPanels } from '../lib/generatorPanels';
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -607,6 +608,7 @@ export default function GeneratorRPS({ user }) {
       overflow: 'hidden',
       background: '#EDF3F9',
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      gap: 24,                 /* jarak antar window agar terasa terpisah */
       marginRight: 'var(--rail-width, 44px)',
       transition: 'margin-right 0.2s ease',
     }}>
@@ -620,6 +622,8 @@ export default function GeneratorRPS({ user }) {
         minWidth: 360,
         height: '100vh',
         background: '#f6f6f6',
+        border: '1px solid #d2d2d2',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'row',   /* icon strip di sebelah kanan konten form */
       }}>
@@ -883,17 +887,12 @@ export default function GeneratorRPS({ user }) {
           Berderet di antara Form dan Panel MK
       ══════════════════════════════════════════════ */}
       {previewOpen && (
-        <div style={{
-          width: 544, flexShrink: 0,
-          height: '100vh',
-          background: 'white',
-          borderLeft: '1px solid #d2d2d2',
-          display: 'flex', flexDirection: 'column',
-        }}>
+        <FloatingWindow id="generator-preview" style={{ background: 'white' }}
+          defaultRect={() => ({ x: Math.round(window.innerWidth * 0.34) + 24, y: 16, w: 544, h: window.innerHeight - 32 })}>
           {/* Header strip */}
-          <div style={{ height: 10, background: activeTabObj.accent, flexShrink: 0 }} />
+          <div data-drag-handle style={{ height: 10, background: activeTabObj.accent, flexShrink: 0, cursor: 'move' }} />
           {/* Header bar */}
-          <div style={{
+          <div data-drag-handle style={{ cursor: 'move',
             padding: '0 14px', height: 44,
             borderBottom: '1px solid #e0e8f0',
             display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
@@ -904,8 +903,8 @@ export default function GeneratorRPS({ user }) {
               Preview · {activeTabObj.label}
             </span>
             <button onClick={() => setPreviewOpen(false)} style={{
-              width: 22, height: 22, borderRadius: '50%', background: '#fee2e2',
-              border: 'none', fontSize: 13, color: '#dc2626',
+              width: 22, height: 22, borderRadius: '50%', background: 'transparent',
+              border: 'none', fontSize: 18, fontWeight: 400, lineHeight: 1, color: '#000',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>×</button>
           </div>
@@ -913,7 +912,7 @@ export default function GeneratorRPS({ user }) {
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
             <PreviewPanel activeTab={activeTab} formData={formData} mk={selectedMk} />
           </div>
-        </div>
+        </FloatingWindow>
       )}
 
       {/* ══════════════════════════════════════════════
@@ -921,17 +920,12 @@ export default function GeneratorRPS({ user }) {
           Berderet di antara Preview (jika ada) dan Panel MK
       ══════════════════════════════════════════════ */}
       {diskusiOpen && (
-        <div style={{
-          width: 426, flexShrink: 0,
-          height: '100vh',
-          background: '#f8fafc',
-          borderLeft: '1px solid #d2d2d2',
-          display: 'flex', flexDirection: 'column',
-        }}>
+        <FloatingWindow id="generator-ai" style={{ background: '#f8fafc' }}
+          defaultRect={() => ({ x: Math.max(0, window.innerWidth - 44 - 372 - 24 - 426), y: 16, w: 426, h: window.innerHeight - 32 })}>
           {/* Header strip */}
-          <div style={{ height: 10, background: '#7c3aed', flexShrink: 0 }} />
+          <div data-drag-handle style={{ height: 10, background: '#7c3aed', flexShrink: 0, cursor: 'move' }} />
           {/* Chat header */}
-          <div style={{
+          <div data-drag-handle style={{ cursor: 'move',
             padding: '10px 14px', borderBottom: '1px solid #e0e8f0',
             background: 'white', flexShrink: 0,
           }}>
@@ -954,10 +948,10 @@ export default function GeneratorRPS({ user }) {
                 Siap
               </span>
               <button onClick={() => setDiskusiOpen(false)} style={{
-                width: 22, height: 22, borderRadius: '50%', background: '#f1f5f9',
-                border: '1px solid #e0e8f0', cursor: 'pointer',
+                width: 22, height: 22, borderRadius: '50%', background: 'transparent',
+                border: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, color: '#64748b', marginLeft: 2,
+                fontSize: 18, lineHeight: 1, color: '#000', marginLeft: 2,
               }}>×</button>
             </div>
           </div>
@@ -998,7 +992,7 @@ export default function GeneratorRPS({ user }) {
               <span style={{ color: chatInput.trim() ? 'white' : '#94a3b8', fontSize: 15, lineHeight: 1 }}>↑</span>
             </button>
           </div>
-        </div>
+        </FloatingWindow>
       )}
 
       {/* ══════════════════════════════════════════════
@@ -1013,7 +1007,8 @@ export default function GeneratorRPS({ user }) {
         background: 'white',
         display: 'flex',
         flexDirection: 'column',
-        borderLeft: '1px solid #d2d2d2',
+        border: '1px solid #d2d2d2',
+        boxSizing: 'border-box',
         overflowY: 'auto',
       }}>
         {/* User header — Figma: bg rgba(198,228,245,0.9), h=55, border-bottom #9cc3dd */}
