@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Icon from '../components/Icon';
+import { generatorPanels, useGeneratorPanels } from '../lib/generatorPanels';
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 const TABS = [
@@ -142,35 +143,6 @@ function ChatBubble({ role, text, sources, actions, analysis, onAction }) {
 
   return (
     <div style={{ marginBottom: 18 }}>
-      {/* Assistant header */}
-      {isAssistant && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: '#1a1a1a',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <span style={{ color: 'white', fontSize: 14 }}>✦</span>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>Asisten Kurikulum</div>
-            <div style={{ fontSize: 10, color: '#94a3b8' }}>Agen AI · RAG buku Bloom–Anderson</div>
-          </div>
-          {/* Siap badge — Figma: bg #dcfce7, color #16a34a */}
-          <span style={{
-            fontSize: 10.5, fontWeight: 500,
-            background: '#dcfce7', color: '#16a34a',
-            padding: '2px 8px', borderRadius: 20,
-            display: 'flex', alignItems: 'center', gap: 4,
-            flexShrink: 0,
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
-            Siap
-          </span>
-        </div>
-      )}
-
       {/* RAG source chips */}
       {isAssistant && sources && (
         <div style={{ marginBottom: 8 }}>
@@ -540,9 +512,11 @@ export default function GeneratorRPS({ user }) {
   const chatEndRef = useRef(null);
 
   // Panel visibility state
-  const [diskusiOpen, setDiskusiOpen] = useState(false);         // Panel AI overlay
-  const [previewOpen, setPreviewOpen] = useState(false);         // muncul saat Simpan
-  const [previewMinimized, setPreviewMinimized] = useState(false); // minimize ke strip bawah
+  const panels = useGeneratorPanels();                            // status dari tombol di rail kanan
+  const diskusiOpen = panels.ai;
+  const previewOpen = panels.preview;
+  const setDiskusiOpen = (v) => generatorPanels.set('ai', typeof v === 'function' ? v(panels.ai) : v);
+  const setPreviewOpen = (v) => generatorPanels.set('preview', typeof v === 'function' ? v(panels.preview) : v);
 
   const [formData, setFormData] = useState({
     deskripsi_id: '',
@@ -887,7 +861,7 @@ export default function GeneratorRPS({ user }) {
           background: '#f6f6f6',
         }}>
           <button
-            onClick={() => { setPreviewOpen(true); setPreviewMinimized(false); }}
+            onClick={() => { setPreviewOpen(true); }}
             style={{
               width: '100%', height: 34,
               background: '#1f1f1f', color: 'white',
@@ -902,47 +876,6 @@ export default function GeneratorRPS({ user }) {
 
         </div>{/* end form content column */}
 
-        {/* ── Icon strip — tombol Preview & AI menempel di tepi kanan panel ── */}
-        <div style={{
-          width: 44, flexShrink: 0,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: 60, gap: 6,
-          background: '#f0f0f0',
-          borderRight: '1px solid #d2d2d2',
-        }}>
-          {/* Preview button */}
-          <button
-            onClick={() => { setPreviewOpen(o => !o); setPreviewMinimized(false); }}
-            title="Preview hasil"
-            style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: previewOpen ? '#f59e0b' : 'white',
-              border: `1px solid ${previewOpen ? '#d97706' : '#d2d2d2'}`,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18,
-              boxShadow: previewOpen ? '0 2px 8px rgba(245,158,11,0.3)' : '0 1px 3px rgba(0,0,0,0.08)',
-              transition: 'all 0.15s',
-            }}
-          >👁</button>
-          {/* AI Diskusi button */}
-          <button
-            onClick={() => setDiskusiOpen(o => !o)}
-            title="Asisten AI Kurikulum"
-            style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: diskusiOpen ? '#7c3aed' : 'white',
-              border: `1px solid ${diskusiOpen ? '#6d28d9' : '#d2d2d2'}`,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, color: diskusiOpen ? 'white' : '#7c3aed',
-              boxShadow: diskusiOpen ? '0 2px 8px rgba(124,58,237,0.3)' : '0 1px 3px rgba(0,0,0,0.08)',
-              transition: 'all 0.15s',
-            }}
-          >✦</button>
-        </div>
-
       </div>{/* end Panel 1 outer */}
 
       {/* ══════════════════════════════════════════════
@@ -951,7 +884,7 @@ export default function GeneratorRPS({ user }) {
       ══════════════════════════════════════════════ */}
       {previewOpen && (
         <div style={{
-          width: 400, flexShrink: 0,
+          width: 544, flexShrink: 0,
           height: '100vh',
           background: 'white',
           borderLeft: '1px solid #d2d2d2',
@@ -989,7 +922,7 @@ export default function GeneratorRPS({ user }) {
       ══════════════════════════════════════════════ */}
       {diskusiOpen && (
         <div style={{
-          width: 380, flexShrink: 0,
+          width: 426, flexShrink: 0,
           height: '100vh',
           background: '#f8fafc',
           borderLeft: '1px solid #d2d2d2',

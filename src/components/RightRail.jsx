@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from './Icon';
+import { generatorPanels, useGeneratorPanels } from '../lib/generatorPanels';
 
 const NAV_ITEMS = [
   { id: 'dashboard',  label: 'Dashboard',    icon: 'dashboard',       path: '/' },
@@ -23,6 +24,13 @@ export default function RightRail({ user, onLogout }) {
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  const panels = useGeneratorPanels();
+  const onGenerator = location.pathname.startsWith('/generator');
+  const PANEL_ITEMS = [
+    { id: 'ai', label: 'Agen AI', icon: 'auto_awesome' },
+    { id: 'preview', label: 'Preview', icon: 'description' },
+  ];
 
   const railW = expanded ? 200 : 44;
 
@@ -189,6 +197,33 @@ export default function RightRail({ user, onLogout }) {
             );
           })}
         </nav>
+
+        {/* Tombol jendela Agen AI & Preview — hanya di mode generator */}
+        {onGenerator && (
+          <div style={{ width: '100%', borderTop: '1px solid var(--color-rail-border)', paddingTop: 6 }}>
+            {PANEL_ITEMS.map(item => {
+              const on = panels[item.id];
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => generatorPanels.toggle(item.id)}
+                  title={`${on ? 'Sembunyikan' : 'Tampilkan'} ${item.label}`}
+                  style={{
+                    width: '100%', padding: expanded ? '10px 14px' : '10px 0',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: expanded ? 'flex-start' : 'center', gap: expanded ? 10 : 0,
+                    background: on ? 'rgba(42,100,150,0.1)' : 'transparent',
+                    border: 'none', cursor: 'pointer',
+                    color: on ? 'var(--color-primary)' : 'var(--color-gray-500)',
+                  }}
+                >
+                  <Icon name={item.icon} size={20} />
+                  {expanded && <span style={{ fontSize: 13 }}>{item.label}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Bottom items */}
         <div style={{ width: '100%', paddingBottom: 8 }}>
