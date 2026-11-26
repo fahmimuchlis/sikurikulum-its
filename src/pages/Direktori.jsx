@@ -234,6 +234,7 @@ export default function Direktori({ user }) {
   const [filterSem, setFilterSem] = useState('');
   const [search, setSearch] = useState('');
   const [rightOpen, setRightOpen] = useState(true);
+  const [leftOpen, setLeftOpen] = useState(true);   // panel MK list minimize
   const [previewZoom, setPreviewZoom] = useState(1);
 
   // Load versi
@@ -316,6 +317,37 @@ export default function Direktori({ user }) {
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#EDF3F9' }}>
 
       {/* ── LEFT: MK Table ── */}
+      {!leftOpen ? (
+        /* Collapsed strip — klik untuk expand */
+        <div
+          onClick={() => setLeftOpen(true)}
+          title="Buka daftar mata kuliah"
+          style={{
+            width: 44, flexShrink: 0,
+            height: '100vh',
+            background: 'white',
+            borderRight: '1px solid #e0e8f0',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >
+          <div style={{ width: '100%', height: 4, background: 'var(--color-primary)', flexShrink: 0 }} />
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 10,
+          }}>
+            <Icon name="menu_book" size={18} style={{ color: 'var(--color-primary)' }} />
+            <span style={{
+              fontSize: 10, fontWeight: 600, color: '#64748b',
+              writingMode: 'vertical-rl', textOrientation: 'mixed',
+              letterSpacing: 1, transform: 'rotate(180deg)',
+            }}>Mata Kuliah</span>
+            <Icon name="chevron_right" size={16} style={{ color: '#94a3b8' }} />
+          </div>
+        </div>
+      ) : (
       <div style={{
         width: 460,
         flexShrink: 0,
@@ -445,10 +477,23 @@ export default function Direktori({ user }) {
         </div>
 
         {/* Footer count */}
-        <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', fontSize: 11, color: '#94a3b8', background: '#f8fafc' }}>
-          {filtered.length} mata kuliah · {filtered.reduce((sum, d) => sum + (d.master_mata_kuliah?.sks || 0), 0)} total SKS
+        <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', fontSize: 11, color: '#94a3b8', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{filtered.length} mata kuliah · {filtered.reduce((sum, d) => sum + (d.master_mata_kuliah?.sks || 0), 0)} total SKS</span>
+          {/* Tombol collapse panel kiri */}
+          <button
+            onClick={() => setLeftOpen(false)}
+            title="Sembunyikan panel daftar MK"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 3,
+              fontSize: 11, padding: '2px 4px',
+            }}
+          >
+            <Icon name="chevron_left" size={16} /> Tutup
+          </button>
         </div>
       </div>
+      )}{/* end leftOpen conditional */}
 
       {/* ── CENTER: Preview ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -460,6 +505,21 @@ export default function Direktori({ user }) {
           backdropFilter: 'blur(8px)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Tombol buka panel MK — muncul saat panel kiri ditutup */}
+            {!leftOpen && (
+              <button
+                onClick={() => setLeftOpen(true)}
+                title="Tampilkan daftar mata kuliah"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: 'var(--color-primary)', color: 'white',
+                  border: 'none', borderRadius: 7, padding: '5px 10px',
+                  fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                <Icon name="menu_book" size={14} /> Daftar MK
+              </button>
+            )}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 6,
               background: '#f8fafc', border: '1px solid #e0e8f0',
