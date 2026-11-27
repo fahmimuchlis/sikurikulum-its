@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 
 // ── Konstanta ────────────────────────────────────────────────────────────────
@@ -323,6 +323,7 @@ export default function AdminMasterData({ user }) {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll(); }, []);
 
   const loadAll = async () => {
