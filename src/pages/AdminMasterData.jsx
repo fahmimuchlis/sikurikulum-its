@@ -14,8 +14,11 @@ const RMK_COLOR = {
   Umum: { bg: '#f3e5f5', text: '#7b1fa2', label: 'Umum/Wajib' },
 };
 
-const JENJANG_LIST = ['S1', 'Profesi', 'S2', 'S3'];
+const JENJANG_LIST = ['S1', 'PPAr', 'S2', 'S3'];
 const TIPE_LIST    = ['Studio', 'Teoritik'];
+
+const labelStyle = { display: 'block', fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 4, letterSpacing: 0.3 };
+const inputStyle = { width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13, boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' };
 
 function RmkBadge({ rmk }) {
   const c = RMK_COLOR[rmk] || { bg: '#f5f5f5', text: '#555' };
@@ -41,17 +44,17 @@ function StatusDot({ status }) {
   );
 }
 
-// ── Komponen tabel spreadsheet ───────────────────────────────────────────────
+// ── Komponen tabel MK ────────────────────────────────────────────────────────
 function MKTable({ data, onDelete, onEdit, isAdmin }) {
   const cols = [
-    { key: 'kode_mk',  label: 'Kode',       width: 110 },
+    { key: 'kode_mk',  label: 'Kode',            width: 110 },
     { key: 'nama_mk',  label: 'Nama Mata Kuliah', width: 280, flex: true },
-    { key: 'sks',      label: 'SKS',         width: 48,  align: 'center' },
-    { key: 'jenjang',  label: 'Jenjang',     width: 72,  align: 'center' },
-    { key: 'rmk',      label: 'RMK',         width: 72,  align: 'center' },
-    { key: 'tipe',     label: 'Tipe',        width: 80 },
-    { key: 'semester', label: 'Sem',         width: 48,  align: 'center' },
-    { key: 'status',   label: 'Status',      width: 90 },
+    { key: 'sks',      label: 'SKS',              width: 48,  align: 'center' },
+    { key: 'jenjang',  label: 'Jenjang',          width: 72,  align: 'center' },
+    { key: 'rmk',      label: 'RMK',              width: 72,  align: 'center' },
+    { key: 'tipe',     label: 'Tipe',             width: 80 },
+    { key: 'semester', label: 'Sem',              width: 48,  align: 'center' },
+    { key: 'status',   label: 'Status',           width: 90 },
   ];
 
   return (
@@ -68,7 +71,7 @@ function MKTable({ data, onDelete, onEdit, isAdmin }) {
                 minWidth: c.width,
               }}>{c.label}</th>
             ))}
-            {isAdmin && <th style={{ width: 32, padding: '8px 6px' }} />}
+            {isAdmin && <th style={{ width: 64, padding: '8px 6px' }} />}
           </tr>
         </thead>
         <tbody>
@@ -110,7 +113,18 @@ function MKTable({ data, onDelete, onEdit, isAdmin }) {
                 <StatusDot status={mk.status} />
               </td>
               {isAdmin && (
-                <td style={{ padding: '7px 6px', textAlign: 'center' }}>
+                <td style={{ padding: '7px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <button
+                    onClick={() => onEdit(mk)}
+                    title="Edit"
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#1a5cb8', fontSize: 13, padding: '2px 5px', borderRadius: 4,
+                      opacity: 0.5, transition: 'opacity 0.1s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+                  >✎</button>
                   <button
                     onClick={() => onDelete(mk.id, mk.kode_mk)}
                     title="Hapus"
@@ -133,7 +147,7 @@ function MKTable({ data, onDelete, onEdit, isAdmin }) {
 }
 
 // ── Komponen tabel CPL ───────────────────────────────────────────────────────
-function CPLTable({ data, onDelete, isAdmin }) {
+function CPLTable({ data, onDelete, onEdit, isAdmin }) {
   return (
     <div style={{ overflowX: 'auto', border: '1px solid #e4e7ec', borderRadius: 8 }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -142,7 +156,7 @@ function CPLTable({ data, onDelete, isAdmin }) {
             {['Jenjang','Nomor','Kategori','Deskripsi (ID)','Deskripsi (EN)'].map(h => (
               <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, fontSize: 11, color: '#6b7280', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
             ))}
-            {isAdmin && <th style={{ width: 32 }} />}
+            {isAdmin && <th style={{ width: 64 }} />}
           </tr>
         </thead>
         <tbody>
@@ -162,9 +176,14 @@ function CPLTable({ data, onDelete, isAdmin }) {
               <td style={{ padding: '7px 10px', maxWidth: 320 }}><span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cpl.deskripsi_id}</span></td>
               <td style={{ padding: '7px 10px', maxWidth: 280, color: '#6b7280', fontSize: 12 }}><span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cpl.deskripsi_en || '—'}</span></td>
               {isAdmin && (
-                <td style={{ padding: '7px 6px', textAlign: 'center' }}>
+                <td style={{ padding: '7px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <button onClick={() => onEdit(cpl)} title="Edit"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a5cb8', fontSize: 13, padding: '2px 5px', opacity: 0.5, transition: 'opacity 0.1s' }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+                  >✎</button>
                   <button onClick={() => onDelete(cpl.id)} title="Hapus"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 14, padding: '2px 4px', opacity: 0.5 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 14, padding: '2px 4px', opacity: 0.5, transition: 'opacity 0.1s' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
                   >✕</button>
@@ -178,50 +197,62 @@ function CPLTable({ data, onDelete, isAdmin }) {
   );
 }
 
-// ── Modal tambah MK ──────────────────────────────────────────────────────────
-function ModalTambahMK({ onClose, onSave, msg, error }) {
-  const [form, setForm] = useState({
-    kode_mk: '', nama_mk: '', sks: 3, jenjang: 'S1', semester: 1,
+// ── Modal Form MK (Tambah & Edit) ────────────────────────────────────────────
+function ModalFormMK({ initialData, onClose, onSave, error }) {
+  const isEdit = !!initialData?.id;
+  const [form, setForm] = useState(initialData || {
+    kode_mk: '', nama_mk: '', nama_mk_en: '', sks: 3, jenjang: 'S1', semester: 1,
     tipe: 'Teoritik', rmk: 'PA', status: 'Aktif', departemen: 'Arsitektur',
   });
 
+  const f = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Tambah Mata Kuliah</h3>
+      <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 460, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{isEdit ? `Edit MK · ${form.kode_mk}` : 'Tambah Mata Kuliah'}</h3>
 
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '8px 12px', fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{error}</div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={labelStyle}>Kode MK *</label>
-            <input style={inputStyle} value={form.kode_mk} onChange={e => setForm({...form, kode_mk: e.target.value})} placeholder="CA234503" />
+            <input style={{ ...inputStyle, background: isEdit ? '#f8f9fb' : 'white', color: isEdit ? '#888' : undefined }}
+              value={form.kode_mk}
+              onChange={e => f('kode_mk', e.target.value)}
+              readOnly={isEdit}
+              placeholder="CA234503" />
           </div>
           <div>
             <label style={labelStyle}>SKS *</label>
-            <input type="number" min={1} max={12} style={inputStyle} value={form.sks} onChange={e => setForm({...form, sks: Number(e.target.value)})} />
+            <input type="number" min={1} max={12} style={inputStyle} value={form.sks} onChange={e => f('sks', Number(e.target.value))} />
           </div>
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <label style={labelStyle}>Nama Mata Kuliah *</label>
-          <input style={inputStyle} value={form.nama_mk} onChange={e => setForm({...form, nama_mk: e.target.value})} placeholder="Berfikir Merancang Digital" />
+          <label style={labelStyle}>Nama MK (Indonesia) *</label>
+          <input style={inputStyle} value={form.nama_mk} onChange={e => f('nama_mk', e.target.value)} placeholder="Berfikir Merancang Digital" />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={labelStyle}>Nama MK (English) <span style={{ opacity: 0.5, fontWeight: 400 }}>opsional</span></label>
+          <input style={inputStyle} value={form.nama_mk_en || ''} onChange={e => f('nama_mk_en', e.target.value)} placeholder="Digital Design Thinking" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={labelStyle}>Jenjang</label>
-            <select style={inputStyle} value={form.jenjang} onChange={e => setForm({...form, jenjang: e.target.value})}>
+            <select style={inputStyle} value={form.jenjang} onChange={e => f('jenjang', e.target.value)}>
               {JENJANG_LIST.map(j => <option key={j}>{j}</option>)}
             </select>
           </div>
           <div>
             <label style={labelStyle}>Semester</label>
-            <input type="number" min={1} max={8} style={inputStyle} value={form.semester} onChange={e => setForm({...form, semester: Number(e.target.value)})} />
+            <input type="number" min={1} max={8} style={inputStyle} value={form.semester} onChange={e => f('semester', Number(e.target.value))} />
           </div>
           <div>
             <label style={labelStyle}>Tipe</label>
-            <select style={inputStyle} value={form.tipe} onChange={e => setForm({...form, tipe: e.target.value})}>
+            <select style={inputStyle} value={form.tipe} onChange={e => f('tipe', e.target.value)}>
               {TIPE_LIST.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
@@ -230,13 +261,13 @@ function ModalTambahMK({ onClose, onSave, msg, error }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
           <div>
             <label style={labelStyle}>RMK</label>
-            <select style={inputStyle} value={form.rmk} onChange={e => setForm({...form, rmk: e.target.value})}>
+            <select style={inputStyle} value={form.rmk} onChange={e => f('rmk', e.target.value)}>
               {Object.keys(RMK_COLOR).map(r => <option key={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label style={labelStyle}>Status</label>
-            <select style={inputStyle} value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+            <select style={inputStyle} value={form.status} onChange={e => f('status', e.target.value)}>
               <option>Aktif</option><option>Tidak Aktif</option>
             </select>
           </div>
@@ -244,56 +275,66 @@ function ModalTambahMK({ onClose, onSave, msg, error }) {
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '8px 18px', borderRadius: 7, border: '1px solid #e4e7ec', background: 'white', cursor: 'pointer', fontSize: 14 }}>Batal</button>
-          <button onClick={() => onSave(form)} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: '#1a5cb8', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>Simpan</button>
+          <button onClick={() => onSave(form)} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: '#1a5cb8', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+            {isEdit ? 'Simpan Perubahan' : 'Tambah MK'}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Modal tambah CPL ─────────────────────────────────────────────────────────
-function ModalTambahCPL({ onClose, onSave, error }) {
-  const [form, setForm] = useState({ jenjang: 'S1', nomor_cpl: '', kategori: '', deskripsi_id: '', deskripsi_en: '' });
+// ── Modal Form CPL (Tambah & Edit) ───────────────────────────────────────────
+function ModalFormCPL({ initialData, onClose, onSave, error }) {
+  const isEdit = !!initialData?.id;
+  const [form, setForm] = useState(initialData || {
+    jenjang: 'S1', nomor_cpl: '', kategori: '', deskripsi_id: '', deskripsi_en: '',
+  });
+
+  const f = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 460, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Tambah CPL</h3>
+      <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 460, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{isEdit ? `Edit CPL · ${form.nomor_cpl}` : 'Tambah CPL'}</h3>
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '8px 12px', fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{error}</div>}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={labelStyle}>Jenjang</label>
-            <select style={inputStyle} value={form.jenjang} onChange={e => setForm({...form, jenjang: e.target.value})}>
+            <select style={inputStyle} value={form.jenjang} onChange={e => f('jenjang', e.target.value)}>
               {JENJANG_LIST.map(j => <option key={j}>{j}</option>)}
             </select>
           </div>
           <div>
             <label style={labelStyle}>Nomor CPL *</label>
-            <input style={inputStyle} value={form.nomor_cpl} onChange={e => setForm({...form, nomor_cpl: e.target.value})} placeholder="CPL-1" />
+            <input style={inputStyle} value={form.nomor_cpl} onChange={e => f('nomor_cpl', e.target.value)} placeholder="CPL-1" />
           </div>
         </div>
+
         <div style={{ marginBottom: 12 }}>
           <label style={labelStyle}>Kategori <span style={{ opacity: 0.5, fontWeight: 400 }}>opsional</span></label>
-          <input style={inputStyle} value={form.kategori} onChange={e => setForm({...form, kategori: e.target.value})} placeholder="Sikap / Ketrampilan / Pengetahuan" />
+          <input style={inputStyle} value={form.kategori || ''} onChange={e => f('kategori', e.target.value)} placeholder="Sikap / Ketrampilan / Pengetahuan" />
         </div>
         <div style={{ marginBottom: 12 }}>
           <label style={labelStyle}>Deskripsi (Indonesia) *</label>
-          <textarea rows={3} style={{...inputStyle, resize: 'vertical'}} value={form.deskripsi_id} onChange={e => setForm({...form, deskripsi_id: e.target.value})} placeholder="Mampu menerapkan..." />
+          <textarea rows={3} style={{ ...inputStyle, resize: 'vertical' }} value={form.deskripsi_id} onChange={e => f('deskripsi_id', e.target.value)} placeholder="Mampu menerapkan..." />
         </div>
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>Deskripsi (English) <span style={{ opacity: 0.5, fontWeight: 400 }}>opsional</span></label>
-          <textarea rows={3} style={{...inputStyle, resize: 'vertical'}} value={form.deskripsi_en} onChange={e => setForm({...form, deskripsi_en: e.target.value})} placeholder="Able to apply..." />
+          <textarea rows={3} style={{ ...inputStyle, resize: 'vertical' }} value={form.deskripsi_en || ''} onChange={e => f('deskripsi_en', e.target.value)} placeholder="Able to apply..." />
         </div>
+
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '8px 18px', borderRadius: 7, border: '1px solid #e4e7ec', background: 'white', cursor: 'pointer', fontSize: 14 }}>Batal</button>
-          <button onClick={() => onSave(form)} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: '#1a5cb8', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>Simpan</button>
+          <button onClick={() => onSave(form)} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: '#1a5cb8', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+            {isEdit ? 'Simpan Perubahan' : 'Tambah CPL'}
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
-const labelStyle = { display: 'block', fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 4, letterSpacing: 0.3 };
-const inputStyle = { width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13, boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' };
 
 // ── Halaman utama ────────────────────────────────────────────────────────────
 export default function AdminMasterData({ user }) {
@@ -310,9 +351,9 @@ export default function AdminMasterData({ user }) {
   const [filterTipe, setFilterTipe] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  // Modal
-  const [showModalMK, setShowModalMK] = useState(false);
-  const [showModalCPL, setShowModalCPL] = useState(false);
+  // Modal: null = tutup, { mode: 'add'|'edit', data } = buka
+  const [modalMK, setModalMK] = useState(null);
+  const [modalCPL, setModalCPL] = useState(null);
   const [modalError, setModalError] = useState('');
 
   // Toast
@@ -339,7 +380,7 @@ export default function AdminMasterData({ user }) {
     setLoading(false);
   };
 
-  // ── Filter logic ────────────────────────────────────────────────────────
+  // ── Filter logic ──────────────────────────────────────────────────────
   const filteredMK = daftarMK.filter(mk => {
     const q = search.toLowerCase();
     if (q && !mk.kode_mk?.toLowerCase().includes(q) && !mk.nama_mk?.toLowerCase().includes(q)) return false;
@@ -357,14 +398,21 @@ export default function AdminMasterData({ user }) {
     return true;
   });
 
-  // ── CRUD ────────────────────────────────────────────────────────────────
+  // ── CRUD MK ───────────────────────────────────────────────────────────
   const simpanMK = async (form) => {
     setModalError('');
     if (!form.kode_mk || !form.nama_mk) { setModalError('Kode dan Nama MK wajib diisi.'); return; }
-    const { error } = await supabase.from('master_mata_kuliah').insert(form);
+    const isEdit = !!form.id;
+    let error;
+    if (isEdit) {
+      const { id, created_at, ...updateData } = form; // eslint-disable-line no-unused-vars
+      ({ error } = await supabase.from('master_mata_kuliah').update(updateData).eq('id', id));
+    } else {
+      ({ error } = await supabase.from('master_mata_kuliah').insert(form));
+    }
     if (error) { setModalError('Gagal: ' + error.message); return; }
-    setShowModalMK(false);
-    notify('Mata kuliah berhasil ditambahkan.');
+    setModalMK(null);
+    notify(isEdit ? 'Mata kuliah berhasil diperbarui.' : 'Mata kuliah berhasil ditambahkan.');
     loadAll();
   };
 
@@ -375,13 +423,21 @@ export default function AdminMasterData({ user }) {
     loadAll();
   };
 
+  // ── CRUD CPL ──────────────────────────────────────────────────────────
   const simpanCPL = async (form) => {
     setModalError('');
     if (!form.nomor_cpl || !form.deskripsi_id) { setModalError('Nomor dan Deskripsi CPL wajib diisi.'); return; }
-    const { error } = await supabase.from('master_cpl').insert(form);
+    const isEdit = !!form.id;
+    let error;
+    if (isEdit) {
+      const { id, created_at, ...updateData } = form; // eslint-disable-line no-unused-vars
+      ({ error } = await supabase.from('master_cpl').update(updateData).eq('id', id));
+    } else {
+      ({ error } = await supabase.from('master_cpl').insert(form));
+    }
     if (error) { setModalError('Gagal: ' + error.message); return; }
-    setShowModalCPL(false);
-    notify('CPL berhasil ditambahkan.');
+    setModalCPL(null);
+    notify(isEdit ? 'CPL berhasil diperbarui.' : 'CPL berhasil ditambahkan.');
     loadAll();
   };
 
@@ -392,7 +448,7 @@ export default function AdminMasterData({ user }) {
     loadAll();
   };
 
-  // ── Import CSV ──────────────────────────────────────────────────────────
+  // ── Import CSV ────────────────────────────────────────────────────────
   const handleImportCSV = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -422,7 +478,7 @@ export default function AdminMasterData({ user }) {
     e.target.value = '';
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 12 }}>
       <div style={{ width: 28, height: 28, border: '3px solid #e4e7ec', borderTopColor: '#1a5cb8', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
@@ -473,14 +529,16 @@ export default function AdminMasterData({ user }) {
                     ↑ Import CSV
                     <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImportCSV} />
                   </label>
-                  <button onClick={() => { setShowModalMK(true); setModalError(''); }}
+                  <button
+                    onClick={() => { setModalMK({ mode: 'add', data: null }); setModalError(''); }}
                     style={{ padding: '8px 16px', borderRadius: 7, border: 'none', background: '#1a5cb8', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                     + Tambah MK
                   </button>
                 </>
               )}
               {!isMKTab && (
-                <button onClick={() => { setShowModalCPL(true); setModalError(''); }}
+                <button
+                  onClick={() => { setModalCPL({ mode: 'add', data: null }); setModalError(''); }}
                   style={{ padding: '8px 16px', borderRadius: 7, border: 'none', background: '#1a5cb8', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   + Tambah CPL
                 </button>
@@ -491,14 +549,13 @@ export default function AdminMasterData({ user }) {
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 20, borderBottom: '1px solid #e4e7ec', paddingBottom: 0 }}>
-          {[{ key: 'mk', label: `Mata Kuliah`, count: daftarMK.length }, { key: 'cpl', label: 'CPL', count: daftarCPL.length }].map(t => (
+          {[{ key: 'mk', label: 'Mata Kuliah', count: daftarMK.length }, { key: 'cpl', label: 'CPL', count: daftarCPL.length }].map(t => (
             <button key={t.key} onClick={() => { setTab(t.key); setSearch(''); setFilterJenjang(''); setFilterRMK(''); setFilterTipe(''); setFilterStatus(''); }}
               style={{
                 padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
                 color: tab === t.key ? '#1a5cb8' : '#888',
                 borderBottom: tab === t.key ? '2px solid #1a5cb8' : '2px solid transparent',
-                marginBottom: -1,
-                transition: 'all 0.15s',
+                marginBottom: -1, transition: 'all 0.15s',
               }}
             >
               {t.label} <span style={{ marginLeft: 4, fontSize: 11, background: tab === t.key ? '#e8f0fe' : '#f3f4f6', color: tab === t.key ? '#1a5cb8' : '#888', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>{t.count}</span>
@@ -570,18 +627,45 @@ export default function AdminMasterData({ user }) {
         {/* ── Tabel ── */}
         <div style={{ background: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           {isMKTab
-            ? <MKTable data={filteredMK} onDelete={hapusMK} isAdmin={isAdmin} />
-            : <CPLTable data={filteredCPL} onDelete={hapusCPL} isAdmin={isAdmin} />
+            ? <MKTable
+                data={filteredMK}
+                onDelete={hapusMK}
+                onEdit={mk => { setModalMK({ mode: 'edit', data: mk }); setModalError(''); }}
+                isAdmin={isAdmin}
+              />
+            : <CPLTable
+                data={filteredCPL}
+                onDelete={hapusCPL}
+                onEdit={cpl => { setModalCPL({ mode: 'edit', data: cpl }); setModalError(''); }}
+                isAdmin={isAdmin}
+              />
           }
         </div>
 
       </main>
 
       {/* ── Modals ── */}
-      {showModalMK && <ModalTambahMK onClose={() => setShowModalMK(false)} onSave={simpanMK} error={modalError} />}
-      {showModalCPL && <ModalTambahCPL onClose={() => setShowModalCPL(false)} onSave={simpanCPL} error={modalError} />}
+      {modalMK && (
+        <ModalFormMK
+          initialData={modalMK.data}
+          onClose={() => setModalMK(null)}
+          onSave={simpanMK}
+          error={modalError}
+        />
+      )}
+      {modalCPL && (
+        <ModalFormCPL
+          initialData={modalCPL.data}
+          onClose={() => setModalCPL(null)}
+          onSave={simpanCPL}
+          error={modalError}
+        />
+      )}
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </div>
   );
 }
