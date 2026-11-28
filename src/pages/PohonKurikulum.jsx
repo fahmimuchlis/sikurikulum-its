@@ -121,7 +121,7 @@ function MKCard({ mk, onClick, selected, isStudio, isDisertasi }) {
       onMouseLeave={() => setHov(false)}
       style={{
         background: col.bg,
-        border: `2px solid ${selected ? '#1A4FA8' : col.border}`,
+        border: selected ? '2px solid #1A4FA8' : '1px solid #000000',
         borderRadius: 6,
         padding: '6px 8px 8px',
         cursor: 'pointer',
@@ -142,8 +142,9 @@ function MKCard({ mk, onClick, selected, isStudio, isDisertasi }) {
     >
       {/* Kode & SKS */}
       <div style={{
-        fontSize: 8.5, fontWeight: 600, color: 'rgba(0,0,0,0.5)',
+        fontSize: 8.5, fontWeight: 600, color: '#000000',
         fontFamily: 'monospace', letterSpacing: '0.1px', lineHeight: 1,
+        textAlign: 'center',
       }}>
         ({mk.kode_mk}) &bull; {mk.sks} sks
       </div>
@@ -177,7 +178,7 @@ function PilihanCard({ slot, mkPilihan, onOpen, semester }) {
       onMouseLeave={() => setHov(false)}
       style={{
         background: hov ? '#B8C4D0' : PILIHAN_COLOR.bg,
-        border: `2px dashed ${PILIHAN_COLOR.border}`,
+        border: '1px dashed #000000',
         borderRadius: 6,
         padding: '6px 8px 8px',
         cursor: 'pointer',
@@ -188,18 +189,18 @@ function PilihanCard({ slot, mkPilihan, onOpen, semester }) {
         userSelect: 'none',
       }}
     >
-      <div style={{ fontSize: 8.5, fontWeight: 600, color: 'rgba(0,0,0,0.4)', fontFamily: 'monospace' }}>
+      <div style={{ fontSize: 8.5, fontWeight: 600, color: '#000000', fontFamily: 'monospace', textAlign: 'center' }}>
         PILIHAN &bull; 3 sks
       </div>
       <div style={{
-        fontSize: 10.5, fontWeight: 800, color: '#5A6878',
+        fontSize: 10.5, fontWeight: 800, color: '#000000',
         textTransform: 'uppercase', textAlign: 'center',
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         lineHeight: 1.3,
       }}>
         MK. PILIHAN {slot}
       </div>
-      <div style={{ fontSize: 8, color: '#8090A0', textAlign: 'center' }}>
+      <div style={{ fontSize: 8, color: '#000000', textAlign: 'center' }}>
         ▼ {mkPilihan.length} opsi · klik untuk lihat
       </div>
     </div>
