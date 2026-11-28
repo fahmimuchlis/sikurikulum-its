@@ -3,25 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Icon from '../components/Icon';
 
-// ── Warna RMK ─────────────────────────────────────────────────────────────────
+// ── Palet warna resmi kurikulum (sesuai legenda bagan ITS) ───────────────────
+// PA  = Perancangan Arsitektur  → oranye muda
+// TS  = Teori Sejarah Kritik    → krem/kuning gading
+// PP  = Perumahan & Permukiman  → hijau muda
+// ST  = Sains Teknologi         → biru lavender
+// PK  = Perancangan Kota        → kuning muda
+// DL  = Non Departemen/ITS      → biru cerah (cyan)
+// SKPB/Umum/Nasional            → merah-oranye (Pancasila, Agama, dsb)
+// MK Pilihan                    → abu-abu
+// Belum dikategorikan           → putih
 const RMK_COLOR = {
-  PA:   { bg: '#FFCBA4', border: '#D4622A', label: 'Perancangan Arsitektur' },
-  TS:   { bg: '#FFF176', border: '#C8A000', label: 'Teori Sejarah Kritik' },
-  ST:   { bg: '#B3D9FF', border: '#2A6CB5', label: 'Sains Teknologi' },
-  PP:   { bg: '#FFD6C2', border: '#D4622A', label: 'Perumahan & Permukiman' },
-  PK:   { bg: '#FFEE82', border: '#C8A000', label: 'Perancangan Kota' },
-  DL:   { bg: '#62C8F0', border: '#0A6A9A', label: 'Non Departemen/ITS' },
-  PPAr: { bg: '#A8E6B8', border: '#2A7A4A', label: 'Praktik Profesi' },
-  SKPB: { bg: '#FF6666', border: '#CC0000', label: 'Kurikulum Bersama ITS' },
-  Umum: { bg: '#D0D0D0', border: '#888888', label: 'Umum/Wajib Nasional' },
+  PA:   { bg: '#F4A460', border: '#C06020', label: 'Perancangan Arsitektur' },
+  TS:   { bg: '#F5F0DC', border: '#C8B870', label: 'Teori Sejarah Kritik Arsitektur' },
+  PP:   { bg: '#C8DDB8', border: '#7AAA5A', label: 'Perumahan & Pemukiman' },
+  ST:   { bg: '#B8C0D8', border: '#6878A8', label: 'Sains Teknologi Arsitektur' },
+  PK:   { bg: '#F0F0A0', border: '#A8A830', label: 'Perancangan Kota' },
+  DL:   { bg: '#00BFFF', border: '#007AAA', label: 'Non Departemen/ITS' },
+  SKPB: { bg: '#FF6040', border: '#CC2000', label: 'Nasional (b. indo, kewarganegaraan, Pancasila, agama)' },
+  Umum: { bg: '#FF6040', border: '#CC2000', label: 'Nasional/Umum' },
+  PPAr: { bg: '#F4A460', border: '#C06020', label: 'Praktik Profesi Arsitektur' },
 };
-const STUDIO_COLOR  = { bg: '#FFCBA4', border: '#D4622A', label: 'Studio Perancangan' };
-const PILIHAN_COLOR = { bg: '#C0C0C0', border: '#808080', label: 'MK Pilihan' };
-const DISERTASI_COLOR = { bg: '#A8A8D8', border: '#4040A8', label: 'Disertasi' };
+const STUDIO_COLOR    = { bg: '#F4A460', border: '#C06020', label: 'Studio Perancangan' };
+const PILIHAN_COLOR   = { bg: '#B0B0B0', border: '#787878', label: 'MK Pilihan' };
+const DISERTASI_COLOR = { bg: '#B8C0D8', border: '#6878A8', label: 'Disertasi' };
+const DEFAULT_COLOR   = { bg: '#FFFFFF', border: '#C0C8D0', label: 'Lainnya' };
 
 function getRmkColor(mk) {
   if (mk.tipe === 'Studio') return STUDIO_COLOR;
-  return RMK_COLOR[mk.rmk] || { bg: '#EEEEEE', border: '#AAAAAA', label: mk.rmk || '—' };
+  return RMK_COLOR[mk.rmk] || DEFAULT_COLOR;
 }
 
 const JENJANG_OPTIONS = [
@@ -645,22 +655,31 @@ export default function PohonKurikulum() {
             </div>
           </div>
 
-          {/* Legenda */}
+          {/* Legenda — sesuai palet resmi */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, color: '#4A6080', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Legenda Warna</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 14, height: 9, borderRadius: 2, background: STUDIO_COLOR.bg, border: `1px solid ${STUDIO_COLOR.border}`, flexShrink: 0 }} />
-                <span style={{ fontSize: 9, color: '#4A6080' }}>Studio Perancangan</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 14, height: 9, borderRadius: 2, background: PILIHAN_COLOR.bg, border: `2px dashed ${PILIHAN_COLOR.border}`, flexShrink: 0 }} />
-                <span style={{ fontSize: 9, color: '#4A6080' }}>MK Pilihan</span>
-              </div>
-              {Object.entries(RMK_COLOR).map(([k, col]) => (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 14, height: 9, borderRadius: 2, background: col.bg, border: `1px solid ${col.border}`, flexShrink: 0 }} />
-                  <span style={{ fontSize: 9, color: '#4A6080', lineHeight: 1.3 }}>{k} · {col.label}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {[
+                { col: STUDIO_COLOR,  label: 'Perancangan Arsitektur', note: '(termasuk Studio)' },
+                { col: RMK_COLOR.TS,  label: 'Teori Sejarah Kritik Arsitektur' },
+                { col: RMK_COLOR.PP,  label: 'Perumahan & Pemukiman' },
+                { col: RMK_COLOR.ST,  label: 'Sains Teknologi Arsitektur' },
+                { col: RMK_COLOR.PK,  label: 'Perancangan Kota' },
+                { col: RMK_COLOR.DL,  label: 'Non Departemen/ITS' },
+                { col: RMK_COLOR.SKPB,label: 'Nasional (b. indo, kewarganegaraan, Pancasila, agama)' },
+                { col: PILIHAN_COLOR, label: 'MK Pilihan', dashed: true },
+                { col: DEFAULT_COLOR, label: 'Belum dikategorikan' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <div style={{
+                    width: 13, height: 13, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                    background: item.col.bg,
+                    border: `1.5px ${item.dashed ? 'dashed' : 'solid'} ${item.col.border}`,
+                  }} />
+                  <span style={{ fontSize: 9, color: '#4A6080', lineHeight: 1.35 }}>
+                    {item.label}
+                    {item.note && <span style={{ color: '#9AB0C8' }}> {item.note}</span>}
+                  </span>
                 </div>
               ))}
             </div>
