@@ -556,6 +556,7 @@ function PanelWindow({ layout, id, docked, defaultRect, children }) {
 export default function GeneratorRPS({ user }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('deskripsi');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mkList, setMkList] = useState([]);
   const [selectedMkId, setSelectedMkId] = useState('');
   const [selectedMk, setSelectedMk] = useState(null);
@@ -1070,17 +1071,54 @@ export default function GeneratorRPS({ user }) {
           PANEL 4 — PANEL MK / SIDEBAR   w=372
           Header: bg rgba(198,228,245,0.9), border #9cc3dd
       ══════════════════════════════════════════════ */}
+
+      {/* Tombol show ketika sidebar tersembunyi */}
+      {sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(false)}
+          title="Tampilkan panel"
+          style={{
+            position: 'fixed',
+            right: 44,   /* lebar rail */
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 90,
+            width: 22,
+            height: 56,
+            background: 'rgba(198,228,245,0.95)',
+            border: '1px solid #9cc3dd',
+            borderRight: 'none',
+            borderRadius: '8px 0 0 8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '-2px 0 8px rgba(0,0,0,0.10)',
+            color: '#2a6496',
+            fontSize: 14,
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(198,228,245,1)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(198,228,245,0.95)'; }}
+        >
+          ‹
+        </button>
+      )}
+
       <div style={{
-        width: 372,
+        width: sidebarCollapsed ? 0 : 372,
         flexShrink: 0,
-        marginLeft: 'auto',     /* tetap menempel ke rail walau Preview/AI disembunyikan */
+        marginLeft: 'auto',
         height: '100vh',
         background: 'white',
         display: 'flex',
         flexDirection: 'column',
-        border: '1px solid #d2d2d2',
+        border: sidebarCollapsed ? 'none' : '1px solid #d2d2d2',
         boxSizing: 'border-box',
-        overflowY: 'auto',
+        overflowY: sidebarCollapsed ? 'hidden' : 'auto',
+        overflowX: 'hidden',
+        transition: 'width 0.25s ease',
+        visibility: sidebarCollapsed ? 'hidden' : 'visible',
       }}>
         {/* User header — Figma: bg rgba(198,228,245,0.9), h=55, border-bottom #9cc3dd */}
         <div style={{
@@ -1099,11 +1137,35 @@ export default function GeneratorRPS({ user }) {
           }}>
             {initials}
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             {/* Figma: Nama User #1a1a1a bold 16px at y=12, Peran #1a1a1a regular 12px at y=34 */}
             <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2 }}>{user?.nama || 'Nama User'}</div>
             <div style={{ fontSize: 12, color: '#1a1a1a', marginTop: 2 }}>{user?.peran || 'Peran'}</div>
           </div>
+          {/* Tombol sembunyikan panel */}
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            title="Sembunyikan panel"
+            style={{
+              marginLeft: 'auto',
+              width: 28, height: 28,
+              borderRadius: 6,
+              background: 'rgba(0,0,0,0.06)',
+              border: '1px solid rgba(0,0,0,0.10)',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#2a6496',
+              fontSize: 15,
+              fontWeight: 700,
+              lineHeight: 1,
+              flexShrink: 0,
+              transition: 'background 0.13s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.12)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.06)'; }}
+          >
+            ›
+          </button>
         </div>
 
         {/* Sidebar scroll area — Figma: bg rgba(233,239,243,0.92) */}
